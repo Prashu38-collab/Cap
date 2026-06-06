@@ -1,0 +1,114 @@
+/* .formContainer{
+    display: flex;
+    flex-direction: column;
+    min-height: 53vh;
+} */
+
+.planImage{
+    background-image: url('/images/plan.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding-top: 40px;
+}
+
+.formContainer{
+    width: 100%;
+    padding: 80px;
+    margin: auto;
+}
+
+.title{
+    text-align: center;
+    margin-bottom: 80px;
+    color: #ffffff;
+    text-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.7),
+    0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.title h1{
+    font-size: 48px;
+    font-weight: 700;
+}
+
+.title p{
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.form-card{
+    max-width: 1000px;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(5px);
+    box-shadow:0 0 15px rgba(0,0,0,0.3);
+}
+
+.input-group{
+    margin-bottom: 20px;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.input-group label{
+    color: #333;
+}
+
+.input-group .required{
+    color: red;
+}
+
+.input-group :where(input[type="text"], input[type="number"], input[type="date"], select){
+    height: 40px;
+    width: 100%;
+    outline: none;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0 15px;
+    font-size: 16px;
+    margin-top: 8px;
+    transition: 0.3s ease;
+}
+
+.input-group :where(input[type="text"], input[type="number"], input[type="date"], select):focus{
+    border: 1px solid #111827;
+    box-shadow:0 0 5px rgba(17,24,39,0.5);
+}
+
+.input-group :where(.radio-group, .checkbox-group){
+    display: flex;
+    align-items: center;
+    column-gap: 40px;
+    margin-top: 8px;
+}
+
+.input-group .radio, .input-group .checkbox{
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
+}
+
+.input-group :where( .radio input, .radio label, .checkbox input, .checkbox label) {
+    cursor: pointer;
+}
+
+.btn-container{
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+.generate-btn{
+    align-items: center;
+    font-size: 20px;
+    font-weight: 500;
+    padding: 10px;
+    border-radius: 5px;
+    background: var(--primary-color);
+    color: #ffffff;
+}

@@ -1,0 +1,498 @@
+/* section{
+    padding: 4rem 2rem;
+    margin: 0 auto;
+} */
+
+/*-----------------------------------------------Hero Section------------------------*/
+
+.hero{
+    position: relative;
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-image: url('/images/dashboard.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* .hero .overlay{
+    position: absolute; 
+    inset: 0; 
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.5) ); 
+} */
+
+.hero .container{
+    position: relative;
+    padding: 0 2rem;
+    max-width: 840px;
+    color: var(--secondary-color);
+}
+
+.hero h1{
+    font-size: 80px;
+    font-weight: 700;
+    line-height: 1.1;
+    text-shadow: 0 10px 30px rgba(15, 23, 42, 0.65);
+    margin-bottom: 1rem;
+}
+
+.hero p{
+    font-size: 25px;
+    font-weight: 400;
+    text-shadow: 0 10px 30px rgba(6, 10, 20, 0.65);
+}
+
+.hero .action{
+    display: flex;
+    gap: 50px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1.5rem; 
+}
+
+.hero .start{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 30px;
+    border-radius: 999px;
+    font-size: 20px;
+    font-weight: 500;
+    text-decoration: none;
+    background: linear-gradient(135deg, #facc15, #f97316);
+    color: white;
+    transition: 0.3s ease;
+}
+
+.hero .start:hover{
+    transform: translateY(-3px);
+    box-shadow:0 10px 20px rgba(236, 234, 234, 0.3);
+}
+
+/*-----------------------------------------------Weather Section------------------------*/
+
+.weather-section{
+    padding: 80px;
+}
+
+.weather-section h1{
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--primary-color);
+}
+
+.weather-card{
+    max-width: 90%;
+    margin: auto;
+    /* padding: 40px; */
+    border-radius: 10px;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.weather-overlay{
+    background: rgba(0,0,0,0.2);
+    backdrop-filter: blur(3px);
+    padding: 40px;
+    color: white;
+}
+
+.weather-card .search{
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.search input{
+    width: 450px;
+    height: 50px;
+    border: none;
+    outline: none;
+    border-radius: 25px 0 0 25px;
+    padding: 0 12px;
+    font-size: 16px;
+}
+
+.search button{
+    width: 60px;
+    border: none;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 0 25px 25px 0;
+    cursor: pointer;
+    padding: 10px;
+}
+
+.error-box{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 15px auto;
+    padding: 12px 20px;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    color: rgb(255, 184, 184);
+    font-size: 20px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.weather-card h3{
+    font-size: 30px;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+}
+
+.weather-header{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 50px;
+    flex-wrap: wrap;
+}
+
+.temperature{
+    font-size: 40px;
+    font-weight: 500;
+    line-height: 1;
+}
+
+.weather-emoji{
+    font-size: 60px;
+}
+
+.condition{
+    font-size: 30px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.weather-details{
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.weather-details div{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 20px;
+}
+
+.weather-details i{
+    color: #ffffff;
+}
+
+.forecast-container{
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    flex: 1;
+    scrollbar-width: none;
+    padding-bottom: 10px;
+}
+
+.forecast-container::-webkit-scrollbar{
+    display: none;
+}
+
+.forecast-card{
+    text-align: center;
+    padding: 15px;
+}
+
+.forecast-time{
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+.forecast-emoji{
+    font-size: 30px;
+}
+
+.forecast-temp{
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.forecast-wrapper{
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 40px;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+
+.scroll-btn{
+    width: 45px;
+    height: 45px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    backdrop-filter: blur(10px);
+    color: white;
+    cursor: pointer;
+}
+
+/*-----------------------------------------------Map Visualization------------------------*/
+
+.map-section{
+    padding: 0 80px 80px;
+}
+
+.map-section h1{
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 30px;
+    color: var(--primary-color);
+}
+
+/* .map-container{
+    height: 600px;
+    width: 100%;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    z-index: 0
+} */
+
+.map-container{
+    position: relative;
+    max-width: 90%;
+    height: 650px;
+    margin: auto;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    border: 1px solid black;
+    background: #fff;
+}
+
+.map-container h3{
+    position: absolute;
+    text-align: right;
+    right: 0;
+    padding: 30px;
+    font-size: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    z-index: 555;
+}
+
+.map-container img{
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    opacity: 0.35;
+    transform: scale(1.3);
+    transform-origin: 90% 100%;
+}
+
+.marker{
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.label{
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pin{
+    font-size: 20px;
+}
+
+.kathmandu{
+    top: 48%;
+    left: 49%;
+}
+
+.lalitpur{
+    top: 49%;
+    left: 50%;
+}
+
+.bhaktapur{
+    top: 54%;
+    left: 65%;
+}
+
+.kavrepalanchok{
+    top: 56%;
+    left: 68%;
+}
+
+.sindhupalchok{
+    top: 47%;
+    left: 71%;
+}
+
+.dolakha{
+    top: 43%;
+    left: 76%;
+}
+
+.ramechhap{
+    top: 58%;
+    left: 74%;
+}
+
+.sindhuli{
+    top: 67%;
+    left: 71%;
+}
+
+.makwanpur{
+    top: 64%;
+    left: 60%;
+}
+
+.chitwan{
+    top: 72%;
+    left: 54%;
+}
+
+.nuwakot{
+    top: 46%;
+    left: 58%;
+}
+
+.dhading{
+    top: 53%;
+    left: 55%;
+}
+
+.rasuwa{
+    top: 34%;
+    left: 61%;
+}
+
+/*-----------------------------------------------Recommended Itineraries------------------------*/
+
+.itinerary-section{
+    padding: 0 80px 80px;
+}
+
+.itinerary-section h1{
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 30px;
+}
+
+.itinerary-container{
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card{
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    width: 100%;
+}
+
+.carousel-btn{
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.9);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: 5;
+}
+
+.carousel-btn.left{
+    left: -20px;
+}
+
+.carousel-btn.right{
+    right: -20px;
+}
+
+/* .card-container{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    padding: 20px;
+    width: 90%;
+    max-width: 100%;
+    margin: 0 auto;
+    max-height: 90%;
+    border-radius: 15px;
+} */
+
+.itinerary-card{
+    width: 400px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.itinerary-card:hover{
+    transform: translateY(-8px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.itinerary-card img{
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.itinerary-content{
+    padding: 15px;
+}
+
+.itinerary-content h3{
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.itinerary-content p{
+    color: var(--primary-color);
+    font-size: 15px;
+    line-height: 1.3;
+}
+
+.itinerary-content .button{
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: var(--primary-color);
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 15px;
+}
+
