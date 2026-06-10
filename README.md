@@ -21,5 +21,5 @@ A web-based travel itinerary recommendation system using content-based filtering
 
 ## Installation
 
-npm install
-npm run dev
+- npm install
+- npm run dev
