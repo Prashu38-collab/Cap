@@ -114,7 +114,7 @@ function WeatherSection() {
 
           {/* search box */}
           <div className="search">
-            <input type="text" placeholder="Enter location.." onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchPressed()} />
+            <input type="text" placeholder="Enter any location.." onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchPressed()} />
 
             <button onClick={searchPressed}>
               <i className="fa-solid fa-magnifying-glass"></i>

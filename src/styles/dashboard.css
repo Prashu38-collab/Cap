@@ -3,7 +3,7 @@
     margin: 0 auto;
 } */
 
-/*-----------------------------------------------Hero Section------------------------*/
+/*-----------------------------------------------Hero Section------------------------------------*/
 
 .hero{
     position: relative;
@@ -73,7 +73,7 @@
     box-shadow:0 10px 20px rgba(236, 234, 234, 0.3);
 }
 
-/*-----------------------------------------------Weather Section------------------------*/
+/*-----------------------------------------------Weather Section--------------------------------------------*/
 
 .weather-section{
     padding: 80px;
@@ -82,12 +82,14 @@
 .weather-section h1{
     font-size: 30px;
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     color: var(--primary-color);
 }
 
 .weather-card{
     max-width: 90%;
+    width: 1000px;
+    /* height: 560px; */
     margin: auto;
     /* padding: 40px; */
     border-radius: 10px;
@@ -107,18 +109,18 @@
 .weather-card .search{
     display: flex;
     justify-content: center;
-    margin-top: 30px;
-    margin-bottom: 30px;
+    margin-top: 10px;
+    margin-bottom: 18px;
 }
 
 .search input{
     width: 450px;
-    height: 50px;
+    height: 45px;
     border: none;
     outline: none;
     border-radius: 25px 0 0 25px;
     padding: 0 12px;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .search button{
@@ -135,7 +137,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 15px auto;
+    margin: 20px auto;
     padding: 12px 20px;
     background: rgba(255,255,255,0.2);
     backdrop-filter: blur(20px);
@@ -158,12 +160,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 50px;
+    gap: 40px;
     flex-wrap: wrap;
 }
 
 .temperature{
-    font-size: 40px;
+    font-size: 30px;
     font-weight: 500;
     line-height: 1;
 }
@@ -179,7 +181,7 @@
 }
 
 .weather-details{
-    margin-top: 20px;
+    margin-top: 10px;
     display: flex;
     justify-content: center;
     gap: 40px;
@@ -197,15 +199,24 @@
     color: #ffffff;
 }
 
+.forecast-wrapper{
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 40px;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+
 .forecast-container{
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 25px;
     overflow-x: auto;
     scroll-behavior: smooth;
     flex: 1;
     scrollbar-width: none;
-    padding-bottom: 10px;
+    /* padding-bottom: 10px; */
 }
 
 .forecast-container::-webkit-scrollbar{
@@ -213,12 +224,13 @@
 }
 
 .forecast-card{
+    flex-shrink: 0;
     text-align: center;
     padding: 15px;
 }
 
 .forecast-time{
-    font-size: 18px;
+    font-size: 20px;
     margin-bottom: 5px;
 }
 
@@ -227,17 +239,8 @@
 }
 
 .forecast-temp{
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 600;
-}
-
-.forecast-wrapper{
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-top: 40px;
-    padding-top: 25px;
-    border-top: 1px solid rgba(255,255,255,0.3);
 }
 
 .scroll-btn{
@@ -251,7 +254,7 @@
     cursor: pointer;
 }
 
-/*-----------------------------------------------Map Visualization------------------------*/
+/*-----------------------------------------------Map Visualization-----------------------------------------------*/
 
 .map-section{
     padding: 0 80px 80px;
@@ -264,25 +267,18 @@
     color: var(--primary-color);
 }
 
-/* .map-container{
-    height: 600px;
-    width: 100%;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-    z-index: 0
-} */
-
 .map-container{
     position: relative;
+    width: 1000px;
+    /* height: 580px; */
     max-width: 90%;
-    height: 650px;
     margin: auto;
-    overflow: hidden;
-    border-radius: 10px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    /* overflow: hidden; */
+    border-radius: 15px;
+    /* box-shadow: 0 20px 40px rgba(0,0,0,0.15); */
     border: 1px solid black;
     background: #fff;
+    z-index: 1;
 }
 
 .map-container h3{
@@ -290,19 +286,23 @@
     text-align: right;
     right: 0;
     padding: 30px;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     text-transform: uppercase;
-    z-index: 555;
+    line-height: 1.4;
 }
 
-.map-container img{
-    height: 100%;
+.map-inner{
+    position: relative;
     width: 100%;
-    object-fit: cover;
-    opacity: 0.35;
-    transform: scale(1.3);
-    transform-origin: 90% 100%;
+}
+
+.map-inner img{
+    display: block;
+    width: 100%;
+    height: 100%;
+    opacity: 0.7;
+    object-fit: contain;
 }
 
 .marker{
@@ -311,86 +311,136 @@
     flex-direction: column;
     align-items: center;
     cursor: pointer;
+    transform: translate(-50%, -100%);
+    gap: 0;
+    z-index: 1;
 }
 
 .label{
-    font-size: 12px;
+    font-size: 16px;
     font-weight: 600;
+    margin-bottom: -4px;
+    position: absolute;
+    white-space: nowrap;
 }
 
 .pin{
     font-size: 20px;
+    transition: 0.3s ease;
+    /* line-height: 1; */
+}
+
+.marker:hover .pin{
+    transform: scale(1.7);
+}
+
+.marker:hover{
+    z-index: 999;
 }
 
 .kathmandu{
-    top: 48%;
-    left: 49%;
+    top: 54%;
+    left: 54%;
 }
 
 .lalitpur{
-    top: 49%;
-    left: 50%;
+    top: 55%;
+    left: 56%;
 }
 
 .bhaktapur{
-    top: 54%;
-    left: 65%;
+    top: 61%;
+    left: 54%;
 }
 
 .kavrepalanchok{
-    top: 56%;
-    left: 68%;
+    top: 62%;
+    left: 58%;
 }
 
 .sindhupalchok{
     top: 47%;
-    left: 71%;
-}
-
-.dolakha{
-    top: 43%;
-    left: 76%;
-}
-
-.ramechhap{
-    top: 58%;
-    left: 74%;
-}
-
-.sindhuli{
-    top: 67%;
-    left: 71%;
-}
-
-.makwanpur{
-    top: 64%;
-    left: 60%;
-}
-
-.chitwan{
-    top: 72%;
-    left: 54%;
-}
-
-.nuwakot{
-    top: 46%;
-    left: 58%;
-}
-
-.dhading{
-    top: 53%;
-    left: 55%;
-}
-
-.rasuwa{
-    top: 34%;
     left: 61%;
 }
 
-/*-----------------------------------------------Recommended Itineraries------------------------*/
+.dolakha{
+    top: 55%;
+    left: 68%;
+}
+
+.sindhuli{
+    top: 74%;
+    left: 65%;
+}
+
+.chitwan{
+    top: 63%;
+    left: 38%;
+}
+
+.nuwakot{
+    top: 49%;
+    left: 51%;
+}
+
+.rasuwa{
+    top: 38%;
+    left: 54%;
+}
+
+.label-top{
+    bottom: 100%;
+}
+
+.label-left{
+    right: 100%;
+    line-height: 1;
+}
+
+.label-right{
+    left: 100%;
+    line-height: 1;
+}
+
+.district-popup{
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    width: 350px;
+    background: var(--primary-color);
+    border-radius: 5px;
+    overflow: hidden;
+    visibility: hidden;
+    z-index: 999;
+}
+
+.marker:hover .district-popup{
+    visibility: visible;
+}
+
+.district-popup img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    padding: 10px;
+    filter: brightness(1.2);
+}
+
+.district-popup p{
+    margin: 0;
+    padding-bottom: 10px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #ffffff;
+}
+
+/*-----------------------------------------------Recommended Itineraries----------------------------------------------*/
 
 .itinerary-section{
-    padding: 0 80px 80px;
+    padding: 0 80px;
 }
 
 .itinerary-section h1{
@@ -410,7 +460,7 @@
     display: flex;
     gap: 30px;
     justify-content: center;
-    width: 100%;
+    width: 90%;
 }
 
 .carousel-btn{
@@ -435,21 +485,9 @@
     right: -20px;
 }
 
-/* .card-container{
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
-    padding: 20px;
-    width: 90%;
-    max-width: 100%;
-    margin: 0 auto;
-    max-height: 90%;
-    border-radius: 15px;
-} */
-
 .itinerary-card{
     width: 400px;
-    height: 500px;
+    min-height: 400px;
     display: flex;
     flex-direction: column;
     background-color: #f0f0f0;
@@ -465,10 +503,17 @@
     box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
-.itinerary-card img{
+.itinerary-image{
     width: 100%;
-    height: auto;
+    height: 220px;
+    overflow: hidden;
+}
+
+.itinerary-image img{
+    width: 100%;
+    height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 .itinerary-content{
@@ -476,13 +521,13 @@
 }
 
 .itinerary-content h3{
-    font-size: 28px;
+    font-size: 25px;
     margin-bottom: 8px;
 }
 
 .itinerary-content p{
     color: var(--primary-color);
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.3;
 }
 
@@ -493,6 +538,86 @@
     color: #ffffff;
     text-decoration: none;
     border-radius: 5px;
-    margin-top: 15px;
+    margin-top: 17px;
+    font-size: 17px;
 }
 
+/* -----------------------------------------------Feedback------------------------------------------------------ */
+
+.feedback-section{
+    padding: 80px;
+    text-align: center;
+}
+
+.feedback-section h1{
+    font-size: 30px;
+    color: var(--primary-color);
+    margin-bottom: 40px;
+    text-transform: uppercase;
+}
+
+.feedback-container{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    max-width: 1400px;
+    margin: auto;
+}
+
+.feedback-card{
+    width: 1250px;
+    margin: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.feedback-card img{
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-top: 30px;
+    margin-bottom: 10px;
+}
+
+.feedback-card h3{
+    font-size: 25px;
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+.feedback-stars{
+    color: #fbbf24;
+    font-size: 35px;
+    margin-top: -10px;
+}
+
+.feedback-card p{
+    font-size: 18px;
+    line-height: 1.6;
+    color: #555;
+    padding: 30px 80px;
+}
+
+.feedback-dots{
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.dot{
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #cbd5e1;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.dot.active{
+    background: #2563eb;
+}

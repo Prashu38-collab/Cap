@@ -2,9 +2,10 @@ import { useState } from "react";
 
 import ItineraryCard from "./ItineraryCard";
 
-import pokharaImg from "/images/pokhara.jpg";
+import amayangriImg from "/images/amayangri.jpg";
 import chitwanImg from "/images/chitwan.jpg";
-import abcImg from "/images/ABC.jpg";
+import chandragiriImg from "/images/chandragiri.jpg";
+import changunarayanImg from "/images/changunarayan.jpg";
 import bhaktapurImg from "/images/bhaktapur.jpg";
 
 
@@ -12,27 +13,33 @@ function ItinerarySection() {
 
   const itineraries = [
     {
-      title: "Pokhara Adventure",
-      image: pokharaImg,
-      description: "Adventure Activities in Pokhara"
+      title: "Aama Yangri Trek",
+      image: amayangriImg,
+      description: "Scenic hiking spot with beautiful view"
     },
 
     {
-      title: "Chitwan Safari",
+      title: "Chitwan National Park",
       image: chitwanImg,
       description: "Wildlife Safari Experience"
     },
 
     {
-      title: "ABC Trek",
-      image: abcImg,
-      description: "Amazing Trekking Journey"
+      title: "Chandragiri Hills",
+      image: chandragiriImg,
+      description: "Cable car ride and stunning Himalayan panoramas"
+    },
+
+    {
+      title: "Changunarayan Temple",
+      image: changunarayanImg,
+      description: "Ancient UNESCO-listed temple rich in history and art"
     },
 
     {
       title: "Bhaktapur Durbar Square",
       image: bhaktapurImg,
-      description: "Khwopa, Open Museum"
+      description: "Living museum of ancient Newar architecture"
     }
   ];
 

@@ -42,16 +42,12 @@ function PlanTrip() {
                         <option value="Lalitpur">Lalitpur</option>
                         <option value="Bhaktapur">Bhaktapur</option>
                         <option value="Chitwan">Chitwan</option>
-                        <option value="Dhading">Dhading</option>
                         <option value="Dolakha">Dolakha</option>
                         <option value="Kavrepalanchok">Kavrepalanchok</option>
-                        <option value="Makwanpur">Makwanpur</option>
                         <option value="Nuwakot">Nuwakot</option>
-                        <option value="Ramechhap">Ramechhap</option>
                         <option value="Rasuwa">Rasuwa</option>
                         <option value="Sindhuli">Sindhuli</option>
                         <option value="Sindhupalchok">Sindhupalchok</option>
-                        <option value="Chitwan">Chitwan</option>
                     </select>
                 </div>
 

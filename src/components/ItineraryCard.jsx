@@ -2,7 +2,9 @@ function ItineraryCard({ title, image, description }) {
   return (
     <div className="itinerary-card">
 
-      <img src={image} alt={title} />
+      <div className="itinerary-image">
+        <img src={image} alt={title} />
+      </div>
 
       <div className="itinerary-content">
 
