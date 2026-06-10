@@ -4,11 +4,19 @@ A web-based travel itinerary recommendation system using content-based filtering
 
 ## Features
 
+### Dashboard
+- Navigation bar
+- Hero Section
 - Live weather update based on location 
 - Interactive destination map
 - Personalized itinerary planning
 - Recommended itineraries
 - Customer feedback section
+- Footer
+
+## Plan My Trip
+- Content Filtering Interface to input user preferences
+- Generate Itinerary
 
 ## Technologies
 
