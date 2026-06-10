@@ -2,8 +2,6 @@
 
 A web-based travel itinerary recommendation system using content-based filtering and route optimization for Nepal (currently focusing on 10 districts of Bagmati province only).
 
-##Front-end Part
-
 ## Features
 
 - Live weather update based on location 
