@@ -7,12 +7,13 @@
     background-color: transparent;
     background: linear-gradient(180deg, var(--primary-color), transparent);
     color: var(--secondary-color);
-    z-index: 1000;          /*high value bcz map visual appeared above navbar*/
-    transition: 
+    z-index: 1000;
+    /* transition: 
     background-color 200ms ease,
     height 200ms ease,
-    box-shadow 200ms ease
-    backdrop-filter 200ms ease;
+    box-shadow 200ms ease,
+    backdrop-filter 200ms ease; */
+    transition: all 0.3s ease-in-out;
 }
 
 .navbar .container{
@@ -66,24 +67,26 @@
 .navbar .logout{
     background-color: white;
     text-decoration: none;
-    padding: 5px 20px;
+    padding: 8px 25px;
     border: none;
     outline: none;
-    border-radius: 10px;
+    border-radius: 20px;
     font-size: 18px;
-    font-weight: 500;
-    color: black;
+    font-weight: 700;
+    color: var(--primary-color);
     transition: 0.3 ease-in;
 }
 
 .navbar .logout:hover{
     transform: translateY(-3px);
+    background-color: red;
+    color: white;
 }
 
-.navbar .scrolled{
-    height: 56px;
-    background: rgba(255,255,255,0.3);
-    color: var(--primary-color);
+.navbar.scrolled{
+    height: 80px;
+    background: var(--primary-color);
+    color: var(--secondary-color);
     backdrop-filter: blur(10px);
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.4);
 }

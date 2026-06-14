@@ -10,6 +10,9 @@
 :root{
     --primary-color: #111827;
     --secondary-color: #f9fafb;
+    --primary: #667EEA;
+    --primary-dark: #4F46E5;
+    --muted: #64748B;
 }
 
 body{

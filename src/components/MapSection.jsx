@@ -18,7 +18,7 @@ function MapSection() {
             <span className="label label-left">Kathmandu</span>
             <span className="pin">📍</span>
             <div className="district-popup">
-              <img src="/images/kathmandu.jpg" alt="Kathmandu" />
+              <img src="/images/mykathmandu.jpg" alt="Kathmandu" />
               <p>Basantapur Durbar Square, Kathmandu</p>
             </div>
           </div>
@@ -36,7 +36,7 @@ function MapSection() {
             <span className="label label-left">Bhaktapur</span>
             <span className="pin">📍</span>
             <div className="district-popup">
-              <img src="/images/bhaktapur.jpg" alt="Bhaktapur" />
+              <img src="/images/mybhaktapur.jpg" alt="Bhaktapur" />
               <p>Bhaktapur Durbar Square, Khwopa</p>
             </div>
           </div>

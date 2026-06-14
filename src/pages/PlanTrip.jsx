@@ -13,7 +13,7 @@ function PlanTrip() {
       <div className="planImage">
 
         <div className="formContainer">
-        <div className="title" id="plan">
+        <div className="plan-title" id="plan">
             <h1>Plan My Trip</h1>
             <p>Enter your travel preferences to generate personalized itineraries.</p>
         </div>
@@ -33,10 +33,10 @@ function PlanTrip() {
                  {/* DISTRICT */}
                 <div className="input-group">
                     <label htmlFor="district">
-                        Preferred District <span className="required">*</span>
+                        Starting District <span className="required">*</span>
                     </label><br></br>
                     <select id="district" name="district" defaultValue="" required>
-                        <option value="" disabled hidden>Select a district...</option>
+                        <option value="" disabled hidden>Select your starting district...</option>
 
                         <option value="Kathmandu">Kathmandu</option>
                         <option value="Lalitpur">Lalitpur</option>
@@ -51,14 +51,33 @@ function PlanTrip() {
                     </select>
                 </div>
 
+                <div className="input-group">
+                    <label htmlFor="district">
+                        Ending District <span className="required">*</span>
+                    </label><br></br>
+                    <select id="district" name="district" defaultValue="" required>
+                        <option value="" disabled hidden>Select your ending district...</option>
+
+                        <option value="Kathmandu">Kathmandu</option>
+                        <option value="Lalitpur">Lalitpur</option>
+                        <option value="Bhaktapur">Bhaktapur</option>
+                        <option value="Chitwan">Chitwan</option>
+                        <option value="Dolakha">Dolakha</option>
+                        <option value="Kavrepalanchok">Kavrepalanchok</option>
+                        <option value="Nuwakot">Nuwakot</option>
+                        <option value="Rasuwa">Rasuwa</option>
+                        <option value="Sindhuli">Sindhuli</option>
+                        <option value="Sindhupalchok">Sindhupalchok</option>
+                    </select>
+                </div>
 
                 {/* DESTINATION */}
-                <div className="input-group">
+                {/* <div className="input-group">
                     <label htmlFor="destination">
                         Preferred Destination
                     </label>
                     <input type="text" id="destination" name="destination" placeholder="Enter destination name..." />
-                </div>
+                </div> */}
 
                 {/* INTERESTS */}
                 <div className="input-group">
@@ -113,17 +132,19 @@ function PlanTrip() {
                     <label htmlFor="budget">
                         Trip Budget Range (NPR) <span className="required">*</span>
                     </label><br></br>
-                    <label htmlFor="minimumBudget">Minimum:</label><input type="number" name="minBudget" placeholder="Minimum Budget" min="1000" step="1000" />
-                    <label htmlFor="maximumBudget">Maximum:</label><input type="number" name="maxBudget" placeholder="Maximum Budget" min="2000" max="20000" step="1000" />
+                    {/* <label htmlFor="minimumBudget">Minimum:</label><input type="number" name="minBudget" placeholder="Minimum Budget" min="1000" step="1000" />
+                    <label htmlFor="maximumBudget">Maximum:</label><input type="number" name="maxBudget" placeholder="Maximum Budget" min="2000" max="20000" step="1000" /> */}
+                    
+                    <input type="number" name="trip budget" placeholder="Preferred total trip budget.." />
                 </div>
 
                 {/* HOTEL BUDGET */}
                 <div className="input-group">
                     <label htmlFor="hotelBudget">
-                        Hotel Budget <span className="required">*</span>
+                        Hotel Budget (NPR) <span className="required">*</span>
                     </label>
 
-                    <div className="radio-group">
+                    {/* <div className="radio-group">
                         <div className="radio">
                             <input type="radio" id="low" name="budget" value="Low" defaultChecked required />
                             <label htmlFor="low">Low</label>
@@ -136,7 +157,9 @@ function PlanTrip() {
                             <input type="radio" id="high" name="budget" value="High" required />
                             <label htmlFor="high">High</label>
                         </div>
-                    </div>
+                    </div> */}
+
+                    <input type="number" name="hotel budget" placeholder="Preferred hotel budget.." />
                 </div>
 
                 {/*  TRAVEL Date */}
@@ -152,10 +175,10 @@ function PlanTrip() {
                 </div>
 
                 {/* START LOCATION */}
-                <div className="input-group">
+                {/* <div className="input-group">
                     <label htmlFor="start">Starting Location</label><br></br>
                     <input type="text" id="start" name="start" placeholder="Kathmandu" disabled />
-                </div>
+                </div> */}
 
                 {/* BUTTON */}
                 <div className="btn-container">

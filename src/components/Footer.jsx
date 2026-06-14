@@ -6,7 +6,7 @@ function Footer() {
     <footer>
       <div className="footerContainer">
 
-        <div className="social">
+        <div className="footer-social">
           <a href="https://www.facebook.com" target="_blank" rel="noreferrer">
             <i className="fa-brands fa-facebook"></i>
           </a>
@@ -24,7 +24,7 @@ function Footer() {
           </a>
         </div>
 
-        <div className="links">
+        <div className="footer-links">
           <ul>
             <li><Link to="/">Dashboard</Link></li>
             <li><Link to="/plantrip">Plan My Trip</Link></li>
@@ -34,7 +34,7 @@ function Footer() {
           </ul>
         </div>
 
-        <div className="copyright">
+        <div className="footer-copyright">
           <p>Copyright © 2026 Go Travel | All Rights Reserved</p>
         </div>
 

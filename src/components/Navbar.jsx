@@ -1,10 +1,32 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 import "../styles/navbar.css";
 
 function Navbar() {
+
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    // Clear all auth data
+    localStorage.removeItem('token');
+    sessionStorage.clear();
+    navigate("/login");
+  };
+
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   return (
-    <header className="navbar">
+    <header className={`navbar ${scrolled ? "scrolled" : ""}`}>
         <div className="container">
             {/*--Logo-- */}
             <div className="logo">
@@ -37,9 +59,12 @@ function Navbar() {
           </nav>
 
             {/* --Logout button-- */}
-            <NavLink to="/login" className="logout">
+            {/* <NavLink to="/login" className="logout">
               Logout
-            </NavLink>
+            </NavLink> */}
+
+            <button onClick={handleLogout} className="logout"> Logout </button>
+
         </div>
     </header>
   );

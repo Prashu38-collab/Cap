@@ -6,7 +6,7 @@ import amayangriImg from "/images/amayangri.jpg";
 import chitwanImg from "/images/chitwan.jpg";
 import chandragiriImg from "/images/chandragiri.jpg";
 import changunarayanImg from "/images/changunarayan.jpg";
-import bhaktapurImg from "/images/bhaktapur.jpg";
+import bhaktapurImg from "/images/mybhaktapur.jpg";
 
 
 function ItinerarySection() {
@@ -72,7 +72,7 @@ function ItinerarySection() {
           ❮
         </button>
 
-        <div className="card">
+        <div className="itinerary-cards">
 
           {itineraries
           .slice(startIndex, startIndex + 3)
