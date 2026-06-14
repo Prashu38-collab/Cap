@@ -3,11 +3,28 @@ function ItinerarySection() {
   const itineraries = [
     {
       title: "Kathmandu Tour",
-      duration: "2 Days"
+      duration: "2 Days",
+      category: "Culture"
+    },
+    {
+      title: "Ama Yangri Trek",
+      duration: "2 Days",
+      category: "Adventure"
+    },
+    {
+      title: "Nagarkot Nightstay",
+      duration: "3 Days",
+      category: "Nature"
+    },
+    {
+      title: "Changunarayan Visit",
+      duration: "2 Days",
+      category: "Religious"
     },
     {
       title: "Chitwan Safari",
-      duration: "3 Days"
+      duration: "5 Days",
+      category: "Adventure"
     }
   ];
 
@@ -15,7 +32,7 @@ function ItinerarySection() {
     <>
       <h1>Manage Itineraries</h1>
 
-      <button className="add-btn">
+      <button className="button-actions">
         Add Itinerary
       </button>
 
@@ -36,10 +53,10 @@ function ItinerarySection() {
             <tr key={index}>
               <td>{trip.title}</td>
               <td>{trip.duration}</td>
-              <td>
-                <button>View</button>
-                <button>Edit</button>
-                <button>Delete</button>
+              <td className="crud">
+                <button className="view-btn">View</button>
+                <button className="edit-btn">Edit</button>
+                <button className="delete-btn">Delete</button>
               </td>
             </tr>
 

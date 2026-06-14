@@ -7,22 +7,22 @@ function DashboardSection() {
 
         <div className="admin-stat-card">
           <h3>Users</h3>
-          <p>120</p>
+          <p>120+</p>
         </div>
 
         <div className="admin-stat-card">
           <h3>Itineraries</h3>
-          <p>45</p>
+          <p>5+</p>
         </div>
 
         <div className="admin-stat-card">
           <h3>Destinations</h3>
-          <p>60</p>
+          <p>88+</p>
         </div>
 
         <div className="admin-stat-card">
           <h3>Hotels</h3>
-          <p>30</p>
+          <p>30+</p>
         </div>
 
       </div>

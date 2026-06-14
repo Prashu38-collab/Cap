@@ -6,34 +6,34 @@ import Footer from "../components/Footer";
 
 const contactItems = [
   {
-    icon: '⌖',
+    icon: '📍',
     title: 'Visit Us At',
     detail: 'Naxal, Opposite Hilton',
   },
   {
-    icon: '☎',
+    icon: '📞',
     title: '9800000000/972568798',
     detail: 'Have any questions?',
   },
   {
-    icon: '✉',
+    icon: '📧',
     title: 'gotravelnepal@gmail.com',
     detail: 'Email Us',
   },
   {
-    icon: '72',
+    icon: '🕗',
     title: 'Sun-Fri : 10:00 AM - 5:00 PM',
     detail: 'Working Hours',
   },
 ]
 
-const footerLinks = [
-  { label: 'Dashboard', to: '/dashboard' },
-  { label: 'Plan My Trip', to: '/plan-my-trip' },
-  { label: 'About Us', to: '/about-us' },
-  { label: 'Contact Us', to: '/contact-us' },
-  { label: 'My Profile', to: '/my-profile' },
-]
+// const footerLinks = [
+//   { label: 'Dashboard', to: '/dashboard' },
+//   { label: 'Plan My Trip', to: '/plan-my-trip' },
+//   { label: 'About Us', to: '/about-us' },
+//   { label: 'Contact Us', to: '/contact-us' },
+//   { label: 'My Profile', to: '/my-profile' },
+// ]
 
 export default function ContactUs() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', remarks: '' })
@@ -95,8 +95,12 @@ export default function ContactUs() {
               <input name="phone" value={form.phone} onChange={updateForm} />
             </label>
             <label>
-              <span>Remarks</span>
-              <input name="remarks" value={form.remarks} onChange={updateForm} />
+              <span>Subject</span>
+              <input name="subject" value={form.subject} onChange={updateForm} />
+            </label>
+            <label>
+              <span>Message</span>
+              <input name="message" value={form.message} onChange={updateForm} />
             </label>
             <button type="submit" className="contact-submit">Submit</button>
           </form>

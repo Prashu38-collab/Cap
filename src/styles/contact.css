@@ -1,8 +1,8 @@
-/* .contact-page {
+.contact-page {
   min-height: 100vh;
   background: #ffffff;
   color: #151515;
-} */
+}
 
 /* .contact-navbar {
   height: 54px;
@@ -88,7 +88,8 @@
   color: #fff;
   font-size: 1.2rem;
   font-weight: 500;
-  background: linear-gradient(90deg, #f7eb12 0%, #f0b33a 100%);
+  /* background: linear-gradient(90deg, #f7eb12 0%, #f0b33a 100%); */
+  background: linear-gradient(135deg, #facc15, #f97316);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
@@ -99,20 +100,22 @@
 
 .contact-heading {
   text-align: center;
-  margin-bottom: 18px;
+  margin: 20px;
 }
 
 .contact-heading h1 {
   margin: 0;
   font-size: 2.1rem;
+  font-weight: 800;
+  color: #f4cf2f;
 }
 
 .contact-heading p {
-  margin: 2px 0 0;
-  font-size: 1.55rem;
-  font-weight: 800;
-  color: #f4cf2f;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+  /* margin: 2px 0 0; */
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  /* text-shadow: 0 2px 0 rgba(0, 0, 0, 0.12); */
 }
 
 .contact-grid {
@@ -120,11 +123,12 @@
   grid-template-columns: 1.05fr 1fr;
   gap: 28px;
   align-items: start;
+  padding-top: 40px;
 }
 
 .contact-info-list {
   display: grid;
-  gap: 18px;
+  gap: 20px;
   padding-top: 8px;
 }
 
@@ -135,16 +139,16 @@
 }
 
 .contact-icon {
-  width: 56px;
-  height: 56px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   background: #0c0830;
-  color: #f7b73f;
+  color: #ffffff;
   display: grid;
   place-items: center;
-  font-size: 1.35rem;
+  font-size: 15px;
   font-weight: 800;
-  box-shadow: 0 0 0 2px #f0b33a inset;
+  /* box-shadow: 0 0 0 2px #f0b33a inset; */
   flex: 0 0 auto;
 }
 
@@ -155,7 +159,7 @@
 }
 
 .contact-info-copy strong {
-  color: #f29b23;
+  color: var(--primary-color);
   font-size: 1.1rem;
   line-height: 1.15;
 }
@@ -177,8 +181,9 @@
 }
 
 .contact-form span {
-  font-size: 1.08rem;
+  font-size: 20px;
   color: #353535;
+  font-weight: 500;
 }
 
 .contact-form input {
@@ -191,13 +196,16 @@
 }
 
 .contact-submit {
-  margin-top: 6px;
-  width: 92px;
-  height: 36px;
+  margin-top: 20px;
+  margin-bottom: 40px;
+  width: 150px;
+  height: 45px;
   border: 0;
   border-radius: 16px;
-  background: linear-gradient(90deg, #f7eb12 0%, #f0b33a 100%);
-  color: #1d1d1d;
+  /* background: linear-gradient(90deg, #f7eb12 0%, #f0b33a 100%); */
+  background: linear-gradient(135deg, #facc15, #f97316);
+  color: #ffffff;
+  font-size: 20px;
   font-weight: 700;
   box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
 }

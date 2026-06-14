@@ -5,6 +5,7 @@ import DashboardSection from "../components/admin/AdminDashboardSection";
 import UsersSection from "../components/admin/ManageUsers";
 import ItinerarySection from "../components/admin/ManageItinerary";
 import DatabaseSection from "../components/admin/ManageDatabase";
+import ContactSection from "../components/admin/ContactMessages";
 
 import "../styles/admin.css";
 
@@ -59,6 +60,13 @@ function AdminDashboard() {
             Manage Database
           </li>
 
+          <li
+            className={activePage === "messages" ? "active" : ""}
+            onClick={() => setActivePage("messages")}
+          >
+            Contact Messages
+          </li>
+
           <li className="logout" onClick={handleLogout}>
             Logout
           </li>
@@ -77,6 +85,8 @@ function AdminDashboard() {
         {activePage === "itineraries" && <ItinerarySection />}
 
         {activePage === "database" && <DatabaseSection />}
+
+        {activePage === "messages" && <ContactSection />}
 
       </main>
 

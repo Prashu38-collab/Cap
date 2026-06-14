@@ -1,17 +1,16 @@
 function DatabaseSection() {
   return (
-
-    <div className="database-page">
+    <>
 
       <h1>Manage Database</h1>
 
-      <div className="database-actions">
-        <button>Import CSV</button>
-        <button>Export CSV</button>
-        <button>Refresh Data</button>
+      <div className="database-buttons">
+        <button className="button-actions">Import CSV</button>
+        <button className="button-actions">Export CSV</button>
+        <button className="button-actions">Refresh Data</button>
       </div>
 
-      <table className="database-table">
+      <table>
 
         <thead>
           <tr>
@@ -35,7 +34,7 @@ function DatabaseSection() {
 
           <tr>
             <td>Itineraries</td>
-            <td>45</td>
+            <td>5</td>
             <td>
               <span className="status active">
                 Active
@@ -45,7 +44,7 @@ function DatabaseSection() {
 
           <tr>
             <td>Destinations</td>
-            <td>60</td>
+            <td>88</td>
             <td>
               <span className="status active">
                 Active
@@ -55,7 +54,7 @@ function DatabaseSection() {
 
           <tr>
             <td>Hotels</td>
-            <td>25</td>
+            <td>30</td>
             <td>
               <span className="status active">
                 Active
@@ -67,7 +66,7 @@ function DatabaseSection() {
 
       </table>
 
-    </div>
+    </>
 
   );
 }
