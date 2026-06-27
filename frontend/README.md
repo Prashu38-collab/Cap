@@ -1,16 +1,41 @@
-# React + Vite
+# Go Travel
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web-based travel itinerary recommendation system using content-based filtering and route optimization for Nepal (currently focusing on 10 districts of Bagmati province only).
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### Dashboard
+- Navigation bar
+- Hero Section
+- Live weather update based on location 
+- Interactive destination map
+- Personalized itinerary planning
+- Recommended itineraries
+- Customer feedback section
+- Footer
 
-## React Compiler
+### Plan My Trip
+- Content Filtering Interface to input user preferences
+- Generate Itinerary
+- Display generated itinerary
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### About Us
+Tells user about Go Travel. Shares core values, mission, and values of our project.
 
-## Expanding the ESLint configuration
+### Contact Us
+Enables user to communicate wuth us directly in case of any queries by sending their information and message.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### My Profile
+Allows user to view, edit and delete profile. User can also find their saved itineraries and remove them as well.
+
+## Technologies
+
+- React
+- JavaScript
+- CSS
+- OpenWeather API
+
+## Installation
+
+- npm install
+- npm run dev
