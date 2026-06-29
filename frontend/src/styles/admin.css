@@ -75,12 +75,35 @@
     border-radius: 12px;
     text-align: center;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px; 
+}
+
+.admin-stat-card h3{
+    font-size: 18px;
 }
 
 .admin-stat-card p{
     font-size: 32px;
     font-weight: 700;
-    color: #2563eb;
+    /* color: #2563eb; */
+}
+
+.stat-icon{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    justify-content:center;
+    align-items:center;
+    font-size: 18px;
+    background: #2563eb;
+    color:white;
+    flex-shrink:0;
 }
 
 .dashboard-card{
@@ -104,7 +127,7 @@
     margin-bottom:25px;
 }
 
-/* ================= Lists ================= */
+/* ------------------ Lists ----------------- */
 
 .dashboard-card ul{
     list-style:none;
@@ -130,7 +153,7 @@
     margin-top:4px;
 }
 
-/* ================= Popular Category ================= */
+/* ------------------ Popular Category ---------------- */
 
 .category-chart{
     display:flex;
@@ -164,7 +187,7 @@
     transition:width .6s ease;
 }
 
-/* ================= Scroll if lots of messages ================= */
+/* ------------------ Scroll messages ----------------- */
 
 .recentmessages ul,
 .recentactivities ul{
@@ -172,7 +195,7 @@
     overflow-y:auto;
 }
 
-/* ---------------------------------BACK BUTTTON-------------------------------------- */
+/* ----------------------------------BACK BUTTTON--------------------------------------- */
 
 .back-header{
     display: flex;
@@ -343,19 +366,21 @@ tr:hover{
     color: #2563eb;
 }
 
-.form-buttons{
-    display: flex;
-    gap: 15px;
-    margin-top: 25px;
+.modal-buttons{
+    display:flex;
+    justify-content:flex-end;
+    gap:15px;
+    margin-top:30px;
 }
 
 .save-btn{
     background: #22c55e;
     color: white;
     border: none;
-    padding: 12px;
+    padding: 10px 20px;
     border-radius: 8px;
     cursor: pointer;
+    font-size: 15px;
     font-weight: 600;
 }
 
@@ -364,17 +389,18 @@ tr:hover{
 }
 
 .cancel-btn{
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
+    border:none;
+    background:#64748b;
+    color:white;
+    padding:10px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+    transition:.3s;
 }
 
 .cancel-btn:hover{
-    background: #dc2626;
+    background:#475569;
 }
 
 /* ------------------------------------------- Contact Messages -------------------------------------- */
@@ -409,4 +435,58 @@ tr:hover{
 
 .reply-btn:hover{
     background: #000e33;
+}
+
+/* -------------------- Message Modal ---------------- */
+
+.message-modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+
+.message-box{
+    width:550px;
+    background:white;
+    border-radius:12px;
+    padding:30px;
+    box-shadow:0 15px 40px rgba(0,0,0,.2);
+}
+
+.message-box h2{
+    margin-bottom:25px;
+    color:#1e293b;
+}
+
+.message-info{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
+
+.message-info p{
+    margin:0;
+    color:#374151;
+    line-height:1.6;
+}
+
+.message-info strong{
+    display:inline-block;
+    width:80px;
+    color:#111827;
+}
+
+.message-content{
+    margin-top:10px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:10px;
+    padding:15px;
+    line-height:1.7;
+    color:#475569;
+    min-height:120px;
 }

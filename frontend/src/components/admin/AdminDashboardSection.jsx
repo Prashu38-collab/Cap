@@ -57,23 +57,35 @@ function DashboardSection() {
       <div className="admin-stats-grid">
 
         <div className="admin-stat-card">
-          <h3>Users</h3>
+          <div className="stat-icon">
+            <i className="fa-solid fa-users"></i>
+          </div>
           <p>{stats.users}</p>
+          <h3>Users</h3>
         </div>
 
         <div className="admin-stat-card">
-          <h3>Destinations</h3>
+          <div className="stat-icon">
+            <i className="fa-solid fa-location-dot"></i>
+          </div>
           <p>{stats.destinations}</p>
+          <h3>Destinations</h3>
         </div>
 
         <div className="admin-stat-card">
-          <h3>Hotels</h3>
+          <div className="stat-icon">
+            <i className="fa-solid fa-hotel"></i>
+          </div>
           <p>{stats.hotels}</p>
+          <h3>Hotels</h3>
         </div>
 
         <div className="admin-stat-card">
-          <h3>Generated Itineraries</h3>
+          <div className="stat-icon">
+            <i className="fa-solid fa-route"></i>
+          </div>
           <p>{stats.itineraries}</p>
+          <h3>Generated Itineraries</h3>
         </div>
 
       </div>

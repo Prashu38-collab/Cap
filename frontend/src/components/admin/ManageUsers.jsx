@@ -182,7 +182,7 @@ return (
       <label htmlFor="password">Password <span className="required">*</span> </label>
       <input id="password" type="password" name="password" value={newUser.password} onChange={handleInputChange} required />
 
-      <div className="form-buttons">
+      <div className="modal-buttons">
 
         <button className="save-btn" onClick={handleAddUser} >
           Save
