@@ -43,7 +43,7 @@ test_cases = [
 ]
 
 # 4. Run the tests
-print("🚀 STARTING TREK MATCHING TESTS...\n" + "-"*40)
+print(" STARTING TREK MATCHING TESTS...\n" + "-"*40)
 
 passed = 0
 failed = 0
