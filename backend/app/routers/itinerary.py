@@ -8,9 +8,7 @@ from sqlalchemy import text
 router = APIRouter()
 
 
-# =====================================================
 # GET PLACES + HOTELS (or assume already fetched)
-# =====================================================
 def fetch_places(db: Session, district: str):
     query = text("""
         SELECT place_id, name, latitide, longitude
@@ -33,9 +31,7 @@ def fetch_hotels(db: Session, district: str):
     return [dict(r._mapping) for r in result]
 
 
-# =====================================================
 # MAIN ENDPOINT
-# =====================================================
 @router.post("/generate-itinerary1")
 def create_itinerary(payload: dict, db: Session = Depends(get_db)):
 

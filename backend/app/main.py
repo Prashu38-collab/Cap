@@ -7,7 +7,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Include routers
+# Include routers 
 app.include_router(auth.router)
 app.include_router(User_Preferences.router)
 
