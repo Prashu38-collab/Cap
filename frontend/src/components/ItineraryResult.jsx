@@ -208,11 +208,10 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
                   </div>
                   <div className="ir-meal-card" style={{ background: mc.bg, borderColor: mc.border }}>
                     <div className="ir-meal-body">
-                      <span className="ir-meal-time">{place.start_time}</span>
-                      <h4 style={{ color: mc.text }}>{place.icon} {place.name}</h4>
-                      {place.cost_estimate && (
-                        <span className="ir-meal-cost">~ NPR {place.cost_estimate}</span>
-                      )}
+                      <h4 style={{ color: mc.text }}>
+                        {place.start_time && <span className="ir-time">{place.start_time}</span>}
+                        {place.icon} {place.name}
+                      </h4>
                     </div>
                   </div>
                 </div>
@@ -231,28 +230,18 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
                     <div className="ir-place-img" style={{ backgroundImage: `url(${cfg.img})` }} />
                     <span className="ir-place-cat-badge" style={{ background: cfg.color }}>{cfg.icon} {place.category}</span>
                   </div>
-                  <div className="ir-place-body">
-                    <h4>{place.name}</h4>
+                    <div className="ir-place-body">
+                    <h4>
+                      {place.start_time && <span className="ir-time">{place.start_time}</span>}
+                      {place.name}
+                    </h4>
                     <div className="ir-place-meta">
-                      <span className="ir-meta-chip" style={{ background: cfg.color + "22", color: cfg.color }}>
-                        ⏱ {place.duration}h
-                      </span>
-                      {place.start_time && (
-                        <span className="ir-meta-chip" style={{ background: "#D4973C22", color: "#D4973C" }}>
-                          🕐 {place.start_time}
-                        </span>
-                      )}
                       <span className="ir-meta-chip" style={{ background: "#3b82f622", color: "#3b82f6" }}>
                         {transportIcons[place.transport_mode] || "🚗"} {place.transport_mode}
                       </span>
                       {place.travel_dist_km > 0 && (
                         <span className="ir-meta-chip" style={{ background: "#10b98122", color: "#10b981" }}>
                           📍 {place.travel_dist_km} km
-                        </span>
-                      )}
-                      {place.is_anchor_activity && (
-                        <span className="ir-meta-chip anchor" style={{ background: "#8b5cf622", color: "#8b5cf6" }}>
-                          ⚓ Full Day
                         </span>
                       )}
                     </div>
@@ -272,7 +261,6 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
           {/* STATS ROW */}
         {(() => {
           const realPlaces = currentDay.places.filter(p => p.type !== "meal");
-          const totDur = realPlaces.reduce((s, p) => s + (p.duration || 0), 0);
           return (
           <div className="ir-stats-row">
             <div className="ir-stat">
@@ -284,14 +272,6 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
               <span className="ir-stat-icon">🚗</span>
               <span className="ir-stat-val"><AnimatedCounter value={currentDay.total_travel_km} suffix="km" /></span>
               <span className="ir-stat-lbl">Travel</span>
-            </div>
-            <div className="ir-stat">
-              <span className="ir-stat-icon">⏱️</span>
-              <span className="ir-stat-val">
-                {totDur.toFixed(1)}
-                <span className="ir-stat-unit">h</span>
-              </span>
-              <span className="ir-stat-lbl">Activities</span>
             </div>
             <div className="ir-stat">
               <span className="ir-stat-icon">🏨</span>

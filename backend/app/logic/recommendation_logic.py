@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 
 class RecommendationService:
 
-    def get_ranked_places(self, db: Session, preference_id: int):
+    def get_ranked_places(self, db: Session, preference_id: int, districts_override: Optional[list] = None):
 
         # ----------------------------
         # USER PREFERENCES
@@ -31,13 +31,16 @@ class RecommendationService:
                 return [v.lower() for v in val]
             return [x.strip().lower() for x in str(val).split(",")]
 
-        preferred_categories = parse_list(getattr(pref, "preferred_categories", None))
+        preferred_categories = parse_list(getattr(pref, "category", None))
         budget = (getattr(pref, "budget_level", "") or "").lower()
         mobility = (getattr(pref, "mobility", "") or "").lower()
         district = (getattr(pref, "starting_district", "") or getattr(pref, "district", "") or "").lower()
 
+        # Support multi-district via districts_override
+        search_districts = districts_override if districts_override else ([district] if district else [])
+
         # ----------------------------
-        # GET PLACES (FILTERED BY DISTRICT)
+        # GET PLACES (FILTERED BY DISTRICT(S))
         # ----------------------------
         query_str = """
             SELECT
@@ -49,15 +52,27 @@ class RecommendationService:
                 "Category" AS category,
                 "Mobility" AS mobility,
                 "Budget_level" AS budget_level,
-                "Entry_Fee" AS entry_fee
+                "Entry_Fee" AS entry_fee,
+                "estimated_duration_value" AS raw_duration_value,
+                "estimated_duration_unit" AS raw_duration_unit,
+                "Indoor_Outdoor" AS indoor_outdoor,
+                "Weather_Sensitivity" AS weather_sensitivity,
+                "is_trek" AS is_trek,
+                "opening_time" AS opening_time,
+                "closing_time" AS closing_time,
+                "elevation_meters" AS elevation_meters
             FROM itinerary_places
         """
         
         params = {}
         
-        if district:
-            query_str += """ WHERE "District" ILIKE :district """
-            params["district"] = f"%{district}%"
+        if search_districts:
+            conditions = []
+            for i, d in enumerate(search_districts):
+                p = f"dist_{i}"
+                conditions.append(f""" "District" ILIKE :{p} """)
+                params[p] = f"%{d}%"
+            query_str += " WHERE " + " OR ".join(conditions)
 
         query = text(query_str)
         rows = db.execute(query, params).fetchall()
@@ -78,11 +93,14 @@ class RecommendationService:
             fee = (r.entry_fee or "").lower()
 
             # CATEGORY (40%)
+            # Prioritize preferred categories but don't exclude others.
+            # Non-matching places get 0.25 so they can still be selected as
+            # fallback after preferred places are exhausted (but rank lower).
             if preferred_categories:
                 if any(c in cat for c in preferred_categories):
                     score += 0.40
                 else:
-                    score += 0.05
+                    score += 0.25
 
             # DISTRICT (20%)
             if district and district in dist:
