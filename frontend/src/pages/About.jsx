@@ -4,48 +4,12 @@ import '../styles/about.css'
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-import {
-  FaPlane,
-  FaStar,
-  FaFacebook,
-  FaInstagram,
-  FaYoutube,
-  FaMountain
-} from 'react-icons/fa'
-
-import { FaXTwitter } from 'react-icons/fa6'
-import { MdTravelExplore } from 'react-icons/md'
-import { BsPeopleFill } from 'react-icons/bs'
-
 export default function AboutUs() {
-//   const navigate = useNavigate()
-
-//   function logout() {
-//     navigate('/login')
-//   }
 
   return (
     <div className="about-page">
 
      < Navbar/>
-
-      {/* HERO SECTION */}
-      {/* <section className="about-hero">
-        <img
-          src="images/yak.png"
-          alt="Nepal Mountains"
-          className="about-hero-image"
-        />
-        <div className="about-hero-overlay" />
-
-        <div className="about-hero-content">
-          <h1>About Us</h1>
-          <p>Discover Nepal with Go Travel</p>
-          <a href="#about-content" className="about-hero-button">
-            About Us
-          </a>
-        </div>
-      </section> */}
 
       <section className="about-content" id="about-content">
 
@@ -58,8 +22,8 @@ export default function AboutUs() {
 
           <div className="about-image-container">
             <img
-              src="images/trekking.png"
-              alt="Trekking"
+              src="images/grpfoto.png"
+              alt="Group Photo"
               className="about-image"
             />
           </div>
@@ -69,24 +33,62 @@ export default function AboutUs() {
             <h2>Who we are</h2>
 
             <p>
-              Go Travel is a trusted travel and tour company dedicated
-              to creating unforgettable travel experiences across Nepal.
-              We specialize in personalized tours, trekking adventures,
-              holiday packages, transportation services, and travel planning
-              designed to make every journey seamless and memorable.
+              We are a team of third-year undergraduate students from IIMS College who developed "A Web-Based Travel Itinerary Recommendation System Using Content-Based Filtering and Route Optimization" as part of our academic project. Our aim is to create a smart and user-friendly platform that makes travel planning simpler and more efficient.
             </p>
-
+            
             <p>
-              Our team is passionate about helping travelers discover
-              breathtaking destinations while ensuring comfort, safety,
-              and exceptional service throughout their journey.
+              Our system helps users generate personalized travel itineraries based on their interests while optimizing travel routes for a better experience. Through this project, we have combined our knowledge of web development and recommendation systems to provide a practical solution for modern travelers.
             </p>
 
           </div>
 
+          
+
         </div>
 
       </section>
+      <section className="team-section">
+  <h2>Meet Our Team</h2>
+
+  <div className="team-container">
+    <div className="team-card">
+      <img src="images/Prashamsa.png" alt="A" className="team-image" />
+      <h3>Prashamsa Ghimire</h3>
+      {/* <p>Scrum Leader</p> */}
+      <p>Role: Backend, Database</p>
+    </div>
+
+<div className="team-card">
+  <img src="images/Priety.png" alt="D" className="team-image" />
+  <h3>Priety Maharjan</h3>
+  <p>Role: Frontend, Testing</p>
+</div>
+
+
+<div className="team-card">
+  <img src="images/Kritika.jpg" alt="E" className="team-image" />
+  <h3>Kritika Maharjan </h3>
+  <p>Role: Frontend, Security</p>
+</div>
+
+<div className="team-card">
+  <img src="images/Riddhi.png" alt="C" className="team-image" />
+  <h3>Riddhishree Khanal</h3>
+  <p>Role: Backend, Database</p>
+</div>
+
+
+
+<div className="team-card">
+  <img src="images/Reshika.png" alt="B" className="team-image" />
+  <h3>Reshika Dhakal</h3>
+  <p>Role: Backend, Database</p>
+</div>
+
+
+  </div>
+</section>
+
 
      < Footer/>
 

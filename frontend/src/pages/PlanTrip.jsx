@@ -30,23 +30,21 @@ function PlanTrip() {
                 
                 <div className="form-card">
                     
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} className="form-content">
 
-                        {/* PROVINCE */}
-                        <div className="input-group">
-                            <label htmlFor="province">
-                                Province 
-                            </label><br></br>
-                            <input type="text" id="province" name="province" value="Bagmati" disabled />
-                        </div>
+                        <fieldset className="form-fieldset">
+
+                        <legend>Destination <span className="required">*</span> </legend>
+
+                        <div className="form-row">
 
                         {/* DISTRICT */}
                         <div className="input-group">
                             <label htmlFor="district">
-                                Starting District <span className="required">*</span>
+                                Starting District
                             </label><br></br>
                             <select id="district" name="district" defaultValue="" required>
-                                <option value="" disabled hidden>Select your starting district...</option>
+                                <option value="" disabled hidden>Select...</option>
 
                                 <option value="Kathmandu">Kathmandu</option>
                                 <option value="Lalitpur">Lalitpur</option>
@@ -63,10 +61,10 @@ function PlanTrip() {
 
                         <div className="input-group">
                             <label htmlFor="district">
-                                Ending District <span className="required">*</span>
+                                Ending District
                             </label><br></br>
                             <select id="district" name="district" defaultValue="" required>
-                                <option value="" disabled hidden>Select your ending district...</option>
+                                <option value="" disabled hidden>Select...</option>
 
                                 <option value="Kathmandu">Kathmandu</option>
                                 <option value="Lalitpur">Lalitpur</option>
@@ -81,45 +79,55 @@ function PlanTrip() {
                             </select>
                         </div>
 
-                        {/* DESTINATION */}
-                        {/* <div className="input-group">
-                            <label htmlFor="destination">
-                                Preferred Destination
-                            </label>
-                            <input type="text" id="destination" name="destination" placeholder="Enter destination name..." />
-                        </div> */}
+                        </div>
+
+                        </fieldset>
+
+                        <fieldset className="form-fieldset">
+
+                        <legend>Category <span className="required">*</span> </legend>
 
                         {/* INTERESTS */}
                         <div className="input-group">
-                            <label>
+                            {/* <label>
                                 Interests <span className="required">*</span>
-                            </label><br></br>
+                            </label><br></br> */}
 
                             <div className="checkbox-group">
                                 <div className="checkbox">
-                                    <input type="checkbox" id="interest1" name="interest1" value="Adventure" defaultChecked />
+                                    <input type="checkbox" id="interest5" name="interest5" value="any" defaultChecked />
+                                    <label htmlFor="interest5"> Any </label>
+                                </div> 
+                                <div className="checkbox">
+                                    <input type="checkbox" id="interest1" name="interest1" value="adventure" />
                                     <label htmlFor="interest1"> Adventure </label>
                                 </div>
                                 <div className="checkbox">
-                                    <input type="checkbox" id="interest2" name="interest2" value="Nature" />
+                                    <input type="checkbox" id="interest2" name="interest2" value="nature" />
                                     <label htmlFor="interest2"> Nature </label>
                                 </div>
                                 <div className="checkbox">
-                                    <input type="checkbox" id="interest3" name="interest3" value="Culture" />
-                                    <label htmlFor="interest3"> Culture </label>
+                                    <input type="checkbox" id="interest3" name="interest3" value="cultural" />
+                                    <label htmlFor="interest3"> Cultural </label>
                                 </div>
                                 <div className="checkbox">
-                                    <input type="checkbox" id="interest4" name="interest4" value="Religious" />
+                                    <input type="checkbox" id="interest4" name="interest4" value="religious" />
                                     <label htmlFor="interest4"> Religious </label>
                                 </div>
                             </div>
                         </div>
 
+                        </fieldset>
+
+                        <fieldset className="form-fieldset">
+
+                        <legend>Mobility Type <span className="required">*</span> </legend>
+
                         {/* MOBILITY TYPE */}
                         <div className="input-group">
-                            <label>
-                                Mobility Type <span className="required">*</span>
-                            </label>
+                            {/* <label>
+                                Type <span className="required">*</span>
+                            </label> */}
 
                             <div className="radio-group">
                                 <div className="radio">
@@ -137,58 +145,59 @@ function PlanTrip() {
                             </div>
                         </div>
 
+                        </fieldset>
+
+                        <fieldset className="form-fieldset">
+
+                        <legend>Budget(NPR) <span className="required">*</span> </legend>
+
+                        <div className="form-row">
+
                         {/* TRIP BUDGET */}
                         <div className="input-group">
                             <label htmlFor="budget">
-                                Trip Budget Range (NPR) <span className="required">*</span>
+                                Trip Budget
                             </label><br></br>
                             {/* <label htmlFor="minimumBudget">Minimum:</label><input type="number" name="minBudget" placeholder="Minimum Budget" min="1000" step="1000" />
                             <label htmlFor="maximumBudget">Maximum:</label><input type="number" name="maxBudget" placeholder="Maximum Budget" min="2000" max="20000" step="1000" /> */}
                             
-                            <input type="number" name="trip budget" placeholder="Preferred total trip budget.." />
+                            <input type="number" name="trip budget" placeholder="e.g. 5000" min="1000" step="1000" />
                         </div>
 
                         {/* HOTEL BUDGET */}
                         <div className="input-group">
                             <label htmlFor="hotelBudget">
-                                Hotel Budget (NPR) <span className="required">*</span>
+                                Hotel Budget
                             </label>
 
-                            {/* <div className="radio-group">
-                                <div className="radio">
-                                    <input type="radio" id="low" name="budget" value="Low" defaultChecked />
-                                    <label htmlFor="low">Low</label>
-                                </div>
-                                <div className="radio">
-                                    <input type="radio" id="medium" name="budget" value="Medium" />
-                                    <label htmlFor="medium">Medium</label>
-                                </div>
-                                <div className="radio">
-                                    <input type="radio" id="high" name="budget" value="High" />
-                                    <label htmlFor="high">High</label>
-                                </div>
-                            </div> */}
-
-                            <input type="number" name="hotel budget" placeholder="Preferred hotel budget.." />
+                            <input type="number" name="hotel budget" placeholder="e.g. 4000" min="1000" step="1000" />
                         </div>
+
+                        </div>
+
+                        </fieldset>
+
+                        <fieldset className="form-fieldset">
+
+                        <legend>Schedule <span className="required">*</span> </legend>
+
+                        <div className="form-row">
 
                         {/*  TRAVEL Date */}
                         <div className="input-group">
-                            <label htmlFor="travelDate">Travel Date <span className="required">*</span></label><br></br>
+                            <label htmlFor="travelDate">Travel Date </label><br></br>
                             <input type="date" id="travelDate" name="travelDate" required />
                         </div>
 
                         {/* TRIP DURATION */}
                         <div className="input-group">
-                            <label htmlFor="duration">Trip Duration <span className="required">*</span></label><br></br>
-                            <input type="number" placeholder="Number of travel days" id="duration" name="duration" min="1" required />
+                            <label htmlFor="duration">Trip Duration </label><br></br>
+                            <input type="number" placeholder="No. of days" id="duration" name="duration" min="1" required />
                         </div>
 
-                        {/* START LOCATION */}
-                        {/* <div className="input-group">
-                            <label htmlFor="start">Starting Location</label><br></br>
-                            <input type="text" id="start" name="start" placeholder="Kathmandu" disabled />
-                        </div> */}
+                        </div>
+
+                        </fieldset>
 
                         {/* BUTTON */}
                         <div className="btn-container">

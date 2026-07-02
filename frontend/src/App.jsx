@@ -45,7 +45,6 @@ function App() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-      <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
 
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/generate" element={<GenerateItinerary />} />

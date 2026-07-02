@@ -4,8 +4,6 @@ function Hero() {
   return (
     <section className="hero">
 
-      {/* <div className="overlay"></div> */}
-
       <div className="container">
 
         <h1>Go Travel Nepal</h1>

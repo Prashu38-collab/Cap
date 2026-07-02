@@ -63,23 +63,36 @@ export default function MyProfile() {
      < Navbar />
 
       <section className="profile-hero">
-        <img src="\images\contactus.png" alt="Boudhanath Stupa Nepal" className="profile-hero-image" />
-        <div className="profile-hero-overlay" />
-        <div className="profile-hero-copy">
-          <a href="#profile-card" className="profile-hero-button">My Profile</a>
-        </div>
-      </section>
+  <img
+    src="/images/contactus.png"
+    alt="Boudhanath Stupa Nepal"
+    className="profile-hero-image"
+  />
 
-      {/* MAIN CONTENT CONTAINER */}
-      <p className='text'>Welcome Back, Traveler</p>
+  <div className="profile-hero-overlay" />
 
+  <div className="profile-hero-copy">
+    <h1 className="hero-title">
+      Every Journey Tells a Story
+    </h1>
+
+<p className="hero-quote">
+  "Travel isn't always about the destination, it's about the memories
+  you create along the way."
+</p>
+
+
+  </div>
+</section>
       <main className="profile-main">
         
         {/* PERSONAL INFORMATION CARD */}
+
+        <h2>Personal Information</h2>
+        
         <section id="profile-card" className="profile-card">
 
           <div className="profile-card-info">
-            <h2>Personal Information</h2>
             
             <div className="profile-detail-grid">
               <div className="profile-detail-row">

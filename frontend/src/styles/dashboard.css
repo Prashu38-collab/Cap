@@ -19,17 +19,20 @@
     background-repeat: no-repeat;
 }
 
-/* .hero .overlay{
-    position: absolute; 
-    inset: 0; 
-    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.5) ); 
-} */
+.hero::before{
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.2);   /* Black overlay */
+    z-index: 1;
+}
 
 .hero .container{
     position: relative;
     padding: 0 2rem;
     max-width: 840px;
     color: var(--secondary-color);
+    z-index: 2;
 }
 
 .hero h1{
