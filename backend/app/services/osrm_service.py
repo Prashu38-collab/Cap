@@ -14,7 +14,7 @@ from urllib.parse import quote
 import requests
 
 OSRM_BASE_URL = "http://router.project-osrm.org/route/v1/driving"
-REQUEST_TIMEOUT = 10  # seconds
+REQUEST_TIMEOUT = 20  # seconds
 
 
 def _build_osrm_url(

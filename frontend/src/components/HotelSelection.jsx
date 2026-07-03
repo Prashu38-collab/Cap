@@ -78,7 +78,16 @@ export default function HotelSelection({ hotels, corridor, onSelect, loading }) 
     onSelect(selectedId);
   };
 
-  const districtLabel = corridor?.[0] || "your starting district";
+  const districtLabel = corridor?.[0] || "starting district";
+  const routeText = corridor?.length > 1 ? corridor.join(" → ") : districtLabel;
+
+  // Group hotels by district
+  const grouped = {};
+  for (const h of hotels) {
+    const d = h.district || "Unknown";
+    if (!grouped[d]) grouped[d] = [];
+    grouped[d].push(h);
+  }
 
   return (
     <div className="hs-wrap">
@@ -88,8 +97,8 @@ export default function HotelSelection({ hotels, corridor, onSelect, loading }) 
         <div className="hs-header-icon">🏨</div>
         <h2 className="hs-title">Choose Your Sanctuary</h2>
         <p className="hs-subtitle">
-          Pick where you'll rest in <strong>{districtLabel}</strong> — the rest of your
-          trip will be built around this starting point.
+          Pick where you'll rest in <strong>{routeText}</strong> — select a
+          starting hotel and we'll assign others along your route.
         </p>
         {corridor?.length > 1 && (
           <p className="hs-corridor">
@@ -98,17 +107,22 @@ export default function HotelSelection({ hotels, corridor, onSelect, loading }) 
         )}
       </div>
 
-      <div className="hs-grid">
-        {hotels.map((hotel, idx) => (
-          <HotelCard
-            key={hotel.hotel_id}
-            hotel={hotel}
-            index={idx}
-            selected={selectedId === hotel.hotel_id}
-            onSelect={handleSelect}
-          />
-        ))}
-      </div>
+      {Object.entries(grouped).map(([district, districtHotels]) => (
+        <div key={district} className="hs-district-group">
+          <h3 className="hs-district-title">🏠 {district}</h3>
+          <div className="hs-grid">
+            {districtHotels.map((hotel, idx) => (
+              <HotelCard
+                key={hotel.hotel_id}
+                hotel={hotel}
+                index={idx}
+                selected={selectedId === hotel.hotel_id}
+                onSelect={handleSelect}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
 
       <div className="hs-footer">
         <p className="hs-footer-hint">
