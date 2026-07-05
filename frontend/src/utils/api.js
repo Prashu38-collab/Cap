@@ -54,3 +54,24 @@ export function generateFromHotel(preferenceId, startingHotelId) {
     body: JSON.stringify({ starting_hotel_id: startingHotelId }),
   });
 }
+
+export function getTrekOptions(endingDistrict) {
+  return request("/itinerary/get-trek-options", {
+    method: "POST",
+    body: JSON.stringify({ ending_district: endingDistrict }),
+  });
+}
+
+export function generateTrek(placeId, travelDays) {
+  return request("/itinerary/generate-trek", {
+    method: "POST",
+    body: JSON.stringify({ place_id: placeId, travel_days: travelDays }),
+  });
+}
+
+export function selectTrekHotel(preferenceId, dayNumber, hotelId) {
+  return request("/itinerary/select-trek-hotel", {
+    method: "POST",
+    body: JSON.stringify({ preference_id: preferenceId, day_number: dayNumber, hotel_id: hotelId }),
+  });
+}

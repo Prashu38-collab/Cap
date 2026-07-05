@@ -823,6 +823,12 @@
   background: #D4973C;
 }
 
+/* ─── TREK SELECTION ─── */
+.trek-selection-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
 /* ─── HOTEL SELECTION (Midnight Spice) ─── */
 .hotel-selection-wrap {
   max-width: 1060px;
