@@ -59,7 +59,7 @@
     background: #f5f7fb;
 }
 
-/* ----------------------------------------------- Dahboard Section Stats -------------------------------------- */
+/* ----------------------------------------------- Dashboard Section Stats -------------------------------------- */
 
 .admin-stats-grid{
     display: grid;
@@ -90,6 +90,7 @@
 .admin-stat-card p{
     font-size: 32px;
     font-weight: 700;
+    margin-top: 10px;
     /* color: #2563eb; */
 }
 
@@ -278,7 +279,7 @@ tr:hover{
 /* ------------------------------------- CRUD (View, Edit, Delete) ------------------------------------ */
 
 .crud{
-    display: flex;
+    /* display: flex; */
     gap: 8px;
 }
 
@@ -316,7 +317,7 @@ tr:hover{
 
 /* ------------------------------------- Manage Users ------------------------------------ */
 
-.status{
+/* .status{
     display: inline-block;
     padding: 6px 12px;
     border-radius: 20px;
@@ -332,6 +333,36 @@ tr:hover{
 .status.inactive{
     background: #fee2e2;
     color: #991b1b;
+} */
+
+.status-select{
+    /* width: 100px; */
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    outline: none;
+    font-size: 16px;
+    font-weight: 600;
+    display: inline-block;
+    /* background-color: #fffcfc; */
+}
+
+.status-select.active{
+    background: #dcfce7;
+    color: #209d50;
+}
+
+.status-select.inactive{
+    background: #fee2e2;
+    color: #d51d1d;
+}
+
+.status-select.locked{
+    background: #e5e7eb;
+    color: #374151;
 }
 
 .user-form label{

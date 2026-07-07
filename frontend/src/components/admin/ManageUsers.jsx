@@ -1,21 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 function UsersSection({ setActivePage }) {
 
-// -----------------------------------------------------(IMPortant)-api endpoint for user to be changed after integration
-const API_URL = "http://localhost:8000/api/users";
-
+const API_URL = "http://localhost:8000/api/admin/users";
 const [users, setUsers] = useState([]);
-
 const [showForm, setShowForm] = useState(false);
-
+const [notice, setNotice] = useState(null)
+const noticeTimerRef = useRef(null);
 const [newUser, setNewUser] = useState({
 name: "",
 email: "",
 phone_number: "",
 password: ""
 });
+
+function showNotice(type, message) {
+    if (noticeTimerRef.current)
+        clearTimeout(noticeTimerRef.current);
+
+    setNotice({type, message });
+
+    noticeTimerRef.current = setTimeout(() => {setNotice(null);}, 5000);
+}
 
 useEffect(() => {
 fetchUsers();
@@ -43,20 +50,81 @@ const handleInputChange = (e) => {
 
 };
 
+// Add User
 const handleAddUser = async () => {
 
+  // Required Fields
+
   if (
-    !newUser.name ||
-    !newUser.email ||
-    !newUser.phone_number ||
-    !newUser.password
+    !newUser.name.trim() ||
+    !newUser.email.trim() ||
+    !newUser.phone_number.trim() ||
+    !newUser.password.trim()
   ) {
-    alert("Please fill all fields");
+    showNotice("error", "Please fill all required fields.");
     return;
   }
 
+  // Name Validation
+
+  if (newUser.name.trim().length < 3) {
+    showNotice("error", "Name must contain at least 3 characters.");
+    return;
+  }
+
+  // Email Validation
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(newUser.email)) {
+    showNotice("error", "Please enter a valid email address.");
+    return;
+  }
+
+  // Phone Validation
+
+  const phoneRegex = /^[0-9]{10}$/;
+
+  if (!phoneRegex.test(newUser.phone_number)) {
+    showNotice("error", "Phone number must contain exactly 10 digits.");
+    return;
+  }
+
+  // Password Validation
+
+  const password = newUser.password;
+
+  if (password.length < 8) {
+    showNotice("error", "Password must contain at least 8 characters.");
+    return;
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    showNotice("error", "Password must contain at least one uppercase letter.");
+    return;
+  }
+
+  if (!/[a-z]/.test(password)) {
+    showNotice("error", "Password must contain at least one lowercase letter.");
+    return;
+  }
+
+  if (!/[0-9]/.test(password)) {
+    showNotice("error", "Password must contain at least one number.");
+    return;
+  }
+
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    showNotice("error", "Password must contain at least one special character.");
+    return;
+  }
+
+  // Send Request
+
   try {
-    await axios.post(API_URL, newUser);
+
+    const response = await axios.post(API_URL, newUser);
+    alert(response.data.message);
     fetchUsers();
     setNewUser({
       name: "",
@@ -64,16 +132,45 @@ const handleAddUser = async () => {
       phone_number: "",
       password: ""
     });
-
     setShowForm(false);
+  }
 
-  } catch (error) {
-    console.error("Error adding user:", error);
-    alert("Failed to add user");
+  catch (error) {
+    console.error(error);
+    if (error.response) {
+      alert(error.response.data.detail);
+    } else {
+      alert("Server is unreachable.");
+    }
   }
 
 };
 
+// Status Update
+const handleStatusChange = async (id, status) => {
+
+  try {
+    const response = await axios.put(
+      `${API_URL}/${id}/status`,
+      {
+        status: status
+      }
+    );
+    alert(response.data.message);
+    fetchUsers();
+  }
+
+  catch(error){
+    console.error(error);
+    if(error.response){
+      alert(error.response.data.detail);
+    }
+
+  }
+
+};
+
+// Delete User
 const handleDeleteUser = async (id) => {
 
   const confirmDelete = window.confirm(
@@ -81,15 +178,22 @@ const handleDeleteUser = async (id) => {
   );
 
   if (!confirmDelete) return;
-
   try {
-    await axios.delete(`${API_URL}/${id}`);
+    const response = await axios.delete(
+      `${API_URL}/${id}`
+    );
+    alert(response.data.message);
     fetchUsers();
-  } catch (error) {
-    console.error("Error deleting user:", error);
-    alert("Failed to delete user");
   }
 
+  catch(error){
+    console.error(error);
+    if(error.response){
+      alert(error.response.data.detail);
+    }else{
+      alert("Unable to delete user.");
+    }
+  }
 };
 
 return (
@@ -135,14 +239,17 @@ return (
             <td>{user.phone_number}</td>
 
             <td>
-              <span className={
-                  user.status === "Active"
-                    ? "status active"
-                    : "status inactive"
+              <select
+                className={`status-select ${user.status.toLowerCase()}`}
+                value={user.status}
+                onChange={(e) =>
+                  handleStatusChange(user.id, e.target.value)
                 }
               >
-                {user.status}
-              </span>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Locked">Locked</option>
+               </select>
             </td>
 
             <td className="crud">
@@ -200,162 +307,16 @@ return (
 
 )}
 
+{notice && (
+    <div className={`toast ${notice.type}`}>
+        <span>{notice.type === "success" ? "✓" : "!"}</span>
+        <span>{notice.message}</span>
+    </div>
+)}
+
 </>
 
 );
 }
 
 export default UsersSection;
-
-
-
-
-
-// import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
-
-// function UsersSection({ setActivePage }) {
-
-//   // const navigate = useNavigate();
-
-//   const [showForm, setShowForm] = useState(false);
-
-//   const users = [
-//     {
-//       id: 1,
-//       name: "Kritika Maharjan",
-//       email: "kritika@gmail.com",
-//       status: "Active"
-//     },
-//     {
-//       id: 2,
-//       name: "Priety Maharjan",
-//       email: "priety@gmail.com",
-//       status: "Inactive"
-//     },
-//     {
-//       id: 3,
-//       name: "Reshika Dhakal",
-//       email: "reshika@gmail.com",
-//       status: "Active"
-//     },
-//     {
-//       id: 4,
-//       name: "Riddhishree Khanal",
-//       email: "riddhi@gmail.com",
-//       status: "Active"
-//     },
-//     {
-//       id: 5,
-//       name: "Prashamsa Ghimire",
-//       email: "prashamsa@gmail.com",
-//       status: "Inactive"
-//     }
-//   ];
-
-//   return (
-//     <>
-//       <div className="back-header">
-//         <button className="back-btn" onClick={() => setActivePage("dashboard")} >
-//           <i className = "fa-solid fa-arrow-left"></i>
-//         </button>
-
-//         <h1>Manage Users</h1>
-
-//       </div>
-
-//       <button className="button-actions" onClick={() => setShowForm(true)} >
-//         Add User
-//       </button>
-
-//       <table>
-
-//         <thead>
-//           <tr>
-//             <th>Name</th>
-//             <th>Email</th>
-//             <th>Status</th>
-//             <th>Action</th>
-//           </tr>
-//         </thead>
-
-//         <tbody>
-
-//           {users.map((user) => (
-
-//             <tr key={user.id}>
-
-//               <td>{user.name}</td>
-
-//               <td>{user.email}</td>
-
-//               <td>
-//                 <span className = { user.status === "Active" ? "status active" : "status inactive" } >
-//                   {user.status}
-//                 </span>
-//               </td>
-
-//               <td className="crud">
-//                 <button className="delete-btn">Delete</button>
-//               </td>
-//             </tr>
-
-//           ))}
-
-//         </tbody>
-
-//       </table>
-
-//        {/* Add User Form */}
-//       {showForm && (
-//         <div className="user-form-modal">
-
-//           <div className="user-form">
-
-//             <h2>Add User</h2>
-
-//             <input
-//               type="text"
-//               placeholder="Full Name"
-//             />
-
-//             <input
-//               type="email"
-//               placeholder="Email"
-//             />
-
-//             <input
-//               type="tel"
-//               placeholder="Phone Number"
-//             />
-
-//             <input
-//               type="password"
-//               placeholder="Password"
-//             />
-
-//             <div className="form-buttons">
-
-//               <button className="save-btn" onClick={handleAddUser} >
-//                 Save
-//               </button>
-
-//               <button
-//                 className="cancel-btn"
-//                 onClick={() => setShowForm(false)}
-//               >
-//                 Cancel
-//               </button>
-
-//             </div>
-
-//           </div>
-
-//         </div>
-//       )}
-
-//     </>
-//   );
-// }
-
-// export default UsersSection;

@@ -23,27 +23,47 @@ function DashboardSection() {
   const fetchDashboardData = async () => {
 
   try {
-
-    const statsResponse = await axios.get("http://localhost:8000/api/admin/stats");
-
-    const messagesResponse = await axios.get("http://localhost:8000/api/admin/messages/recent");
-
-    const activitiesResponse = await axios.get("http://localhost:8000/api/admin/activity");
-
-    const categoryResponse = await axios.get("http://localhost:8000/api/admin/dashboard/popular-categories");
+    const statsResponse = await axios.get(
+      "http://localhost:8000/api/admin/stats"
+    );
 
     setStats(statsResponse.data);
 
+  } catch (error) {
+    console.error("Stats Error:", error);
+  }
+
+  try {
+    const messagesResponse = await axios.get(
+      "http://localhost:8000/api/admin/messages/recent"
+    );
+
     setMessages(messagesResponse.data);
+
+  } catch (error) {
+    console.log("Messages API not implemented yet.");
+  }
+
+  try {
+    const activitiesResponse = await axios.get(
+      "http://localhost:8000/api/admin/activity"
+    );
 
     setActivities(activitiesResponse.data);
 
-    setCategories(categoryResponse.data);
-
+  } catch (error) {
+    console.log("Activity API not implemented yet.");
   }
 
-  catch(error) {
-    console.error(error);
+  try {
+    const categoryResponse = await axios.get(
+      "http://localhost:8000/api/admin/dashboard/popular-categories"
+    );
+
+    setCategories(categoryResponse.data);
+
+  } catch (error) {
+    console.log("Categories API not implemented yet.");
   }
 
 };
