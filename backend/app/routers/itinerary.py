@@ -23,6 +23,7 @@ def fetch_places(db: Session, district: str, categories: str = None):
         SELECT place_id, place_name,
                "Latitude" as latitude,
                "Longitude" as longitude,
+                place_name as name,
                "Category" as category,
                "Indoor_Outdoor" as indoor_outdoor,
                "Mobility" as mobility,
