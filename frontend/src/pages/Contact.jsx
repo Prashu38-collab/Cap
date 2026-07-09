@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import '../styles/contact.css'
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import axios from "axios";
+
 import {
 FaUser,
 FaEnvelope,
@@ -21,14 +23,54 @@ subject: '',
 message: ''
 })
 
+const API_URL = "http://localhost:8000/contact";
+
 function updateForm(event) {
 const { name, value } = event.target
 setForm(previous => ({ ...previous, [name]: value }))
 }
 
-function submitForm(event) {
-event.preventDefault()
-alert('Thanks for reaching out. We will get back to you soon.')
+// function submitForm(event) {
+// event.preventDefault()
+// alert('Thanks for reaching out. We will get back to you soon.')
+// }
+
+async function submitForm(event) {
+
+  event.preventDefault();
+
+  if(
+    !form.name.trim() ||
+    !form.email.trim() ||
+    !form.subject.trim() ||
+    !form.message.trim()
+  ){
+    alert("Please fill all required fields.");
+    return;
+  }
+
+  try{
+    const response = await axios.post(API_URL, form);
+    alert(response.data.message);
+    setForm({
+    name:"",
+    email:"",
+    phone:"",
+    subject:"",
+    message:""
+    });
+  }
+
+  catch(error){
+    console.error(error);
+    if(error.response){
+      alert(error.response.data.detail);
+    }
+    else{
+      alert("Unable to connect to server.");
+    }
+  }
+
 }
 
 return ( 
@@ -39,7 +81,7 @@ return (
   <section className="contact-hero">
   <img
     src="/images/contact.jpg"
-    alt="Boudhanath Stupa Nepal"
+    alt="Contact Page Image"
     className="contact-hero-image"
   />
 

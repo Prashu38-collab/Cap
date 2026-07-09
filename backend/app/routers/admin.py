@@ -15,6 +15,12 @@ from app.crud.admin_crud import (
     get_dashboard_stats
 )
 
+from app.crud.contact_crud import (
+    get_all_messages,
+    update_message_status,
+    delete_message
+)
+
 from app.crud.user_crud import (
     get_all_users,
     get_user_by_email,
@@ -42,6 +48,9 @@ class AdminCreateUser(BaseModel):
     password: str
 
 class StatusUpdate(BaseModel):
+    status: str
+
+class MessageStatus(BaseModel):
     status: str
 
 # DASHBOARD STATISTICS
@@ -243,3 +252,75 @@ def change_status(
         "message": f"User status updated to {data.status}."
     }
 
+# GET ALL CONTACT MESSAGES
+
+@router.get("/messages")
+def admin_get_messages(
+    db: Session = Depends(get_db)
+):
+
+    rows = get_all_messages(db)
+
+    return [
+        {
+            "message_id": row.message_id,
+            "name": row.name,
+            "email": row.email,
+            "phone": row.phone,
+            "subject": row.subject,
+            "message": row.message,
+            "status": row.status,
+            "created_at": row.created_at
+        }
+        for row in rows
+    ]
+
+
+# UPDATE MESSAGE STATUS
+
+@router.put("/messages/{message_id}/read")
+def admin_update_message_status(
+    message_id: int,
+    # data: MessageStatus,
+    db: Session = Depends(get_db)
+):
+
+    success = update_message_status(
+        db=db,
+        message_id=message_id,
+        status="Read"
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Message not found."
+        )
+
+    return {
+        "message":"Message updated successfully."
+    }
+
+
+# DELETE MESSAGE
+
+@router.delete("/messages/{message_id}")
+def admin_delete_message(
+    message_id:int,
+    db:Session=Depends(get_db)
+):
+
+    success=delete_message(
+        db,
+        message_id
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Message not found."
+        )
+
+    return{
+        "message":"Message deleted successfully."
+    }

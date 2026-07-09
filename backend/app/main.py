@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import User_Preferences, auth,hotels, itinerary, weather,weather_places, traffic, places, map, admin
+from app.routers import User_Preferences, auth,hotels, itinerary, weather,weather_places, traffic, places, map, admin, contact
 
 app = FastAPI(
     title="Travel Itinerary System API",
@@ -33,7 +33,9 @@ app.include_router(weather.router)
 app.include_router(traffic.router)
 app.include_router(places.router)
 app.include_router(map.router)
+
 app.include_router(admin.router)
+app.include_router(contact.router)
 
 
 @app.get("/")

@@ -24,7 +24,7 @@ function EyeOffIcon() {
 }
 
 export default function Signup() {
-  // const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '', agree: false })
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -42,10 +42,6 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    // if (getCurrentUser()) {
-    //   navigate('/dashboard', { replace: true })
-    // }
-
     return () => {
       if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current)
       if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current)
@@ -66,7 +62,6 @@ export default function Signup() {
   async function submit(e) {
     e.preventDefault()
 
-    // if (!form.name.trim() || !form.email.trim() || !form.phone.trim() || !form.password.trim() || !form.confirm.trim()) {
     if (
       !form.name.trim() ||
       !form.email.trim() ||
@@ -77,11 +72,6 @@ export default function Signup() {
       showNotice('error', 'Please fill in all fields.')
       return
     }
-
-    // if (!form.email.trim().toLowerCase().endsWith('@gmail.com')) {
-    //   showNotice('error', 'Email must end with @gmail.com.')
-    //   return
-    // }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -124,17 +114,6 @@ export default function Signup() {
       showNotice('error', 'Passwords do not match.')
       return
     }
-
-    // const result = registerUser(form)
-
-    // if (!result.ok) {
-    //   showNotice('error', result.message)
-    //   return
-    // }
-
-    // showNotice('success', 'Signup successful')
-    // if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current)
-    // redirectTimerRef.current = setTimeout(() => navigate('/login'), 900)
 
    try {
     const response = await axios.post("http://localhost:8000/register",
@@ -186,10 +165,6 @@ export default function Signup() {
               {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
             </div>
-
-
-            {/* <input name="password" type="password" placeholder="Password" value={form.password} onChange={update} />
-            <input name="confirm_password" type="password" placeholder="Confirm Password" value={form.confirm_password} onChange={update} /> */}
 
             <label className="checkbox"><input name="terms_accepted" type="checkbox" checked={form.terms_accepted} onChange={update} /> I agree to the terms & policy</label>
             <button className="btn" type="submit">Sign Up</button>

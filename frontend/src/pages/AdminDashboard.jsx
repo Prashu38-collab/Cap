@@ -1,77 +1,143 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-import DashboardSection from "../components/admin/AdminDashboardSection";
-import UsersSection from "../components/admin/ManageUsers";
-import ContactSection from "../components/admin/ContactMessages";
-
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import "../styles/admin.css";
 
 function AdminDashboard() {
-  
-  const navigate = useNavigate();
-  const handleLogout = () => {
 
-    localStorage.removeItem("token");
-    // localStorage.removeItem("user");
-    sessionStorage.clear();
-    navigate("/login");
-  };
+    const navigate = useNavigate();
 
-  const [activePage, setActivePage] = useState("dashboard");
+    const handleLogout = () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      sessionStorage.clear();
 
-  return (
-    <div className="admin-layout">
+      navigate("/login");
+    };
 
-      {/* Sidebar */}
-      <aside className="admin-sidebar">
+    return (
 
-        <h2>Go Travel</h2>
+        <div className="admin-layout">
 
-        <ul>
+            {/* Sidebar */}
 
-          <li
-            className={activePage === "dashboard" ? "active" : ""}
-            onClick={() => setActivePage("dashboard")}
-          >
-            Dashboard
-          </li>
+            <aside className="admin-sidebar">
 
-          <li
-            className={activePage === "users" ? "active" : ""}
-            onClick={() => setActivePage("users")}
-          >
-            Manage Users
-          </li>
+                <h2>Go Travel</h2>
 
-          <li
-            className={activePage === "messages" ? "active" : ""}
-            onClick={() => setActivePage("messages")}
-          >
-            Contact Messages
-          </li>
+                <ul>
+                    <li>
+                      <NavLink to="/admin" end className={({ isActive }) => isActive ? "active" : "" } >
+                        Dashboard
+                      </NavLink>
+                    </li>
 
-          <li className="logout" onClick={handleLogout}>
-            Logout
-          </li>
+                    <li>
+                      <NavLink to="/admin/users" className={({ isActive }) => isActive ? "active" : "" } >
+                        Manage Users
+                      </NavLink>
+                    </li>
 
-        </ul>
+                    <li>
+                      <NavLink to="/admin/messages" className={({ isActive }) => isActive ? "active" : "" } >
+                        Contact Messages
+                      </NavLink>
+                    </li>
 
-      </aside>
+                    <li className="logout" onClick={handleLogout} >
+                      Logout
+                    </li>
 
-      {/* Main Content */}
-      <main className="admin-content">
+                </ul>
 
-        {activePage === "dashboard" && <DashboardSection />}
+            </aside>
 
-        {activePage === "users" && (<UsersSection setActivePage={setActivePage} /> )}
+            {/* Page Content */}
 
-        {activePage === "messages" && (<ContactSection setActivePage={setActivePage} /> )}
+            <main className="admin-content">
+              <Outlet />
+            </main>
 
-      </main>
+        </div>
 
-    </div>
-  );
+    );
+
 }
 
 export default AdminDashboard;
+
+// import { useState } from "react";
+// import { useNavigate } from "react-router-dom";
+
+// import DashboardSection from "../components/admin/AdminDashboardSection";
+// import UsersSection from "../components/admin/ManageUsers";
+// import ContactSection from "../components/admin/ContactMessages";
+
+// import "../styles/admin.css";
+
+// function AdminDashboard() {
+  
+//   const navigate = useNavigate();
+//   const handleLogout = () => {
+
+//     localStorage.removeItem("token");
+//     // localStorage.removeItem("user");
+//     sessionStorage.clear();
+//     navigate("/login");
+//   };
+
+//   const [activePage, setActivePage] = useState("dashboard");
+
+//   return (
+//     <div className="admin-layout">
+
+//       {/* Sidebar */}
+//       <aside className="admin-sidebar">
+
+//         <h2>Go Travel</h2>
+
+//         <ul>
+
+//           <li
+//             className={activePage === "dashboard" ? "active" : ""}
+//             onClick={() => setActivePage("dashboard")}
+//           >
+//             Dashboard
+//           </li>
+
+//           <li
+//             className={activePage === "users" ? "active" : ""}
+//             onClick={() => setActivePage("users")}
+//           >
+//             Manage Users
+//           </li>
+
+//           <li
+//             className={activePage === "messages" ? "active" : ""}
+//             onClick={() => setActivePage("messages")}
+//           >
+//             Contact Messages
+//           </li>
+
+//           <li className="logout" onClick={handleLogout}>
+//             Logout
+//           </li>
+
+//         </ul>
+
+//       </aside>
+
+//       {/* Main Content */}
+//       <main className="admin-content">
+
+//         {activePage === "dashboard" && <DashboardSection />}
+
+//         {activePage === "users" && (<UsersSection setActivePage={setActivePage} /> )}
+
+//         {activePage === "messages" && (<ContactSection setActivePage={setActivePage} /> )}
+
+//       </main>
+
+//     </div>
+//   );
+// }
+
+// export default AdminDashboard;

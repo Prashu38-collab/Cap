@@ -111,7 +111,7 @@ color: #0c0830;
   border-radius: 25px;
   box-shadow: 0 15px 40px rgba(0,0,0,0.08);
   display: grid;
-  gap: 20px;
+  /* gap: 10px; */
 
   width: 100%;
   max-width: 700px;
@@ -167,6 +167,7 @@ font-size: 1rem;
 font-weight: 700;
 cursor: pointer;
 transition: all 0.3s ease;
+margin-top: 20px;
 }
 
 .contact-submit:hover {

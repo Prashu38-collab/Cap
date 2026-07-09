@@ -12,6 +12,9 @@ import GenerateItinerary from "./pages/GenerateItinerary";
 import { getCurrentUser } from "./utils/authStorage";
 
 import AdminDashboard from "./pages/AdminDashboard";
+import DashboardSection from "./components/admin/AdminDashboardSection";
+import UsersSection from "./components/admin/ManageUsers";
+import ContactSection from "./components/admin/ContactMessages";
 
 const ProtectedRoute = ({ children }) => {
   return getCurrentUser() ? children : <Navigate to="/login" replace />;
@@ -46,8 +49,13 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
-      <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/generate" element={<GenerateItinerary />} />
+
+      <Route path="/admin" element={<AdminDashboard />}>
+          <Route index element={<DashboardSection />} />
+          <Route path="users" element={<UsersSection />} />
+          <Route path="messages" element={<ContactSection />} />
+      </Route>
 
     </Routes>
   );

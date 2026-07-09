@@ -1,19 +1,48 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+
+import Swal from "sweetalert2";
 import axios from "axios";
 
-function UsersSection({ setActivePage }) {
+function UsersSection() {
 
 const API_URL = "http://localhost:8000/api/admin/users";
+
 const [users, setUsers] = useState([]);
 const [showForm, setShowForm] = useState(false);
 const [notice, setNotice] = useState(null)
 const noticeTimerRef = useRef(null);
+const navigate = useNavigate();
+
 const [newUser, setNewUser] = useState({
 name: "",
 email: "",
 phone_number: "",
 password: ""
 });
+
+// 
+const [search, setSearch] = useState("");
+const [currentPage, setCurrentPage] = useState(1);
+
+const usersPerPage = 6;
+
+// Search & Filter
+const filteredUsers = users.filter((user) =>
+  user.name.toLowerCase().includes(search.toLowerCase()) ||
+  user.email.toLowerCase().includes(search.toLowerCase())
+);
+
+// Pagination
+const indexOfLastUser = currentPage * usersPerPage;
+const indexOfFirstUser = indexOfLastUser - usersPerPage;
+
+const currentUsers = filteredUsers.slice(
+  indexOfFirstUser,
+  indexOfLastUser
+);
+
+const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
 function showNotice(type, message) {
     if (noticeTimerRef.current)
@@ -25,7 +54,11 @@ function showNotice(type, message) {
 }
 
 useEffect(() => {
-fetchUsers();
+    fetchUsers();
+    // const interval = setInterval(() => {
+    //     fetchUsers();
+    // }, 5000);
+    // return () => clearInterval(interval);
 }, []);
 
 const fetchUsers = async () => {
@@ -173,33 +206,45 @@ const handleStatusChange = async (id, status) => {
 // Delete User
 const handleDeleteUser = async (id) => {
 
-  const confirmDelete = window.confirm(
-    "Are you sure you want to delete this user?"
-  );
+  const result = await Swal.fire({
+    title: "Delete User?",
+    text: "This user will be permanently removed.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#6c757d",
+    confirmButtonText: "Delete",
+    cancelButtonText: "Cancel"
+  });
 
-  if (!confirmDelete) return;
+  if (!result.isConfirmed) return;
+
   try {
-    const response = await axios.delete(
-      `${API_URL}/${id}`
-    );
-    alert(response.data.message);
+    const response = await axios.delete(`${API_URL}/${id}`);
+    await Swal.fire({
+      title: "Deleted!",
+      text: response.data.message,
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false
+    });
     fetchUsers();
+
+  } catch (error) {
+    console.error(error);
+    Swal.fire({
+      title: "Error",
+      text: error.response?.data?.detail || "Unable to delete user.",
+      icon: "error"
+    });
   }
 
-  catch(error){
-    console.error(error);
-    if(error.response){
-      alert(error.response.data.detail);
-    }else{
-      alert("Unable to delete user.");
-    }
-  }
 };
 
 return (
   <>
   <div className="back-header">
-    <button className="back-btn" title="Go Back to Dashboard" onClick={() => setActivePage("dashboard")} >
+    <button className="back-btn" title="Go Back to Dashboard" onClick={() => navigate("/admin")}>
       <i className="fa-solid fa-arrow-left"></i>
     </button>
 
@@ -210,9 +255,37 @@ return (
 {!showForm ? (
 
   <>
-  <button className="button-actions" onClick={() => setShowForm(true)} >
+    {/* <button className="button-actions" onClick={() => setShowForm(true)} >
+      Add User
+    </button> */}
+
+    <div className="table-header">
+
+  <button
+    className="button-actions"
+    onClick={() => setShowForm(true)}
+  >
     Add User
   </button>
+
+  <div className="search-container">
+
+    <i className="fa-solid fa-magnifying-glass search-icon"></i>
+
+    <input
+      type="text"
+      className="search-box"
+      placeholder="Search by name or email..."
+      value={search}
+      onChange={(e) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+      }}
+    />
+
+  </div>
+
+</div>
 
     <table>
 
@@ -228,45 +301,79 @@ return (
 
       <tbody>
 
-        {users.map((user) => (
+        {filteredUsers.length === 0 ? (
 
-          <tr key={user.id}>
-
-            <td>{user.name}</td>
-
-            <td>{user.email}</td>
-
-            <td>{user.phone_number}</td>
-
-            <td>
-              <select
-                className={`status-select ${user.status.toLowerCase()}`}
-                value={user.status}
-                onChange={(e) =>
-                  handleStatusChange(user.id, e.target.value)
-                }
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Locked">Locked</option>
-               </select>
-            </td>
-
-            <td className="crud">
-
-              <button className="delete-btn" onClick={() => handleDeleteUser(user.id)} >
-                Delete
-              </button>
-
-            </td>
-
+          <tr>
+              <td colSpan="5" className="empty-table">
+                  No contact messages found.
+              </td>
           </tr>
 
-        ))}
+          ) : (
+
+          currentUsers.map((user) => (
+
+            <tr key={user.id}>
+
+              <td>{user.name}</td>
+
+              <td>{user.email}</td>
+
+              <td>{user.phone_number}</td>
+
+              <td>
+                <select
+                  className={`status-select ${user.status.toLowerCase()}`}
+                  value={user.status}
+                  onChange={(e) =>
+                    handleStatusChange(user.id, e.target.value)
+                  }
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                  <option value="Locked">Locked</option>
+                </select>
+              </td>
+
+              <td className="crud">
+
+                <button className="delete-btn" onClick={() => handleDeleteUser(user.id)} >
+                  Delete
+                </button>
+
+              </td>
+
+            </tr>
+
+          ))
+        )}
 
       </tbody>
 
     </table>
+
+    <div className="pagination">
+
+  <button
+    disabled={currentPage === 1}
+    onClick={() => setCurrentPage(currentPage - 1)}
+  >
+    Previous
+  </button>
+
+  <span>
+    Page {currentPage} of {totalPages || 1}
+  </span>
+
+  <button
+    disabled={currentPage === totalPages || totalPages === 0}
+    onClick={() => setCurrentPage(currentPage + 1)}
+  >
+    Next
+  </button>
+
+</div>
+
   </>
 
 ) : (

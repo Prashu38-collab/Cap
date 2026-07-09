@@ -54,7 +54,7 @@ export default function AboutUs() {
     <div className="team-card">
       <img src="images/Prashamsa.png" alt="A" className="team-image" />
       <h3>Prashamsa Ghimire</h3>
-      {/* <p>Scrum Leader</p> */}
+      <p>Scrum Leader</p>
       <p>Role: Backend, Database</p>
     </div>
 

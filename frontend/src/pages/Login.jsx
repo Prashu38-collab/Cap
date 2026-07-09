@@ -67,31 +67,10 @@ export default function Login() {
       return
     }
 
-    // if (!form.email.trim().toLowerCase().endsWith('@gmail.com')) {
-    //   showNotice('error', 'Email must end with @gmail.com.')
-    //   return
-    // }
-
     if (!form.password.trim()) {
       showNotice('error', 'Password is required.')
       return
     }
-
-    // if (form.password.length < 8) {
-    //   showNotice('error', 'Password must be at least 8 characters.')
-    //   return
-    // }
-
-    // const result = loginUser(form.email, form.password)
-
-    // if (!result.ok) {
-    //   showNotice('error', result.message)
-    //   return
-    // }
-
-    // showNotice('success', 'Login successful')
-    // if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current)
-    // redirectTimerRef.current = setTimeout(() => navigate('/dashboard'), 900)
 
     try {
 
@@ -101,6 +80,22 @@ export default function Login() {
           password: form.password
         }
       );
+
+      if (response.data.user.status === "Inactive") {
+        showNotice(
+          "error",
+          "Your account is inactive. Please verify your email."
+        );
+        return;
+      }
+
+      if (response.data.user.status === "Locked") {
+        showNotice(
+          "error",
+          "Your account has been locked. Please contact the administrator."
+        );
+        return;
+      }
 
       localStorage.setItem("token", response.data.access_token);
 
@@ -119,11 +114,11 @@ export default function Login() {
 
     catch(error){
       if(error.response){
-          showNotice("error", error.response.data.detail);
+        showNotice("error", error.response.data.detail);
       }
 
       else{
-          showNotice("error", "Unable to connect to server.");
+        showNotice("error", "Unable to connect to server.");
       }
     }
   }
