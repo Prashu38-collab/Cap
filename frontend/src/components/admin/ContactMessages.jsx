@@ -17,7 +17,7 @@ function ContactSection() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const messagesPerPage = 6;
+  const messagesPerPage = 10;
 
   // Filter
   const filteredMessages = messages.filter((message) =>
@@ -191,13 +191,9 @@ const handleView = async (message) => {
 
           currentMessages.map((message) => (
             <tr key={message.message_id}>
-
               <td>{message.name}</td>
-
               <td>{message.email}</td>
-
               <td>{message.subject}</td>
-
               <td>
                 <span className={message.status === "Read" ? "status read" : "status unread"}>
                   {message.status}
@@ -205,8 +201,9 @@ const handleView = async (message) => {
               </td>
 
               <td className="crud">
-                <button className="view-btn" onClick={() => handleView(message)}>
-                  View
+                <button className="view-btn" title="View" onClick={() => handleView(message)}>
+                  {/* View */}
+                  <i className="fa-solid fa-eye"></i>
                 </button>
 
                 {/* <a href={`https://mail.google.com/mail/?view=cm&fs=1&to=${message.email}&su=Re: ${message.subject}`}
@@ -214,8 +211,9 @@ const handleView = async (message) => {
                   Reply
                 </a> */}
 
-                <button className="delete-btn" onClick={() => handleDelete(message.message_id)}>
-                  Delete
+                <button className="delete-btn" title="Edit" onClick={() => handleDelete(message.message_id)}>
+                  {/* Delete */}
+                  <i className="fa-solid fa-trash"></i>
                 </button>
               </td>
 
@@ -229,29 +227,14 @@ const handleView = async (message) => {
       </table>
 
       <div className="pagination">
-
-    <button
-        disabled={currentPage === 1}
-        onClick={() => setCurrentPage(currentPage - 1)}
-    >
-        Previous
-    </button>
-
-    <span>
-        Page {currentPage} of {totalPages || 1}
-    </span>
-
-    <button
-        disabled={
-            currentPage === totalPages ||
-            totalPages === 0
-        }
-        onClick={() => setCurrentPage(currentPage + 1)}
-    >
-        Next
-    </button>
-
-</div>
+        <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)} >
+          Previous
+        </button>
+        <span> Page {currentPage} of {totalPages || 1} </span>
+        <button disabled={ currentPage === totalPages || totalPages === 0 } onClick={() => setCurrentPage(currentPage + 1)} >
+          Next
+        </button>
+      </div>
 
       {/* ---------------- View Modal ----------------- */}
       {showModal && selectedMessage && (

@@ -25,7 +25,7 @@ password: ""
 const [search, setSearch] = useState("");
 const [currentPage, setCurrentPage] = useState(1);
 
-const usersPerPage = 6;
+const usersPerPage = 10;
 
 // Search & Filter
 const filteredUsers = users.filter((user) =>
@@ -36,20 +36,17 @@ const filteredUsers = users.filter((user) =>
 // Pagination
 const indexOfLastUser = currentPage * usersPerPage;
 const indexOfFirstUser = indexOfLastUser - usersPerPage;
-
 const currentUsers = filteredUsers.slice(
   indexOfFirstUser,
   indexOfLastUser
 );
-
 const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
+// Toast
 function showNotice(type, message) {
     if (noticeTimerRef.current)
         clearTimeout(noticeTimerRef.current);
-
     setNotice({type, message });
-
     noticeTimerRef.current = setTimeout(() => {setNotice(null);}, 5000);
 }
 
@@ -261,31 +258,28 @@ return (
 
     <div className="table-header">
 
-  <button
-    className="button-actions"
-    onClick={() => setShowForm(true)}
-  >
-    Add User
-  </button>
+      <button
+        className="button-actions"
+        onClick={() => setShowForm(true)}
+      >
+        Add User
+      </button>
 
-  <div className="search-container">
+      <div className="search-container">
+        <i className="fa-solid fa-magnifying-glass search-icon"></i>
+        <input
+          type="text"
+          className="search-box"
+          placeholder="Search by name or email..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
 
-    <i className="fa-solid fa-magnifying-glass search-icon"></i>
-
-    <input
-      type="text"
-      className="search-box"
-      placeholder="Search by name or email..."
-      value={search}
-      onChange={(e) => {
-        setSearch(e.target.value);
-        setCurrentPage(1);
-      }}
-    />
-
-  </div>
-
-</div>
+    </div>
 
     <table>
 
@@ -314,13 +308,9 @@ return (
           currentUsers.map((user) => (
 
             <tr key={user.id}>
-
               <td>{user.name}</td>
-
               <td>{user.email}</td>
-
               <td>{user.phone_number}</td>
-
               <td>
                 <select
                   className={`status-select ${user.status.toLowerCase()}`}
@@ -336,11 +326,10 @@ return (
               </td>
 
               <td className="crud">
-
-                <button className="delete-btn" onClick={() => handleDeleteUser(user.id)} >
-                  Delete
+                <button className="delete-btn" title="Edit" onClick={() => handleDeleteUser(user.id)} >
+                  {/* Delete */}
+                  <i className="fa-solid fa-trash"></i>
                 </button>
-
               </td>
 
             </tr>
@@ -353,26 +342,16 @@ return (
     </table>
 
     <div className="pagination">
-
-  <button
-    disabled={currentPage === 1}
-    onClick={() => setCurrentPage(currentPage - 1)}
-  >
-    Previous
-  </button>
-
-  <span>
-    Page {currentPage} of {totalPages || 1}
-  </span>
-
-  <button
-    disabled={currentPage === totalPages || totalPages === 0}
-    onClick={() => setCurrentPage(currentPage + 1)}
-  >
-    Next
-  </button>
-
-</div>
+      <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+        Previous
+      </button>
+      <span>
+        Page {currentPage} of {totalPages || 1}
+      </span>
+      <button disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(currentPage + 1)} >
+        Next
+      </button>
+    </div>
 
   </>
 

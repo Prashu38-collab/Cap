@@ -37,6 +37,12 @@ function AdminDashboard() {
                     </li>
 
                     <li>
+                      <NavLink to="/admin/destinations" className={({ isActive }) => isActive ? "active" : "" } >
+                        Manage Destinations
+                      </NavLink>
+                    </li>
+
+                    <li>
                       <NavLink to="/admin/messages" className={({ isActive }) => isActive ? "active" : "" } >
                         Contact Messages
                       </NavLink>

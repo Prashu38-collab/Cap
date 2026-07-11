@@ -29,6 +29,19 @@ from app.crud.user_crud import (
     update_user_status
 )
 
+from app.crud.destination_crud import (
+    get_all_destinations,
+    get_destination_by_id,
+    create_destination,
+    update_destination,
+    delete_destination
+)
+
+from app.schemas.destination_schema import (
+    DestinationCreate,
+    DestinationUpdate
+)
+
 pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto"
@@ -39,17 +52,7 @@ router = APIRouter(
     tags=["Admin"]
 )
 
-# Pydantic Models
-
-class AdminCreateUser(BaseModel):
-    name: str
-    email: EmailStr
-    phone_number: str
-    password: str
-
-class StatusUpdate(BaseModel):
-    status: str
-
+# Pydantic Model
 class MessageStatus(BaseModel):
     status: str
 
@@ -91,7 +94,7 @@ def add_user(
     db: Session = Depends(get_db)
 ):
 
-    # ---------------- Name Validation ----------------
+    # Name Validation
 
     if len(user.name.strip()) < 3:
         raise HTTPException(
@@ -99,7 +102,7 @@ def add_user(
             detail="Name must contain at least 3 characters."
         )
 
-    # ---------------- Phone Validation ----------------
+    # Phone Validation
 
     if not re.fullmatch(r"\d{10}", user.phone_number):
         raise HTTPException(
@@ -107,7 +110,7 @@ def add_user(
             detail="Phone number must contain exactly 10 digits."
         )
 
-    # ---------------- Password Validation ----------------
+    # Password Validation
 
     password = user.password
 
@@ -147,7 +150,7 @@ def add_user(
             detail="Password must contain one special character."
         )
 
-    # ---------------- Duplicate Email ----------------
+    # Duplicate Email
 
     existing = get_user_by_email(
         db,
@@ -160,11 +163,11 @@ def add_user(
             detail="Email already exists."
         )
 
-    # ---------------- Hash Password ----------------
+    # Hash Password
 
     hashed_password = pwd_context.hash(password)
 
-    # ---------------- Create User ----------------
+    # Create User
 
     create_user(
         db=db,
@@ -323,4 +326,135 @@ def admin_delete_message(
 
     return{
         "message":"Message deleted successfully."
+    }
+
+# GET ALL DESTINATIONS
+
+@router.get("/destinations")
+def admin_get_destinations(
+    db: Session = Depends(get_db)
+):
+
+    destinations = get_all_destinations(db)
+
+    return [
+        {
+            "place_id": d.place_id,
+            "place_name": d.place_name,
+            "District": d.District,
+            "Latitude": d.Latitude,
+            "Longitude": d.Longitude,
+            "Category": d.Category,
+            "Indoor_Outdoor": d.Indoor_Outdoor,
+            "Mobility": d.Mobility,
+            "Weather_Sensitivity": d.Weather_Sensitivity,
+            "Budget_level": d.Budget_level,
+            "Entry_Fee": d.Entry_Fee,
+            "province": d.province,
+            "estimated_duration_value": d.estimated_duration_value,
+            "estimated_duration_unit": d.estimated_duration_unit,
+            "is_trek": d.is_trek,
+            "elevation_meters": d.elevation_meters,
+            "opening_time": d.opening_time,
+            "closing_time": d.closing_time
+        }
+        for d in destinations
+    ]
+
+# GET ONE DESTINATION
+
+@router.get("/destinations/{place_id}")
+def admin_get_destination(
+    place_id: int,
+    db: Session = Depends(get_db)
+):
+    destination = get_destination_by_id(db, place_id)
+
+    if not destination:
+        raise HTTPException(
+            status_code=404,
+            detail="Destination not found."
+        )
+
+    return {
+    "place_id": destination.place_id,
+    "place_name": destination.place_name,
+    "District": destination.District,
+    "Latitude": destination.Latitude,
+    "Longitude": destination.Longitude,
+    "Category": destination.Category,
+    "Indoor_Outdoor": destination.Indoor_Outdoor,
+    "Mobility": destination.Mobility,
+    "Weather_Sensitivity": destination.Weather_Sensitivity,
+    "Budget_level": destination.Budget_level,
+    "Entry_Fee": destination.Entry_Fee,
+    "province": destination.province,
+    "estimated_duration_value": destination.estimated_duration_value,
+    "estimated_duration_unit": destination.estimated_duration_unit,
+    "is_trek": destination.is_trek,
+    "elevation_meters": destination.elevation_meters,
+    "opening_time": destination.opening_time,
+    "closing_time": destination.closing_time
+}
+
+# ADD DESTINATION
+
+@router.post("/destinations")
+def admin_add_destination(
+    destination: DestinationCreate,
+    db: Session = Depends(get_db)
+):
+    create_destination(
+        db,
+        destination
+    )
+
+    return {
+        "message": "Destination added successfully."
+    }
+
+# UPDATE DESTINATION
+
+@router.put("/destinations/{place_id}")
+def admin_update_destination(
+    place_id: int,
+    destination: DestinationUpdate,
+    db: Session = Depends(get_db)
+):
+    success = update_destination(
+        db,
+        place_id,
+        destination
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Destination not found."
+        )
+
+    return {
+        "message": "Destination updated successfully."
+    }
+
+# DELETE DESTINATION
+
+@router.delete("/destinations/{place_id}")
+def admin_delete_destination(
+    place_id: int,
+    db: Session = Depends(get_db)
+):
+    success = delete_destination(
+        db,
+        place_id
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Destination not found."
+        )
+
+    return {
+        "message": "Destination deleted successfully."
     }

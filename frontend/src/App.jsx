@@ -15,6 +15,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import DashboardSection from "./components/admin/AdminDashboardSection";
 import UsersSection from "./components/admin/ManageUsers";
 import ContactSection from "./components/admin/ContactMessages";
+import ManageDestinations from "./components/admin/ManageDestinations";
 
 const ProtectedRoute = ({ children }) => {
   return getCurrentUser() ? children : <Navigate to="/login" replace />;
@@ -55,6 +56,7 @@ function App() {
           <Route index element={<DashboardSection />} />
           <Route path="users" element={<UsersSection />} />
           <Route path="messages" element={<ContactSection />} />
+          <Route path="destinations" element={<ManageDestinations />} />
       </Route>
 
     </Routes>
