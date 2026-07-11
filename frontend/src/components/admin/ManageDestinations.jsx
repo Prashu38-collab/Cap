@@ -316,7 +316,7 @@ return (
                         <option value="Religious">Religious</option>
                     </select>
 
-                    <label>Indoor / Outdoor</label>
+                    <label>Indoor / Outdoor <span className="required">*</span></label>
                     <select name="Indoor_Outdoor" value={newDestination.Indoor_Outdoor} onChange={handleInputChange}>
                         <option value="">Select</option>
                         <option value="Indoor">Indoor</option>
@@ -332,7 +332,7 @@ return (
                     <option value="Difficult">Difficult</option>
                     </select>
 
-                    <label>Weather Sensitivity</label>
+                    <label>Weather Sensitivity <span className="required">*</span></label>
                     <select name="Weather_Sensitivity" value={newDestination.Weather_Sensitivity} onChange={handleInputChange}>
                         <option value="">Select</option>
                         <option value="Yes">Yes</option>
@@ -347,27 +347,27 @@ return (
                     <option value="High">High</option>
                     </select>
 
-                    <label>Opening Time</label>
+                    <label>Opening Time <span className="required">*</span></label>
                     <input type="time" name="opening_time" value={newDestination.opening_time} onChange={handleInputChange} />
                 </div>
 
                 {/* Right Column */}
                 <div className="form-column">
 
-                    <label>Entry Fee</label>
+                    <label>Entry Fee <span className="required">*</span></label>
                     <select name="Entry_Fee" value={newDestination.Entry_Fee} onChange={handleInputChange}>
                         <option value="">Select</option>
                         <option value="Free">Free</option>
                         <option value="Paid">Paid</option>
                     </select>
 
-                    <label>Province</label>
+                    <label>Province <span className="required">*</span></label>
                     <input type="number" name="province" min="1" max="7" value={newDestination.province} onChange={handleInputChange} />
 
-                    <label>Latitude</label>
+                    <label>Latitude <span className="required">*</span></label>
                     <input type="number" step="any" name="Latitude" value={newDestination.Latitude} onChange={handleInputChange} />
 
-                    <label>Longitude</label>
+                    <label>Longitude <span className="required">*</span></label>
                     <input type="number" step="any" name="Longitude" value={newDestination.Longitude} onChange={handleInputChange} />
 
                     <label>Duration <span className="required">*</span></label>
@@ -383,13 +383,13 @@ return (
 
                     <label className="checkbox-label">
                     <input type="checkbox" name="is_trek" checked={newDestination.is_trek} onChange={handleInputChange} />
-                        Is Trek?
+                        Is Trek? <span className="required">*</span>
                     </label>
 
-                    <label>Elevation (meters)</label>
+                    <label>Elevation (meters) <span className="required">*</span></label>
                     <input type="number" name="elevation_meters" value={newDestination.elevation_meters} onChange={handleInputChange} />
 
-                    <label>Closing Time</label>
+                    <label>Closing Time <span className="required">*</span></label>
                     <input type="time" name="closing_time" value={newDestination.closing_time} onChange={handleInputChange} />
                 </div>
                 </div>
@@ -450,13 +450,13 @@ return (
       <div className="form-grid">
         {/* Left Column */}
         <div className="form-column">
-          <label>Place Name <span className="required">*</span></label>
+          <label>Place Name </label>
           <input type="text" value={selectedDestination.place_name} onChange={(e) => setSelectedDestination({ ...selectedDestination, place_name: e.target.value })} />
 
-          <label>District <span className="required">*</span></label>
+          <label>District </label>
           <input type="text" value={selectedDestination.District} onChange={(e) => setSelectedDestination({ ...selectedDestination, District: e.target.value })} />
 
-          <label>Category <span className="required">*</span></label>
+          <label>Category </label>
         <select value={selectedDestination.Category} onChange={(e) => setSelectedDestination({ ...selectedDestination, Category: e.target.value })}>
             <option value="">Select Category</option>
             <option value="Adventure">Adventure</option>
@@ -473,7 +473,7 @@ return (
                 <option value="Both">Both</option>
             </select>
 
-          <label>Mobility <span className="required">*</span></label>
+          <label>Mobility </label>
           <select value={selectedDestination.Mobility} onChange={(e) => setSelectedDestination({ ...selectedDestination, Mobility: e.target.value })}>
             <option value="">Select</option>
             <option value="Easy">Easy</option>
@@ -519,7 +519,7 @@ return (
           <label>Longitude</label>
           <input type="number" step="any" value={selectedDestination.Longitude || ""} onChange={(e) => setSelectedDestination({ ...selectedDestination, Longitude: e.target.value })} />
 
-          <label>Duration <span className="required">*</span></label>
+          <label>Duration </label>
           <div className="duration-row">
             <input type="number" value={selectedDestination.estimated_duration_value || ""} onChange={(e) => setSelectedDestination({ ...selectedDestination, estimated_duration_value: e.target.value })} />
             <select value={selectedDestination.estimated_duration_unit || ""} onChange={(e) => setSelectedDestination({ ...selectedDestination, estimated_duration_unit: e.target.value })}>

@@ -5,13 +5,39 @@ from sqlalchemy import text
 
 def get_all_destinations(db: Session):
 
+    # result = db.execute(
+    #     text("""
+    #         SELECT *
+    #         FROM itinerary_places
+    #         ORDER BY place_name
+    #     """)
+    # )
+
     result = db.execute(
-        text("""
-            SELECT *
-            FROM itinerary_places
-            ORDER BY place_name
-        """)
-    )
+    text("""
+        SELECT
+            place_id,
+            place_name,
+            "District",
+            "Latitude",
+            "Longitude",
+            "Category",
+            "Indoor_Outdoor",
+            "Mobility",
+            "Weather_Sensitivity",
+            "Budget_level",
+            "Entry_Fee",
+            province,
+            estimated_duration_value,
+            estimated_duration_unit,
+            is_trek,
+            elevation_meters,
+            opening_time,
+            closing_time
+        FROM itinerary_places
+        ORDER BY place_name
+    """)
+)
 
     return result.fetchall()
 
@@ -24,7 +50,27 @@ def get_destination_by_id(
 
     result = db.execute(
         text("""
-            SELECT *
+
+            SELECT
+            place_id,
+            place_name,
+            "District",
+            "Latitude",
+            "Longitude",
+            "Category",
+            "Indoor_Outdoor",
+            "Mobility",
+            "Weather_Sensitivity",
+            "Budget_level",
+            "Entry_Fee",
+            province,
+            estimated_duration_value,
+            estimated_duration_unit,
+            is_trek,
+            elevation_meters,
+            opening_time,
+            closing_time
+             
             FROM itinerary_places
             WHERE place_id = :place_id
         """),
@@ -44,18 +90,19 @@ def create_destination(
 
     db.execute(
         text("""
+             
             INSERT INTO itinerary_places
             (
                 place_name,
-                District,
-                Latitude,
-                Longitude,
-                Category,
-                Indoor_Outdoor,
-                Mobility,
-                Weather_Sensitivity,
-                Budget_level,
-                Entry_Fee,
+                "District",
+                "Latitude",
+                "Longitude",
+                "Category",
+                "Indoor_Outdoor",
+                "Mobility",
+                "Weather_Sensitivity",
+                "Budget_level",
+                "Entry_Fee",
                 province,
                 estimated_duration_value,
                 estimated_duration_unit,
@@ -106,15 +153,16 @@ def update_destination(
             SET
 
                 place_name=:place_name,
-                District=:District,
-                Latitude=:Latitude,
-                Longitude=:Longitude,
-                Category=:Category,
-                Indoor_Outdoor=:Indoor_Outdoor,
-                Mobility=:Mobility,
-                Weather_Sensitivity=:Weather_Sensitivity,
-                Budget_level=:Budget_level,
-                Entry_Fee=:Entry_Fee,
+                "District"=:District,
+                "Latitude"=:Latitude,
+                "Longitude"=:Longitude,
+                "Category"=:Category,
+                "Indoor_Outdoor"=:Indoor_Outdoor,
+                "Mobility"=:Mobility,
+                "Weather_Sensitivity"=:Weather_Sensitivity,
+                "Budget_level"=:Budget_level,
+                "Entry_Fee"=:Entry_Fee,
+             
                 province=:province,
                 estimated_duration_value=:estimated_duration_value,
                 estimated_duration_unit=:estimated_duration_unit,
