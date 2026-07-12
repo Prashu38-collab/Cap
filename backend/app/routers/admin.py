@@ -42,6 +42,25 @@ from app.schemas.destination_schema import (
     DestinationUpdate
 )
 
+from app.schemas.hotel_schema import (
+    HotelCreate,
+    HotelUpdate
+)
+
+from app.crud.hotel_crud import (
+    get_all_hotels,
+    get_hotel_by_id,
+    create_hotel,
+    update_hotel,
+    delete_hotel
+)
+
+from app.crud.generated_itinerary_crud import (
+    get_all_generated_itineraries,
+    get_generated_itinerary_by_id,
+    delete_generated_itinerary
+)
+
 pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto"
@@ -64,6 +83,9 @@ def dashboard_stats(
 ):
 
     return get_dashboard_stats(db)
+
+
+# -----------------------------------------------------------USERS-------------------------------------------------------------------
 
 # GET ALL USERS
 
@@ -255,6 +277,9 @@ def change_status(
         "message": f"User status updated to {data.status}."
     }
 
+
+# ------------------------------------------------------------MESSAGES-------------------------------------------------------------
+
 # GET ALL CONTACT MESSAGES
 
 @router.get("/messages")
@@ -328,6 +353,8 @@ def admin_delete_message(
         "message":"Message deleted successfully."
     }
 
+
+# -----------------------------------------------DESTINATIONS------------------------------------------------------
 # GET ALL DESTINATIONS
 
 @router.get("/destinations")
@@ -457,4 +484,177 @@ def admin_delete_destination(
 
     return {
         "message": "Destination deleted successfully."
+    }
+
+
+# -------------------------------------------------HOTELS--------------------------------------------------
+
+# GET ALL HOTELS
+
+@router.get("/hotels")
+def admin_get_hotels(
+    db: Session = Depends(get_db)
+):
+
+    return get_all_hotels(db)
+
+
+# GET HOTEL
+
+@router.get("/hotels/{hotel_id}")
+def admin_get_hotel(
+    hotel_id: int,
+    db: Session = Depends(get_db)
+):
+
+    hotel = get_hotel_by_id(
+        db,
+        hotel_id
+    )
+
+    if not hotel:
+        raise HTTPException(
+            status_code=404,
+            detail="Hotel not found."
+        )
+
+    return hotel
+
+
+# ADD HOTEL
+
+@router.post("/hotels")
+def admin_add_hotel(
+    hotel: HotelCreate,
+    db: Session = Depends(get_db)
+):
+
+    if hotel.review_score < 0 or hotel.review_score > 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Review score must be between 0 and 5."
+        )
+
+    if hotel.budget < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Budget cannot be negative."
+        )
+
+    create_hotel(
+        db,
+        hotel
+    )
+
+    return {
+        "message": "Hotel added successfully."
+    }
+
+
+# UPDATE HOTEL
+
+@router.put("/hotels/{hotel_id}")
+def admin_update_hotel(
+    hotel_id: int,
+    hotel: HotelUpdate,
+    db: Session = Depends(get_db)
+):
+
+    if hotel.review_score < 0 or hotel.review_score > 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Review score must be between 0 and 5."
+        )
+
+    success = update_hotel(
+        db,
+        hotel_id,
+        hotel
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Hotel not found."
+        )
+
+    return {
+        "message": "Hotel updated successfully."
+    }
+
+
+# DELETE HOTEL
+
+@router.delete("/hotels/{hotel_id}")
+def admin_delete_hotel(
+    hotel_id: int,
+    db: Session = Depends(get_db)
+):
+
+    success = delete_hotel(
+        db,
+        hotel_id
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Hotel not found."
+        )
+
+    return {
+        "message": "Hotel deleted successfully."
+    }
+
+
+# ------------------------------------------GENERATED ITINERARIES-----------------------------------------
+
+# GET ALL GENERATED ITINERARIES
+
+@router.get("/generated-itineraries")
+def admin_get_generated_itineraries(
+    db: Session = Depends(get_db)
+):
+    return get_all_generated_itineraries(db)
+
+# GET ONE GENERATED ITINERARY
+
+@router.get("/generated-itineraries/{itinerary_id}")
+def admin_get_generated_itinerary(
+    itinerary_id: int,
+    db: Session = Depends(get_db)
+):
+    itinerary = get_generated_itinerary_by_id(
+        db,
+        itinerary_id
+    )
+
+    if not itinerary:
+        raise HTTPException(
+            status_code=404,
+            detail="Generated itinerary not found."
+        )
+
+    return itinerary
+
+# DELETE GENERATED ITINERARY
+
+@router.delete("/generated-itineraries/{itinerary_id}")
+def admin_delete_generated_itinerary(
+    itinerary_id: int,
+    db: Session = Depends(get_db)
+):
+    success = delete_generated_itinerary(
+        db,
+        itinerary_id
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Generated itinerary not found."
+        )
+
+    return {
+        "message": "Generated itinerary deleted successfully."
     }

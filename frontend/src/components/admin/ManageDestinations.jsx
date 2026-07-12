@@ -144,11 +144,7 @@ const handleAdd=async()=>{
 // Edit
 const handleEdit=async()=>{
     try{
-        const response=await axios.put(
-            `${API_URL}/${selectedDestination.place_id}`,
-            selectedDestination
-        );
-
+        const response = await axios.put( `${API_URL}/${selectedDestination.place_id}`, selectedDestination );
         Swal.fire({
             icon:"success",
             title:"Updated",
@@ -156,7 +152,6 @@ const handleEdit=async()=>{
             timer:1500,
             showConfirmButton:false
         });
-
         fetchDestinations();
         setShowEdit(false);
     }
@@ -214,11 +209,7 @@ return (
 
             <div className="search-container">
                 <i className="fa-solid fa-magnifying-glass search-icon"></i>
-                <input
-                type="text"
-                className="search-box"
-                placeholder="Search place name, district, or category..."
-                value={search}
+                <input type="text" className="search-box" placeholder="Search place name, district, or category..." value={search}
                 onChange={(e) => {
                     setSearch(e.target.value);
                     setCurrentPage(1);
@@ -255,21 +246,21 @@ return (
                     <td>{destination.Mobility}</td>
                     <td>{destination.Budget_level}</td>
                     <td className="crud">
+                        {/* View */}
                         <button className="view-btn" title="View" onClick={()=>handleView(destination)}>
-                            {/* View */}
                             <i className="fa-solid fa-eye"></i>
                         </button>
 
+                        {/* Edit */}
                         <button className="editing-btn" title="Edit" onClick={()=>{
                             setSelectedDestination(destination);
                             setShowEdit(true);
                             }} >
-                            {/* Edit */}
                             <i className="fa-solid fa-pen"></i>
                         </button>
 
+                        {/* Delete */}
                         <button className="delete-btn" title="Delete" onClick={()=>handleDelete(destination.place_id)}>
-                            {/* Delete */}
                             <i className="fa-solid fa-trash"></i>
                         </button>
                     </td>
@@ -395,7 +386,9 @@ return (
                 </div>
 
                 <div className="modal-buttons">
+                {/* Save */}
                 <button className="save-btn" onClick={handleAdd}>Save</button>
+                {/* Cancel */}
                 <button className="cancel-btn" onClick={() => setShowAdd(false)}>Cancel</button>
                 </div>
             </div>
@@ -544,7 +537,9 @@ return (
       </div>
 
       <div className="modal-buttons">
+        {/* Save */}
         <button className="save-btn" onClick={handleEdit}>Update</button>
+        {/* Cancel */}
         <button className="cancel-btn" onClick={() => setShowEdit(false)}>Cancel</button>
       </div>
     </div>

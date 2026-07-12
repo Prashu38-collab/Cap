@@ -9,7 +9,7 @@ function UsersSection() {
 const API_URL = "http://localhost:8000/api/admin/users";
 
 const [users, setUsers] = useState([]);
-const [showForm, setShowForm] = useState(false);
+const [showAdd, setShowAdd] = useState(false);
 const [notice, setNotice] = useState(null)
 const noticeTimerRef = useRef(null);
 const navigate = useNavigate();
@@ -45,7 +45,7 @@ const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 // Toast
 function showNotice(type, message) {
     if (noticeTimerRef.current)
-        clearTimeout(noticeTimerRef.current);
+    clearTimeout(noticeTimerRef.current);
     setNotice({type, message });
     noticeTimerRef.current = setTimeout(() => {setNotice(null);}, 5000);
 }
@@ -84,96 +84,78 @@ const handleInputChange = (e) => {
 const handleAddUser = async () => {
 
   // Required Fields
-
   if (
     !newUser.name.trim() ||
     !newUser.email.trim() ||
     !newUser.phone_number.trim() ||
     !newUser.password.trim()
   ) {
-    showNotice("error", "Please fill all required fields.");
+    Swal.fire("Error", "Please fill all required fields.", "error");
     return;
   }
 
   // Name Validation
-
   if (newUser.name.trim().length < 3) {
-    showNotice("error", "Name must contain at least 3 characters.");
+    Swal.fire("Error", "Name must contain at least 3 characters.", "error");
     return;
   }
 
   // Email Validation
-
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   if (!emailRegex.test(newUser.email)) {
-    showNotice("error", "Please enter a valid email address.");
+    Swal.fire("Error", "Please enter a valid email address.", "error");
     return;
   }
 
   // Phone Validation
-
   const phoneRegex = /^[0-9]{10}$/;
-
   if (!phoneRegex.test(newUser.phone_number)) {
-    showNotice("error", "Phone number must contain exactly 10 digits.");
+    Swal.fire("Error", "Phone number must contain exactly 10 digits.", "error");
     return;
   }
 
   // Password Validation
-
   const password = newUser.password;
-
   if (password.length < 8) {
-    showNotice("error", "Password must contain at least 8 characters.");
+    Swal.fire("Error", "Password must contain at least 8 characters.", "error");
     return;
   }
 
   if (!/[A-Z]/.test(password)) {
-    showNotice("error", "Password must contain at least one uppercase letter.");
+    Swal.fire("Error", "Password must contain at least one uppercase letter.", "error");
     return;
   }
 
   if (!/[a-z]/.test(password)) {
-    showNotice("error", "Password must contain at least one lowercase letter.");
+    Swal.fire("Error", "Password must contain at least one lowercase letter.", "error");
     return;
   }
 
   if (!/[0-9]/.test(password)) {
-    showNotice("error", "Password must contain at least one number.");
+    Swal.fire("Error", "Password must contain at least one number.", "error");
     return;
   }
 
   if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    showNotice("error", "Password must contain at least one special character.");
+    Swal.fire("Error", "Password must contain at least one special character.", "error");
     return;
   }
 
   // Send Request
-
   try {
-
-    const response = await axios.post(API_URL, newUser);
-    alert(response.data.message);
+    await axios.post(API_URL, newUser);
+    Swal.fire("Success", "User added successfully.", "success");
     fetchUsers();
+    setShowAdd(false);
     setNewUser({
       name: "",
       email: "",
       phone_number: "",
       password: ""
     });
-    setShowForm(false);
+  } catch (error) {
+    console.log(error);
   }
-
-  catch (error) {
-    console.error(error);
-    if (error.response) {
-      alert(error.response.data.detail);
-    } else {
-      alert("Server is unreachable.");
-    }
-  }
-
 };
 
 // Status Update
@@ -186,16 +168,19 @@ const handleStatusChange = async (id, status) => {
         status: status
       }
     );
-    alert(response.data.message);
+    // alert(response.data.message);
+    // fetchUsers();
+    Swal.fire("Success", "Status changed successfully.", "success");
     fetchUsers();
   }
 
   catch(error){
     console.error(error);
-    if(error.response){
-      alert(error.response.data.detail);
-    }
-
+    Swal.fire({
+      title: "Error",
+      text: error.response?.data?.detail || "Unable to update status.",
+      icon: "error"
+    });
   }
 
 };
@@ -249,34 +234,19 @@ return (
 
   </div>
 
-{!showForm ? (
-
-  <>
-    {/* <button className="button-actions" onClick={() => setShowForm(true)} >
-      Add User
-    </button> */}
-
     <div className="table-header">
 
       <button
         className="button-actions"
-        onClick={() => setShowForm(true)}
+        onClick={() => setShowAdd(true)}
       >
         Add User
       </button>
 
       <div className="search-container">
         <i className="fa-solid fa-magnifying-glass search-icon"></i>
-        <input
-          type="text"
-          className="search-box"
-          placeholder="Search by name or email..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
+        <input type="text" className="search-box" placeholder="Search by name or email..." value={search}
+          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} />
       </div>
 
     </div>
@@ -295,12 +265,12 @@ return (
 
       <tbody>
 
-        {filteredUsers.length === 0 ? (
+        {currentUsers.length === 0 ? (
 
           <tr>
-              <td colSpan="5" className="empty-table">
-                  No contact messages found.
-              </td>
+            <td colSpan="5" className="empty-table">
+              No cUsers found.
+            </td>
           </tr>
 
           ) : (
@@ -313,8 +283,7 @@ return (
               <td>{user.phone_number}</td>
               <td>
                 <select
-                  className={`status-select ${user.status.toLowerCase()}`}
-                  value={user.status}
+                  className={`status-select ${user.status.toLowerCase()}`} value={user.status}
                   onChange={(e) =>
                     handleStatusChange(user.id, e.target.value)
                   }
@@ -353,9 +322,8 @@ return (
       </button>
     </div>
 
-  </>
-
-) : (
+  {/* Add Modal */}
+  {showAdd && (
 
   <div className="user-form-container">
 
@@ -376,29 +344,20 @@ return (
       <input id="password" type="password" name="password" value={newUser.password} onChange={handleInputChange} required />
 
       <div className="modal-buttons">
-
+        {/* Save */}
         <button className="save-btn" onClick={handleAddUser} >
           Save
         </button>
-
-        <button className="cancel-btn" onClick={() => setShowForm(false)} >
+        {/* Cancel */}
+        <button className="cancel-btn" onClick={() => setShowAdd(false)} >
           Cancel
         </button>
-
       </div>
 
     </div>
 
   </div>
-
-)}
-
-{notice && (
-    <div className={`toast ${notice.type}`}>
-        <span>{notice.type === "success" ? "✓" : "!"}</span>
-        <span>{notice.message}</span>
-    </div>
-)}
+  )}
 
 </>
 

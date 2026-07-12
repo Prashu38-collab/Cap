@@ -16,6 +16,8 @@ import DashboardSection from "./components/admin/AdminDashboardSection";
 import UsersSection from "./components/admin/ManageUsers";
 import ContactSection from "./components/admin/ContactMessages";
 import ManageDestinations from "./components/admin/ManageDestinations";
+import ManageHotels from "./components/admin/ManageHotels";
+import ManageGeneratedItineraries from './components/admin/ManageGeneratedItineraries';
 
 const ProtectedRoute = ({ children }) => {
   return getCurrentUser() ? children : <Navigate to="/login" replace />;
@@ -57,6 +59,8 @@ function App() {
           <Route path="users" element={<UsersSection />} />
           <Route path="messages" element={<ContactSection />} />
           <Route path="destinations" element={<ManageDestinations />} />
+          <Route path="hotels" element={<ManageHotels />} />
+          <Route path="generated-itineraries" element={<ManageGeneratedItineraries />} />
       </Route>
 
     </Routes>

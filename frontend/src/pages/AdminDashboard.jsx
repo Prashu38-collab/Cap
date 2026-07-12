@@ -32,13 +32,25 @@ function AdminDashboard() {
 
                     <li>
                       <NavLink to="/admin/users" className={({ isActive }) => isActive ? "active" : "" } >
-                        Manage Users
+                        Users
                       </NavLink>
                     </li>
 
                     <li>
                       <NavLink to="/admin/destinations" className={({ isActive }) => isActive ? "active" : "" } >
-                        Manage Destinations
+                        Destinations
+                      </NavLink>
+                    </li>
+
+                    <li>
+                      <NavLink to="/admin/hotels" className={({ isActive }) => isActive ? "active" : "" } >
+                        Hotels
+                      </NavLink>
+                    </li>
+
+                    <li>
+                      <NavLink to="/admin/generated-itineraries" className={({ isActive }) => isActive ? "active" : "" } >
+                        Generated Itineraries
                       </NavLink>
                     </li>
 
