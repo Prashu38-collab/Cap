@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+from app.crud.admin_activity_crud import log_admin_activity
+
 # Get User By Email
 
 def get_user_by_email(db: Session, email: str):
@@ -135,6 +137,12 @@ def create_user(
 
     db.commit()
 
+    log_admin_activity(
+        db,
+        "User Added",
+        f"Added new user '{name}'"
+    )
+
 # Verify User
 
 def verify_user(db: Session, email: str):
@@ -186,12 +194,55 @@ def update_otp(
 
 # Update User Status (Admin)
 
+# def update_user_status(
+#     db: Session,
+#     user_id: int,
+#     status: str
+# ):
+
+#     result = db.execute(
+#         text("""
+#             UPDATE users
+#             SET status = :status
+#             WHERE user_id = :user_id
+#         """),
+#         {
+#             "status": status,
+#             "user_id": user_id
+#         }
+#     )
+
+#     db.commit()
+
+#     return result.rowcount > 0
+
 def update_user_status(
     db: Session,
     user_id: int,
     status: str
 ):
 
+    # Get current user information
+    user = db.execute(
+        text("""
+            SELECT
+                name,
+                status
+            FROM users
+            WHERE user_id = :user_id
+        """),
+        {
+            "user_id": user_id
+        }
+    ).mappings().first()
+
+    if not user:
+        return False
+
+    old_status = user["status"]
+    user_name = user["name"]
+
+    # Update status
     result = db.execute(
         text("""
             UPDATE users
@@ -206,19 +257,61 @@ def update_user_status(
 
     db.commit()
 
+    # Log activity
+    log_admin_activity(
+        db,
+        "User Status Updated",
+        f"Changed status of '{user_name}' from {old_status} to {status}"
+    )
+
     return result.rowcount > 0
 
 # Delete User
+
+# def delete_user(
+#     db: Session,
+#     user_id: int
+# ):
+
+#     result = db.execute(
+#         text("""
+#             DELETE FROM users
+#             WHERE user_id = :user_id
+#         """),
+#         {
+#             "user_id": user_id
+#         }
+#     )
+
+#     db.commit()
+
+#     return result.rowcount > 0
 
 def delete_user(
     db: Session,
     user_id: int
 ):
 
+    user = db.execute(
+        text("""
+            SELECT name
+            FROM users
+            WHERE user_id=:user_id
+        """),
+        {
+            "user_id": user_id
+        }
+    ).mappings().first()
+
+    if not user:
+        return False
+
+    user_name = user["name"]
+
     result = db.execute(
         text("""
             DELETE FROM users
-            WHERE user_id = :user_id
+            WHERE user_id=:user_id
         """),
         {
             "user_id": user_id
@@ -226,5 +319,11 @@ def delete_user(
     )
 
     db.commit()
+
+    log_admin_activity(
+        db,
+        "User Deleted",
+        f"Deleted user '{user_name}'"
+    )
 
     return result.rowcount > 0

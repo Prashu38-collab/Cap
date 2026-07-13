@@ -12,7 +12,10 @@ from app.schemas.admin_schema import (
 )
 
 from app.crud.admin_crud import (
-    get_dashboard_stats
+    get_dashboard_stats,
+    get_destinations_per_district,
+    get_category_distribution,
+    get_recent_messages
 )
 
 from app.crud.contact_crud import (
@@ -61,6 +64,10 @@ from app.crud.generated_itinerary_crud import (
     delete_generated_itinerary
 )
 
+from app.crud.admin_activity_crud import (
+    get_recent_admin_activities
+)
+
 pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto"
@@ -75,14 +82,46 @@ router = APIRouter(
 class MessageStatus(BaseModel):
     status: str
 
+# ------------------------------------------------DASHBOARD-----------------------------------------
+
 # DASHBOARD STATISTICS
 
 @router.get("/stats")
 def dashboard_stats(
     db: Session = Depends(get_db)
 ):
-
     return get_dashboard_stats(db)
+
+# DASHBOARD DISTRICT CHART
+
+@router.get("/dashboard/districts")
+def dashboard_districts(
+    db: Session = Depends(get_db)
+):
+    return get_destinations_per_district(db)
+
+# CATEGORY DISTRIBUTION
+
+@router.get("/dashboard/category-distribution")
+def dashboard_category_distribution(
+    db: Session = Depends(get_db)
+):
+    return get_category_distribution(db)
+
+# RECENT MESSAGES
+
+@router.get("/dashboard/recent-messages")
+def dashboard_recent_messages(
+    db: Session = Depends(get_db)
+):
+    return get_recent_messages(db)
+
+# RECENT ACTIVITIES
+@router.get("/dashboard/recent-activities")
+def dashboard_recent_activities(
+    db: Session = Depends(get_db)
+):
+    return get_recent_admin_activities(db)
 
 
 # -----------------------------------------------------------USERS-------------------------------------------------------------------

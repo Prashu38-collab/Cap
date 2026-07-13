@@ -301,10 +301,10 @@ return (
                     <label>Category <span className="required">*</span></label>
                     <select name="Category" value={newDestination.Category} onChange={handleInputChange}>
                         <option value="">Select Category</option>
-                        <option value="Adventure">Adventure</option>
-                        <option value="Nature">Nature</option>
-                        <option value="Cultural">Cultural</option>
-                        <option value="Religious">Religious</option>
+                        <option value="adventure">Adventure</option>
+                        <option value="nature">Nature</option>
+                        <option value="cultural">Cultural</option>
+                        <option value="religious">Religious</option>
                     </select>
 
                     <label>Indoor / Outdoor <span className="required">*</span></label>
@@ -452,10 +452,10 @@ return (
           <label>Category </label>
         <select value={selectedDestination.Category} onChange={(e) => setSelectedDestination({ ...selectedDestination, Category: e.target.value })}>
             <option value="">Select Category</option>
-            <option value="Adventure">Adventure</option>
-            <option value="Nature">Nature</option>
-            <option value="Cultural">Cultural</option>
-            <option value="Religious">Religious</option>
+            <option value="adventure">Adventure</option>
+            <option value="nature">Nature</option>
+            <option value="cultural">Cultural</option>
+            <option value="religious">Religious</option>
         </select>
 
           <label>Indoor / Outdoor</label>

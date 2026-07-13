@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+from app.crud.admin_activity_crud import log_admin_activity
 
 # GET ALL HOTELS
 
@@ -76,6 +77,12 @@ def create_hotel(
 
     db.commit()
 
+    log_admin_activity(
+        db,
+        "Hotel Added",
+        f"Added hotel '{hotel.hotel_name}'"
+    )
+
 
 # UPDATE HOTEL
 
@@ -110,20 +117,63 @@ def update_hotel(
 
     db.commit()
 
+    log_admin_activity(
+        db,
+        "Hotel Updated",
+        f"Updated hotel '{hotel.hotel_name}'"
+    )
+
     return result.rowcount > 0
 
 
 # DELETE HOTEL
+
+# def delete_hotel(
+#     db: Session,
+#     hotel_id: int
+# ):
+
+#     result = db.execute(
+#         text("""
+#             DELETE FROM hotels
+#             WHERE hotel_id=:hotel_id
+#         """),
+#         {
+#             "hotel_id": hotel_id
+#         }
+#     )
+
+#     db.commit()
+
+#     return result.rowcount > 0
 
 def delete_hotel(
     db: Session,
     hotel_id: int
 ):
 
+    # Get hotel name before deleting
+    hotel = db.execute(
+        text("""
+            SELECT hotel_name
+            FROM hotels
+            WHERE hotel_id = :hotel_id
+        """),
+        {
+            "hotel_id": hotel_id
+        }
+    ).mappings().first()
+
+    if not hotel:
+        return False
+
+    hotel_name = hotel["hotel_name"]
+
+    # Delete hotel
     result = db.execute(
         text("""
             DELETE FROM hotels
-            WHERE hotel_id=:hotel_id
+            WHERE hotel_id = :hotel_id
         """),
         {
             "hotel_id": hotel_id
@@ -131,5 +181,12 @@ def delete_hotel(
     )
 
     db.commit()
+
+    # Log activity
+    log_admin_activity(
+        db,
+        "Hotel Deleted",
+        f"Deleted hotel '{hotel_name}'"
+    )
 
     return result.rowcount > 0

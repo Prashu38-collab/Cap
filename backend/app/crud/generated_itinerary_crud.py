@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+from app.crud.admin_activity_crud import log_admin_activity
 
 # ---------------- GET ALL GENERATED ITINERARIES ----------------
 
@@ -68,11 +69,48 @@ def get_generated_itinerary_by_id(
 
 # ---------------- DELETE ----------------
 
+# def delete_generated_itinerary(
+#     db: Session,
+#     itinerary_id: int
+# ):
+
+#     result = db.execute(
+#         text("""
+#             DELETE FROM generated_itineraries
+#             WHERE itinerary_id = :id
+#         """),
+#         {
+#             "id": itinerary_id
+#         }
+#     )
+
+#     db.commit()
+
+#     return result.rowcount > 0
+
 def delete_generated_itinerary(
     db: Session,
     itinerary_id: int
 ):
 
+    # Get itinerary info before deleting
+    itinerary = db.execute(
+        text("""
+            SELECT
+                itinerary_id,
+                preference_id
+            FROM generated_itineraries
+            WHERE itinerary_id = :id
+        """),
+        {
+            "id": itinerary_id
+        }
+    ).mappings().first()
+
+    if not itinerary:
+        return False
+
+    # Delete itinerary
     result = db.execute(
         text("""
             DELETE FROM generated_itineraries
@@ -84,5 +122,12 @@ def delete_generated_itinerary(
     )
 
     db.commit()
+
+    # Log activity
+    log_admin_activity(
+        db,
+        "Generated Itinerary Deleted",
+        f"Deleted itinerary #{itinerary['itinerary_id']} (Preference ID: {itinerary['preference_id']})"
+    )
 
     return result.rowcount > 0

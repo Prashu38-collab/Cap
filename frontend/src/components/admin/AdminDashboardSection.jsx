@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, PieChart, Pie, Legend
+} from "recharts";
+
 function DashboardSection() {
 
   const [stats, setStats] = useState({
@@ -10,11 +14,13 @@ function DashboardSection() {
     itineraries: 0
   });
 
-  const [messages, setMessages] = useState([]);
+  const [recentMessages, setRecentMessages] = useState([]);
 
   const [activities, setActivities] = useState([]);
 
-  const [categories, setCategories] =useState([]);
+  const [districtData, setDistrictData] = useState([]);
+
+  const [categoryData, setCategoryData] = useState([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -33,44 +39,55 @@ function DashboardSection() {
     console.error("Stats Error:", error);
   }
 
-  try {
+  try{
+
     const messagesResponse = await axios.get(
-      "http://localhost:8000/api/admin/messages/recent"
+      "http://localhost:8000/api/admin/dashboard/recent-messages"
     );
 
-    setMessages(messagesResponse.data);
+    setRecentMessages(messagesResponse.data);
 
-  } catch (error) {
-    console.log("Messages API not implemented yet.");
+  } catch(error){
+    console.error(error);
   }
 
   try {
     const activitiesResponse = await axios.get(
-      "http://localhost:8000/api/admin/activity"
+      "http://localhost:8000/api/admin/dashboard/recent-activities"
     );
 
     setActivities(activitiesResponse.data);
 
   } catch (error) {
-    console.log("Activity API not implemented yet.");
+    console.error(error);
+  }
+
+  try{
+    const categoryResponse = await axios.get(
+      "http://localhost:8000/api/admin/dashboard/category-distribution"
+    );
+
+    setCategoryData(categoryResponse.data);
+
+  }catch(error){
+    console.error(error);
   }
 
   try {
-    const categoryResponse = await axios.get(
-      "http://localhost:8000/api/admin/dashboard/popular-categories"
+    const districtresponse = await axios.get(
+        "http://localhost:8000/api/admin/dashboard/districts"
     );
 
-    setCategories(categoryResponse.data);
+    setDistrictData(districtresponse.data);
 
-  } catch (error) {
-    console.log("Categories API not implemented yet.");
+  }catch(error){
+    console.log(erroror);
   }
 
 };
 
   return (
     <>
-    {/* -------------------Greeting------------ */}
       <h1>Welcome Admin!</h1>
 
       {/* -------------------Statistics------------ */}
@@ -110,62 +127,96 @@ function DashboardSection() {
 
       </div>
 
-      {/* -------------------Popular Category Chart------------ */}
-      <div className="dashboard-card">
+      <div className="dashboard-charts">
 
-        <h3>Popular Travel Categories</h3>
+        {/* -------------------Destinations per District Chart------------ */}
+        <div className="chart-card">
 
-        <div className="category-chart">
-          {categories.map((category) => (
+          <h3>Destinations per District</h3>
 
-          <div className="category-row" key={category.id}>
-            <span>{category.category}</span>
-
-            <div className="progress">
-              <div className="progress-fill"
-                style={{
-                width:`${category.count}%`
-                }}
-                >
-              </div>
-            </div>
-
+          <div className="chart-content">
+            <ResponsiveContainer width="100%" height={450} >
+              <BarChart data={districtData} layout="vertical" margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="District" type="category" width={100} />
+                <Tooltip />
+                <Bar dataKey="total" fill="#3B82F6" barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
 
-          ))
-          }
+        </div>
 
+        {/* -------------------Popular Category Chart------------ */}
+        <div className="chart-card">
+          <h3>Popular Travel Categories</h3>
+          <ResponsiveContainer width="100%" height={320} >
+            <PieChart>
+              <Pie data={categoryData} dataKey="total" nameKey="category" outerRadius={110} label>
+                {categoryData.map((entry, index) => (
+                  <Cell key={index} fill={["#3b82f6", "#22c55e", "#f97316", "#e11d48"][index % 4]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend layout="vertical" align="right" verticalAlign="middle" />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
 
       </div>
 
-      {/* -------------------Recent section------------ */}
-      <div className="dashboard-row">
 
-        <div className="dashboard-card recentmessages">
+      {/* <div className="dashboard-charts"> */}
+
+        {/* -------------------Recent Messasges------------ */}
+
+        <div className="recent-card">
           <h3>Recent Messages</h3>
-          <ul>
-            {messages.map((message) => (
-              <li key={message.id}>
-                <strong>{message.name}</strong>
-                <p>{message.subject}</p>
-              </li>
-            ))}
-          </ul>
+          {recentMessages.length === 0 ? (
+            <div>No messages found.</div>
+          ) : (
+          recentMessages.map((msg) => (
+            <div key={msg.message_id} className="message-item" >
+              <div className="message-row">
+                <span className="message-sender">{msg.name}</span>
+                <span className="message-subject">{msg.subject}</span> - 
+                <span className="message-preview">
+                  {/* {msg.message.length > 50 ? msg.message.substring(0, 70) + "..." : msg.message} */}
+                  {msg.message}
+                </span>
+                <span className="message-date">{new Date(msg.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+          ))
+          )}
         </div>
 
-        <div className="dashboard-card recentactivities">
-          <h3>Recent Activity</h3>
-          <ul>
-            {activities.map((activity) => (
-            <li key={activity.id}>
-              {activity.description}
-            </li>
-            ))}
-          </ul>
-        </div>
+        {/* -------------------Recent Activity------------ */}
         
-      </div>
+        <div className="recent-card">
+          <h3>Recent Activity</h3>
+          {activities.length === 0 ? (
+            <div>No activity found.</div>
+          ) : (
+          activities.map((act) => (
+            <div key={act.activity_id} className="message-item" >
+              <div className="message-row">
+                <span className="message-sender"> {act.action_type}</span>
+                <span className="message-subject">
+                  {/* {act.description.length > 60
+                    ? act.description.substring(0, 60) + "..."
+                    : act.description} */}
+                    {act.description}
+                </span>
+                <span className="message-date"> {new Date(act.created_at).toLocaleDateString()} </span>
+              </div>
+            </div>
+          ))
+          )}
+      {/* </div> */}
+
+    </div>
 
     </>
   );

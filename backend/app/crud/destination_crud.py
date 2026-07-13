@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+from app.crud.admin_activity_crud import log_admin_activity
+
 # ---------------- GET ALL DESTINATIONS ----------------
 
 def get_all_destinations(db: Session):
@@ -138,6 +140,12 @@ def create_destination(
 
     db.commit()
 
+    log_admin_activity(
+        db,
+        "Destination Added",
+        f"Added destination '{destination.place_name}'"
+    )
+
 # ---------------- UPDATE DESTINATION ----------------
 
 def update_destination(
@@ -181,20 +189,63 @@ def update_destination(
 
     db.commit()
 
+    log_admin_activity(
+    db,
+    "Destination Updated",
+    f"Updated destination '{destination.place_name}'"
+)
+
     return result.rowcount > 0
 
 
 # ---------------- DELETE DESTINATION ----------------
+
+# def delete_destination(
+#     db: Session,
+#     place_id: int
+# ):
+
+#     result = db.execute(
+#         text("""
+#             DELETE FROM itinerary_places
+#             WHERE place_id=:place_id
+#         """),
+#         {
+#             "place_id": place_id
+#         }
+#     )
+
+#     db.commit()
+
+#     return result.rowcount > 0
 
 def delete_destination(
     db: Session,
     place_id: int
 ):
 
+    # Get destination name first
+    destination = db.execute(
+        text("""
+            SELECT place_name
+            FROM itinerary_places
+            WHERE place_id = :place_id
+        """),
+        {
+            "place_id": place_id
+        }
+    ).mappings().first()
+
+    if not destination:
+        return False
+
+    place_name = destination["place_name"]
+
+    # Delete destination
     result = db.execute(
         text("""
             DELETE FROM itinerary_places
-            WHERE place_id=:place_id
+            WHERE place_id = :place_id
         """),
         {
             "place_id": place_id
@@ -202,5 +253,12 @@ def delete_destination(
     )
 
     db.commit()
+
+    # Log activity
+    log_admin_activity(
+        db,
+        "Destination Deleted",
+        f"Deleted destination '{place_name}'"
+    )
 
     return result.rowcount > 0
