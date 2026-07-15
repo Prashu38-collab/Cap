@@ -19,14 +19,6 @@ import {
   FaHeart
 } from 'react-icons/fa'
 
-// const navItems = [
-//   { label: 'Dashboard', to: '/dashboard' },
-//   { label: 'Plan My Trip', to: '/plan-my-trip' },
-//   { label: 'About Us', to: '/about-us' },
-//   { label: 'Contact Us', to: '/contact-us' },
-//   { label: 'My Profile', to: '/my-profile' }
-// ]
-
 export default function MyProfile() {
   const navigate = useNavigate()
   const [profile, setProfile] = useState({
@@ -71,42 +63,36 @@ export default function MyProfile() {
      < Navbar />
 
       <section className="profile-hero">
-        <img src="\images\contactus.png" alt="Boudhanath Stupa Nepal" className="profile-hero-image" />
-        <div className="profile-hero-overlay" />
-        <div className="profile-hero-copy">
-          <a href="#profile-card" className="profile-hero-button">My Profile</a>
-        </div>
-      </section>
+  <img
+    src="/images/contactus.png"
+    alt="Boudhanath Stupa Nepal"
+    className="profile-hero-image"
+  />
 
-      {/* MAIN CONTENT CONTAINER */}
-      <p className='text'>Welcome Back, Traveler</p>
+  <div className="profile-hero-overlay" />
 
+  <div className="profile-hero-copy">
+    <h1 className="hero-title">
+      Every Journey Tells a Story
+    </h1>
+
+<p className="hero-quote">
+  "Travel isn't always about the destination, it's about the memories
+  you create along the way."
+</p>
+
+
+  </div>
+</section>
       <main className="profile-main">
         
         {/* PERSONAL INFORMATION CARD */}
+
+        <h2>Personal Information</h2>
+        
         <section id="profile-card" className="profile-card">
-          <div className="profile-avatar-container">
-            <div className="profile-avatar">
-              <img src={avatarSrc} alt="Profile avatar" />
-            </div>
-            <button
-              className="profile-action-btn photo-btn"
-              type="button"
-              onClick={handleChangePhoto}
-            >
-              <FaCamera /> Change Photo
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden-file-input"
-              accept="image/*"
-              onChange={handlePhotoSelected}
-            />
-          </div>
 
           <div className="profile-card-info">
-            <h2>Personal Information</h2>
             
             <div className="profile-detail-grid">
               <div className="profile-detail-row">
@@ -193,105 +179,9 @@ export default function MyProfile() {
           </div>
         </section>
 
-        {/* TRAVEL STATS COUNTER */}
-        <section className="profile-stats">
-          <div className="stat-card">
-            <FaGlobe className="stat-icon" />
-            <p className="stat-number">8</p>
-            <p className="stat-label">Countries Visited</p>
-          </div>
-          <div className="stat-card">
-            <FaPlane className="stat-icon" />
-            <p className="stat-number">12</p>
-            <p className="stat-label">Trips Completed</p>
-          </div>
-          <div className="stat-card">
-            <FaSuitcase className="stat-icon" />
-            <p className="stat-number">15</p>
-            <p className="stat-label">Bookings Made</p>
-          </div>
-          <div className="stat-card">
-            <FaStar className="stat-icon" />
-            <p className="stat-number">5</p>
-            <p className="stat-label">Reviews Given</p>
-          </div>
-        </section>
-
-        {/* UPCOMING TRIPS SECTION */}
+        {/* Saved Itineraries */}
         <section className="profile-section">
-          <h2>My Upcoming Trips</h2>
-          <div className="upcoming-grid">
-            <article className="trip-card">
-              <div className="trip-img-wrapper">
-                <img src="images/chitwan.png" alt="Chitwan Package" />
-              </div>
-              <div className="trip-card-content">
-                <h3>Chitwan Package</h3>
-                <p className="trip-date">📅 15 June 2026</p>
-                <p className="trip-route">✈️ South Korea → Chitwan</p>
-                <div className="trip-card-footer">
-                  <span className="badge badge-confirmed">Confirmed</span>
-                  <button type="button" className="view-details-btn">View Details</button>
-                </div>
-              </div>
-            </article>
-
-            <article className="trip-card">
-              <div className="trip-img-wrapper">
-                <img src="images/bhaktapur.png" alt="Bhaktapur Package" />
-              </div>
-              <div className="trip-card-content">
-                <h3>Bhaktapur Package</h3>
-                <p className="trip-date">📅 25 September 2026</p>
-                <p className="trip-route">✈️ South Korea → Bhaktapur</p>
-                <div className="trip-card-footer">
-                  <span className="badge badge-confirmed">Confirmed</span>
-                  <button type="button" className="view-details-btn">View Details</button>
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        {/* TRAVEL HISTORY TABLE */}
-        <section className="profile-section">
-          <h2>Recent Travel History</h2>
-          <div className="table-responsive">
-            <table className="profile-table">
-              <thead>
-                <tr>
-                  <th>Destination</th>
-                  <th>Date</th>
-                  <th>Package</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><img src="images/pokhara.png" alt="" className="table-thumb" /> Pokhara</td>
-                  <td>Mar 2026</td>
-                  <td>Family Tour</td>
-                  <td><span className="badge badge-completed">Completed</span></td>
-                </tr>
-                <tr>
-                  <td><img src="images/kathmandu.png" alt="" className="table-thumb" /> Kathmandu</td>
-                  <td>Feb 2026</td>
-                  <td>Wildlife Tour</td>
-                  <td><span className="badge badge-completed">Completed</span></td>
-                </tr>
-                <tr>
-                  <td><img src="images/mustang.png" alt="" className="table-thumb" /> Mustang</td>
-                  <td>Dec 2025</td>
-                  <td>Holiday Package</td>
-                  <td><span className="badge badge-completed">Completed</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="profile-section">
-          <h2>Favourite Destinations</h2>
+          <h2>Saved Itineraries</h2>
           <div className="dest-grid">
             <article className="destination-card">
               <div className="dest-img-wrapper">
@@ -327,7 +217,8 @@ export default function MyProfile() {
         </section>
       </main>
 
-            < Footer />
+    < Footer />
+
     </div>
   )
 }
