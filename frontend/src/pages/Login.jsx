@@ -70,7 +70,7 @@ export default function Login() {
   return (
     <div className="auth-container">
       <div className="auth-left">
-        <img src="/images/login.png" alt="Login illustration" />
+        <img src="/images/login2.avif" alt="Login illustration" />
       </div>
       <div className="auth-right">
         <div className="card">
@@ -89,7 +89,7 @@ export default function Login() {
           <div className="row muted">
             <span>Don't have an account? <Link to="/signup">Sign Up</Link></span>
             <span className="divider">•</span>
-            <span><a href="#">Forgot Password?</a></span>
+            <span><Link to="/forgot-password">Forgot Password?</Link></span>
           </div>
         </div>
       </div>

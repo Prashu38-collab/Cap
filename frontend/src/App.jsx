@@ -8,6 +8,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import GenerateItinerary from "./pages/GenerateItinerary";
+import ForgotPassword from "./pages/ForgotPassword";
 
 import { getCurrentUser } from "./utils/authStorage";
 
@@ -45,6 +46,7 @@ function App() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
 
       <Route path="/admin" element={<AdminDashboard />} />

@@ -54,3 +54,28 @@ export function generateFromHotel(preferenceId, startingHotelId) {
     body: JSON.stringify({ starting_hotel_id: startingHotelId }),
   });
 }
+
+export function saveSavedItinerary(payload) {
+  return request("/saved-itineraries/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function listSavedItineraries(preferenceId = null) {
+  const query = preferenceId ? `?preference_id=${encodeURIComponent(preferenceId)}` : "";
+  return request(`/saved-itineraries/${query}`);
+}
+
+export function updateSavedItinerary(itineraryId, payload) {
+  return request(`/saved-itineraries/${itineraryId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteSavedItinerary(itineraryId) {
+  return request(`/saved-itineraries/${itineraryId}`, {
+    method: "DELETE",
+  });
+}
