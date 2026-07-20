@@ -203,6 +203,8 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
                             "review_score": float(h.review_score) if h.review_score else 0,
                             "district": h.district,
                             "distance_km": round(dist, 2),
+                            "latitude": float(h.latitude),
+                            "longitude": float(h.longitude),
                         })
                 nearby.sort(key=lambda x: x["distance_km"])
                 day_data["nearby_hotels"] = nearby[:3]
