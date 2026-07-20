@@ -1,33 +1,32 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
+
+from app.database import get_db
+from app.schemas.user_schema import UserRegister, UserLogin
+from app.crud.user_crud import (
+    get_user_by_email,
+    create_user
+)
+
 from passlib.context import CryptContext
 from jose import jwt
+
 from datetime import datetime, timedelta
 
 router = APIRouter(
     tags=["Authentication"]
 )
 
-# -----------------------------
 # Password Hashing Setup
-# -----------------------------
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# -----------------------------
 # JWT CONFIG
-# -----------------------------
 SECRET_KEY = "mysecretkey123"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# -----------------------------
-# Temporary User Database
-# -----------------------------
-users_db = []
-
-# -----------------------------
 # Signup Model
-# -----------------------------
 class SignupModel(BaseModel):
     name: str
     email: EmailStr
@@ -36,16 +35,12 @@ class SignupModel(BaseModel):
     confirm_password: str
     terms_accepted: bool
 
-# -----------------------------
 # Login Model
-# -----------------------------
 class LoginModel(BaseModel):
     email: EmailStr
     password: str
 
-# -----------------------------
 # Helpers
-# -----------------------------
 def hash_password(password: str):
     return pwd_context.hash(password)
 
@@ -62,52 +57,52 @@ def create_access_token(data: dict):
 
     return token
 
-# -----------------------------
 # REGISTER API
-# -----------------------------
 @router.post("/register")
-def register(user: SignupModel):
-
+def register(
+    user: UserRegister,
+    db: Session = Depends(get_db)
+):
     try:
-        # Terms check
         if not user.terms_accepted:
             raise HTTPException(
                 status_code=400,
-                detail="You must accept Terms & Policy"
+                detail="Please accept Terms and Conditions."
             )
 
-        # Password match check
         if user.password != user.confirm_password:
             raise HTTPException(
                 status_code=400,
-                detail="Passwords do not match"
+                detail="Passwords do not match."
             )
 
-        # Duplicate email check
-        for u in users_db:
-            if u["email"] == user.email:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Email already registered"
-                )
+        existing_user = get_user_by_email(
+            db,
+            user.email
+        )
 
-        # Hash password
-        hashed_pw = hash_password(user.password)
+        if existing_user:
+            raise HTTPException(
+                status_code=400,
+                detail="Email already registered."
+            )
 
-        # Store user
-        users_db.append({
-            "name": user.name,
-            "email": user.email,
-            "phone_number": user.phone_number,
-            "password": hashed_pw
-        })
+        hashed_password = hash_password(
+            user.password
+        )
+
+        create_user(
+            db=db,
+            name=user.name,
+            email=user.email,
+            phone_number=user.phone_number,
+            hashed_password=hashed_password,
+            terms_accepted=user.terms_accepted,
+            confirm_password=user.confirm_password
+        )
 
         return {
-            "message": "User registered successfully",
-            "user": {
-                "name": user.name,
-                "email": user.email
-            }
+            "message": "Registration successful."
         }
 
     except HTTPException as e:
@@ -116,52 +111,65 @@ def register(user: SignupModel):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# -----------------------------
 # LOGIN API (WITH JWT)
-# -----------------------------
 @router.post("/login")
-def login(user: LoginModel):
+def login(
+    user: UserLogin,
+    db: Session = Depends(get_db)
+):
+
+    db_user = get_user_by_email(
+        db,
+        user.email
+    )
 
     try:
-        # Step 1: Find user
-        db_user = None
-
-        for u in users_db:
-            if u["email"] == user.email:
-                db_user = u
-                break
-
-        # Email check
         if not db_user:
             raise HTTPException(
                 status_code=404,
-                detail="User not found"
+                detail="User not found."
+            )
+        
+        if db_user.status == "Locked":
+            raise HTTPException(
+                status_code=403,
+                detail="Your account has been locked by the administrator."
             )
 
-        # Password check
-        is_valid_password = verify_password(
-            user.password,
-            db_user["password"]
-        )
+        if db_user.status == "Inactive":
+            raise HTTPException(
+                status_code=403,
+                detail="Please verify your email before logging in."
+            )
 
-        if not is_valid_password:
+        if not verify_password(
+            user.password,
+            db_user.password
+        ):
             raise HTTPException(
                 status_code=401,
-                detail="Wrong password"
+                detail="Invalid password."
             )
 
-        # Create JWT token
         token = create_access_token(
-            data={"sub": db_user["email"]}
+            {
+                "sub": db_user.email
+            }
         )
 
         return {
+
             "message": "Login successful",
+
             "access_token": token,
+
             "token_type": "bearer",
+
             "user": {
-                "name": db_user["name"],
-                "email": db_user["email"]
+                "id": db_user.user_id,
+                "name": db_user.name,
+                "email": db_user.email,
+                "status": db_user.status
             }
         }
 
