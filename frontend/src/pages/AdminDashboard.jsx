@@ -1,97 +1,83 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-import DashboardSection from "../components/admin/AdminDashboardSection";
-import UsersSection from "../components/admin/ManageUsers";
-import ItinerarySection from "../components/admin/ManageItinerary";
-import DatabaseSection from "../components/admin/ManageDatabase";
-import ContactSection from "../components/admin/ContactMessages";
-
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import "../styles/admin.css";
 
 function AdminDashboard() {
-  
-  const navigate = useNavigate();
-  const handleLogout = () => {
 
-    localStorage.removeItem("token");
-    // localStorage.removeItem("user");
-    sessionStorage.clear();
-    navigate("/login");
-  };
+    const navigate = useNavigate();
 
-  const [activePage, setActivePage] = useState("dashboard");
+    const handleLogout = () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      sessionStorage.clear();
 
-  return (
-    <div className="admin-layout">
+      navigate("/login");
+    };
 
-      {/* Sidebar */}
-      <aside className="admin-sidebar">
+    return (
 
-        <h2>Go Travel</h2>
+        <div className="admin-layout">
 
-        <ul>
+            {/* Sidebar */}
 
-          <li
-            className={activePage === "dashboard" ? "active" : ""}
-            onClick={() => setActivePage("dashboard")}
-          >
-            Dashboard
-          </li>
+            <aside className="admin-sidebar">
 
-          <li
-            className={activePage === "users" ? "active" : ""}
-            onClick={() => setActivePage("users")}
-          >
-            Manage Users
-          </li>
+                <h2>Go Travel</h2>
 
-          <li
-            className={activePage === "itineraries" ? "active" : ""}
-            onClick={() => setActivePage("itineraries")}
-          >
-            Manage Itineraries
-          </li>
+                <ul>
+                    <li>
+                      <NavLink to="/admin" end className={({ isActive }) => isActive ? "active" : "" } >
+                        Dashboard
+                      </NavLink>
+                    </li>
 
-          <li
-            className={activePage === "database" ? "active" : ""}
-            onClick={() => setActivePage("database")}
-          >
-            Manage Database
-          </li>
+                    <li>
+                      <NavLink to="/admin/users" className={({ isActive }) => isActive ? "active" : "" } >
+                        Users
+                      </NavLink>
+                    </li>
 
-          <li
-            className={activePage === "messages" ? "active" : ""}
-            onClick={() => setActivePage("messages")}
-          >
-            Contact Messages
-          </li>
+                    <li>
+                      <NavLink to="/admin/destinations" className={({ isActive }) => isActive ? "active" : "" } >
+                        Destinations
+                      </NavLink>
+                    </li>
 
-          <li className="logout" onClick={handleLogout}>
-            Logout
-          </li>
+                    <li>
+                      <NavLink to="/admin/hotels" className={({ isActive }) => isActive ? "active" : "" } >
+                        Hotels
+                      </NavLink>
+                    </li>
 
-        </ul>
+                    <li>
+                      <NavLink to="/admin/generated-itineraries" className={({ isActive }) => isActive ? "active" : "" } >
+                        Generated Itineraries
+                      </NavLink>
+                    </li>
 
-      </aside>
+                    <li>
+                      <NavLink to="/admin/messages" className={({ isActive }) => isActive ? "active" : "" } >
+                        Contact Messages
+                      </NavLink>
+                    </li>
 
-      {/* Main Content */}
-      <main className="admin-content">
+                    <li className="logout" onClick={handleLogout} >
+                      Logout
+                    </li>
 
-        {activePage === "dashboard" && <DashboardSection />}
+                </ul>
 
-        {activePage === "users" && <UsersSection />}
+            </aside>
 
-        {activePage === "itineraries" && <ItinerarySection />}
+            {/* Page Content */}
 
-        {activePage === "database" && <DatabaseSection />}
+            <main className="admin-content">
+              <Outlet />
+            </main>
 
-        {activePage === "messages" && <ContactSection />}
+        </div>
 
-      </main>
+    );
 
-    </div>
-  );
 }
 
 export default AdminDashboard;

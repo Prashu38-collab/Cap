@@ -2,6 +2,7 @@ import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import WeatherSection from "../components/WeatherSection";
 import MapSection from "../components/MapSection";
+import TravelCategories from "../components/TravelCategories";
 import ItinerarySection from "../components/ItinerarySection";
 import Feedback from "../components/Feedback";
 import Footer from "../components/Footer";
@@ -15,6 +16,7 @@ function Dashboard() {
       <Hero />
       <WeatherSection />
       <MapSection />
+      <TravelCategories />
       <ItinerarySection />
       <Feedback />
       <Footer />

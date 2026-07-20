@@ -1,113 +1,184 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
 import '../styles/contact.css'
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import axios from "axios";
 
-const contactItems = [
-  {
-    icon: '📍',
-    title: 'Visit Us At',
-    detail: 'Naxal, Opposite Hilton',
-  },
-  {
-    icon: '📞',
-    title: '9800000000/972568798',
-    detail: 'Have any questions?',
-  },
-  {
-    icon: '📧',
-    title: 'gotravelnepal@gmail.com',
-    detail: 'Email Us',
-  },
-  {
-    icon: '🕗',
-    title: 'Sun-Fri : 10:00 AM - 5:00 PM',
-    detail: 'Working Hours',
-  },
-]
-
-// const footerLinks = [
-//   { label: 'Dashboard', to: '/dashboard' },
-//   { label: 'Plan My Trip', to: '/plan-my-trip' },
-//   { label: 'About Us', to: '/about-us' },
-//   { label: 'Contact Us', to: '/contact-us' },
-//   { label: 'My Profile', to: '/my-profile' },
-// ]
+import {
+FaUser,
+FaEnvelope,
+FaPhone,
+FaMapMarkerAlt,
+FaFacebook,
+FaInstagram
+} from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 
 export default function ContactUs() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', remarks: '' })
-  const navigate = useNavigate()
+const [form, setForm] = useState({
+name: '',
+email: '',
+phone: '',
+subject: '',
+message: ''
+})
 
-  function updateForm(event) {
-    const { name, value } = event.target
-    setForm(previous => ({ ...previous, [name]: value }))
+const API_URL = "http://localhost:8000/contact";
+
+function updateForm(event) {
+const { name, value } = event.target
+setForm(previous => ({ ...previous, [name]: value }))
+}
+
+// function submitForm(event) {
+// event.preventDefault()
+// alert('Thanks for reaching out. We will get back to you soon.')
+// }
+
+async function submitForm(event) {
+
+  event.preventDefault();
+
+  if(
+    !form.name.trim() ||
+    !form.email.trim() ||
+    !form.subject.trim() ||
+    !form.message.trim()
+  ){
+    alert("Please fill all required fields.");
+    return;
   }
 
-  function submitForm(event) {
-    event.preventDefault()
-    alert('Thanks for reaching out. We will get back to you soon.')
+  try{
+    const response = await axios.post(API_URL, form);
+    alert(response.data.message);
+    setForm({
+    name:"",
+    email:"",
+    phone:"",
+    subject:"",
+    message:""
+    });
   }
 
-  function logout() {
-    navigate('/login')
+  catch(error){
+    console.error(error);
+    if(error.response){
+      alert(error.response.data.detail);
+    }
+    else{
+      alert("Unable to connect to server.");
+    }
   }
 
-  return (
-    <div className="contact-page">
-      < Navbar/>  
+}
 
-      <section className="contact-hero" aria-label="Contact hero">
-        <img src="images/contactus.png" alt="Mountain landscape with prayer flags" className="contact-hero-image" />
-        <a className="contact-hero-button" href="#contact-form">Contact Us</a>
-      </section>
+return ( 
+<div className="contact-page">
 
-      <section className="contact-content">
-        <div className="contact-heading">
-          <h1>Contact Us</h1>
-          <p>Get in touch with Go Travel</p>
-        </div>
+  <Navbar />
 
-        <div className="contact-grid">
-          <div className="contact-info-list">
-            {contactItems.map(item => (
-              <div className="contact-info-row" key={item.title}>
-                <div className="contact-icon">{item.icon}</div>
-                <div className="contact-info-copy">
-                  <strong>{item.title}</strong>
-                  <span>{item.detail}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+  <section className="contact-hero">
+  <img
+    src="/images/contact.jpg"
+    alt="Contact Page Image"
+    className="contact-hero-image"
+  />
 
-          <form id="contact-form" className="contact-form" onSubmit={submitForm}>
-            <label>
-              <span>Name</span>
-              <input name="name" value={form.name} onChange={updateForm} />
-            </label>
-            <label>
-              <span>Email</span>
-              <input name="email" type="email" value={form.email} onChange={updateForm} />
-            </label>
-            <label>
-              <span>Phone Number</span>
-              <input name="phone" value={form.phone} onChange={updateForm} />
-            </label>
-            <label>
-              <span>Subject</span>
-              <input name="subject" value={form.subject} onChange={updateForm} />
-            </label>
-            <label>
-              <span>Message</span>
-              <input name="message" value={form.message} onChange={updateForm} />
-            </label>
-            <button type="submit" className="contact-submit">Submit</button>
-          </form>
-        </div>
-      </section>
+  {/* <div className="contact-hero-overlay" /> */}
 
-      < Footer/>
+  <div className="contact-hero-copy">
+    <h1>Contact Us</h1>
+  </div>
+</section>
+
+  <section className="contact-content">
+
+    <div className="contact-heading">
+      <p>Get in touch with Go Travel</p>
     </div>
-  )
+
+    <div className="contact-grid">
+
+      <form className="contact-form" onSubmit={submitForm}>
+
+        <label>
+          <span>Name</span>
+          <div className="input-group">
+            <FaUser className="input-icon" />
+            <input
+              name="name"
+              value={form.name}
+              onChange={updateForm}
+              placeholder="Enter your name"
+            />
+          </div>
+        </label>
+
+        <label>
+          <span>Email</span>
+          <div className="input-group">
+            <FaEnvelope className="input-icon" />
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={updateForm}
+              placeholder="Enter your email"
+            />
+          </div>
+        </label>
+
+        <label>
+          <span>Phone Number</span>
+          <div className="input-group">
+            <FaPhone className="input-icon" />
+            <input
+              name="phone"
+              value={form.phone}
+              onChange={updateForm}
+              placeholder="Enter phone number"
+            />
+          </div>
+        </label>
+
+        <label>
+          <span>Subject</span>
+          <div className="input-group">
+          <input
+            name="subject"
+            value={form.subject}
+            onChange={updateForm}
+            placeholder="Enter subject"
+          />
+          </div>
+        </label>
+
+        <label>
+          <span>Message</span>
+          <textarea
+            rows="5"
+            name="message"
+            value={form.message}
+            onChange={updateForm}
+            placeholder="Write your message"
+          />
+        </label>
+
+        <button type="submit" className="contact-submit">
+          Send Message
+        </button>
+
+      </form>
+
+    </div>
+
+  </section>
+
+  <Footer />
+
+</div>
+
+
+)
 }
