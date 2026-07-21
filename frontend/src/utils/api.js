@@ -48,10 +48,21 @@ export function createPreference(payload) {
   });
 }
 
-export function generateFromHotel(preferenceId, startingHotelId) {
+export function generateFromHotel(preferenceId, startingHotelId, { includeTransit = false, transitDistricts = [] } = {}) {
   return request(`/itinerary/${preferenceId}/generate`, {
     method: "POST",
-    body: JSON.stringify({ starting_hotel_id: startingHotelId }),
+    body: JSON.stringify({
+      starting_hotel_id: startingHotelId,
+      include_transit: includeTransit,
+      transit_districts: transitDistricts,
+    }),
+  });
+}
+
+export function getNearbyDistricts(districts) {
+  return request("/itinerary/nearby-districts", {
+    method: "POST",
+    body: JSON.stringify({ districts }),
   });
 }
 

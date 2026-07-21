@@ -1,536 +1,297 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 
-const transportIcons = {
-  "Walk / Local Taxi": "🚶",
-  "Private Car / Local Bus": "🚗",
-  "Tourist Bus / Micro": "🚌",
-  "Flight / Long-distance Bus": "✈️",
-  "Walk (Trek)": "🥾",
+const catColors = {
+  nature: "#16a34a",
+  religious: "#d97706",
+  cultural: "#7c3aed",
+  adventure: "#dc2626",
+  hotel: "#2563eb",
 };
 
-const categoryConfig = {
-  nature: { color: "#22c55e", bg: "#052e16", icon: "🌿", img: "/images/lake.jpg" },
-  religious: { color: "#f59e0b", bg: "#451a03", icon: "🛕", img: "/images/changunarayan.jpg" },
-  cultural: { color: "#8b5cf6", bg: "#2e1065", icon: "🏛️", img: "/images/bhaktapur.png" },
-  adventure: { color: "#ef4444", bg: "#450a0a", icon: "⛰️", img: "/images/trekking.png" },
-};
-
-function getCategoryKey(cat) {
+function getCatColor(cat) {
   const c = (cat || "").toLowerCase();
-  if (c.includes("nature")) return "nature";
-  if (c.includes("religious")) return "religious";
-  if (c.includes("cultural")) return "cultural";
-  if (c.includes("adventure")) return "adventure";
-  return null;
+  if (c.includes("nature")) return catColors.nature;
+  if (c.includes("religious")) return catColors.religious;
+  if (c.includes("cultural")) return catColors.cultural;
+  if (c.includes("adventure")) return catColors.adventure;
+  return "#6b7280";
 }
 
-function getDistrictImage(district) {
-  const map = {
-    kathmandu: "/images/kathmandu.png",
-    lalitpur: "/images/lalitpur.jpg",
-    bhaktapur: "/images/bhaktapur.png",
-    chitwan: "/images/chitwan.jpg",
-    dolakha: "/images/dolakha.jpg",
-    kavrepalanchowk: "/images/kavre.png",
-    nuwakot: "/images/nuwakot.jpg",
-    rasuwa: "/images/rasuwa.jpg",
-    sindhuli: "/images/sindhuli.jpg",
-    sindhupalchowk: "/images/sindhupalchowk.jpg",
-  };
-  return map[(district || "").toLowerCase().replace(/\s/g, "")] || "/images/lake.jpg";
-}
-
-function AnimatedCounter({ value, suffix = "" }) {
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    if (!value) return;
-    let start = 0;
-    const step = Math.max(1, Math.floor(value / 20));
-    const interval = setInterval(() => {
-      start += step;
-      if (start >= value) {
-        setDisplay(value);
-        clearInterval(interval);
-      } else {
-        setDisplay(start);
-      }
-    }, 30);
-    return () => clearInterval(interval);
-  }, [value]);
-  return <span>{display}{suffix}</span>;
-}
-
-// Leaflet custom marker generator with dynamic size and opacity
-const getCustomIcon = (color, label, isActive = true, isSecondary = false) => {
-  const size = isActive ? 32 : 22;
-  const fontSize = isActive ? 11 : 9;
-  const opacity = isSecondary ? 0.5 : 1.0;
-
+const markerIcon = (color, label, active = true) => {
+  const sz = active ? 28 : 20;
+  const fs = active ? 10 : 8;
   return L.divIcon({
-    html: `
-      <div style="
-        background-color: ${color};
-        width: ${size}px;
-        height: ${size}px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: ${isActive ? '2px' : '1px'} solid #fff;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        opacity: ${opacity};
-        transition: all 0.2s ease;
-      ">
-        <div style="
-          transform: rotate(45deg);
-          color: #fff;
-          font-weight: bold;
-          font-size: ${fontSize}px;
-          font-family: sans-serif;
-        ">
-          ${label}
-        </div>
-      </div>
-    `,
+    html: `<div style="background:${color};width:${sz}px;height:${sz}px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:${active?2:1}px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"><div style="transform:rotate(45deg);color:#fff;font-weight:700;font-size:${fs}px">${label}</div></div>`,
     className: "place-pin",
-    iconSize: [size, size + 6],
-    iconAnchor: [size / 2, size + 6],
-    popupAnchor: [0, -(size + 6)]
+    iconSize: [sz, sz + 5],
+    iconAnchor: [sz / 2, sz + 5],
+    popupAnchor: [0, -(sz + 5)],
   });
 };
 
-// Map view controller for panning, zooming, and bounding
-function MapController({ center, zoom, activeBounds, activeDay }) {
+function buildPopupHTML({ type, name, district, category, duration, lat, lon, hotelName }) {
+  if (type === "hotel") {
+    return `<div style="font-family:system-ui,sans-serif;min-width:170px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#2563eb;font-weight:700;margin-bottom:3px">Hotel</div><div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">${hotelName || name}</div><div style="font-size:11px;color:#475569;margin-bottom:2px">${district || ""}</div><div style="font-size:10px;color:#94a3b8">${lat.toFixed(5)}, ${lon.toFixed(5)}</div></div>`;
+  }
+  const durText = duration ? `${duration}h` : "";
+  const catText = category || "";
+  return `<div style="font-family:system-ui,sans-serif;min-width:170px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:${getCatColor(category)};font-weight:700;margin-bottom:3px">Place</div><div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">${name}</div><div style="font-size:11px;color:#475569;margin-bottom:2px">${district || ""}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${catText ? `<span style="font-size:10px;background:#f1f5f9;padding:1px 5px;border-radius:3px;color:#475569">${catText}</span>` : ""}${durText ? `<span style="font-size:10px;background:#f1f5f9;padding:1px 5px;border-radius:3px;color:#475569">${durText}</span>` : ""}</div></div>`;
+}
+
+function MapCtrl({ center, zoom, bounds }) {
   const map = useMap();
   useEffect(() => {
-    if (center) {
-      map.setView(center, zoom || 15);
-    } else if (activeBounds && activeBounds.length > 0) {
-      map.fitBounds(activeBounds, { padding: [50, 50] });
-    }
-  }, [center, zoom, activeBounds, activeDay, map]);
+    if (center) map.setView(center, zoom || 15);
+    else if (bounds?.length) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+  }, [center, zoom, bounds, map]);
   return null;
+}
+
+function buildSchedule(day, dayIndex, totalDays) {
+  const places = day.places || [];
+  const isArrival = dayIndex === 0 && totalDays > 1;
+  const isLast = dayIndex === totalDays - 1 && totalDays > 1;
+  const sightseeing = places.filter((p) => p.type !== "meal");
+  const items = [];
+
+  if (isArrival) {
+    items.push({ time: "07:00", label: "Breakfast", type: "meal" });
+    items.push({ time: "09:00", label: "Hotel Check-in", type: "activity", icon: "hotel" });
+    if (sightseeing.length > 0) items.push({ time: "10:30", label: sightseeing[0].name, type: "place", place: sightseeing[0], transport: sightseeing[0].transport_mode, dist: sightseeing[0].travel_dist_km });
+    items.push({ time: "12:30", label: "Lunch", type: "meal" });
+    items.push({ time: "14:00", label: "Explore nearby area", type: "activity", icon: "explore" });
+    items.push({ time: "19:00", label: "Dinner", type: "meal" });
+    return items;
+  }
+
+  if (isLast) {
+    items.push({ time: "07:00", label: "Breakfast", type: "meal" });
+    items.push({ time: "09:00", label: "Check-out", type: "activity", icon: "checkout" });
+    if (sightseeing.length > 0) items.push({ time: "10:00", label: sightseeing[0].name, type: "place", place: sightseeing[0], transport: sightseeing[0].transport_mode, dist: sightseeing[0].travel_dist_km });
+    items.push({ time: "12:00", label: "Return journey", type: "activity", icon: "return" });
+    return items;
+  }
+
+  const timeSlots = ["07:00", "08:30", "10:00", "12:00", "13:30", "15:00", "17:00", "19:00"];
+  let slotIdx = 0;
+  items.push({ time: timeSlots[slotIdx++], label: "Breakfast", type: "meal" });
+
+  sightseeing.forEach((p, i) => {
+    if (slotIdx < timeSlots.length - 2) {
+      const t = timeSlots[slotIdx++];
+      if (i > 0) {
+        const prev = sightseeing[i - 1];
+        if (prev.transport_mode) {
+          items.push({ time: t, label: `${prev.transport_mode}${prev.travel_dist_km ? ` (${prev.travel_dist_km} km)` : ""} to ${p.name}`, type: "transit", transport: prev.transport_mode });
+          if (slotIdx < timeSlots.length - 1) slotIdx++;
+        }
+      }
+      items.push({ time: timeSlots[slotIdx - 1] || t, label: p.name, type: "place", place: p, transport: p.transport_mode, dist: p.travel_dist_km });
+    }
+  });
+
+  items.push({ time: "12:00", label: "Lunch", type: "meal" });
+  items.push({ time: "19:00", label: "Dinner", type: "meal" });
+  return items;
+}
+
+const tlIcon = (isPlace, isMeal, isTransit, isActivity, iconType, catColor) => {
+  if (isPlace) return `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="${catColor}"/></svg>`;
+  if (isMeal) return `<svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="${catColor}" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+  if (isTransit) return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 7,5 5,2" fill="none" stroke="${catColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if (iconType === "hotel") return `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="3" width="8" height="5" rx="1" fill="none" stroke="${catColor}" stroke-width="1.2"/><line x1="1" y1="6" x2="9" y2="6" stroke="${catColor}" stroke-width="1.2"/></svg>`;
+  if (iconType === "checkout") return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="3,7 5,3 7,7" fill="none" stroke="${catColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if (iconType === "return") return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="7,3 3,3 3,7" fill="none" stroke="${catColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="1.5" fill="${catColor}"/></svg>`;
+};
+
+function downloadItinerary(days, corridor, preferenceId) {
+  const data = { preferenceId, corridor, itinerary: days.map((d) => ({ day: d.day, district: d.district, hotel: d.hotel, places: d.places, total_places: d.total_places, day_type: d.day_type })) };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `itinerary-${preferenceId || "trip"}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor }) {
   const [activeDay, setActiveDay] = useState(1);
   const [animDir, setAnimDir] = useState("next");
-
-  // Map linking states
-  const [highlightedPlaceId, setHighlightedPlaceId] = useState(null);
+  const [highlightedId, setHighlightedId] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
   const [mapZoom, setMapZoom] = useState(13);
   const markerRefs = useRef({});
 
-  if (!itinerary || !itinerary.itinerary) return null;
+  if (!itinerary?.itinerary) return null;
 
   const days = itinerary.itinerary;
   const currentDay = days.find((d) => d.day === activeDay) || days[0];
-  const weatherToday = weatherForecast?.find((w) => w.day === activeDay);
-
   if (!currentDay) return null;
 
   const changeDay = (day) => {
-    setMapCenter(null); // Reset manual zoom on day change to let fitBounds work
-    setHighlightedPlaceId(null);
+    setMapCenter(null);
+    setHighlightedId(null);
     setAnimDir(day > activeDay ? "next" : "prev");
     setActiveDay(day);
   };
 
-  // Compile all places across the entire itinerary to show on map
-  const allPlaces = [];
+  const allMarkers = [];
   days.forEach((d) => {
-    // Add hotel stay as a marker
-    if (d.hotel && d.hotel.latitude && d.hotel.longitude) {
-      allPlaces.push({
-        id: `hotel-${d.day}`,
-        name: d.hotel.hotel_name,
-        latitude: parseFloat(d.hotel.latitude),
-        longitude: parseFloat(d.hotel.longitude),
-        type: "hotel",
-        day: d.day,
-        category: "hotel",
-      });
+    if (d.hotel?.latitude && d.hotel?.longitude) {
+      allMarkers.push({ id: `hotel-${d.day}`, name: d.hotel.hotel_name, lat: parseFloat(d.hotel.latitude), lon: parseFloat(d.hotel.longitude), day: d.day, type: "hotel", district: d.hotel.district || d.district || "" });
     }
-    // Add attractions/destinations as markers
-    d.places.forEach((p, idx) => {
+    (d.places || []).forEach((p, i) => {
       if (p.latitude && p.longitude) {
-        allPlaces.push({
-          id: p.place_id || `place-${d.day}-${idx}`,
-          name: p.name,
-          latitude: parseFloat(p.latitude),
-          longitude: parseFloat(p.longitude),
-          type: "place",
-          category: p.category,
-          day: d.day,
-          order: idx + 1,
-        });
+        allMarkers.push({ id: p.place_id || `p-${d.day}-${i}`, name: p.name, lat: parseFloat(p.latitude), lon: parseFloat(p.longitude), day: d.day, type: "place", category: p.category, district: p.district || d.district || "", duration: p.estimated_duration_value || p.duration || null, order: i + 1 });
       }
     });
   });
 
-  // Extract points for active day's polyline path
-  const activeDayPoints = [];
-  if (currentDay.hotel && currentDay.hotel.latitude && currentDay.hotel.longitude) {
-    activeDayPoints.push([parseFloat(currentDay.hotel.latitude), parseFloat(currentDay.hotel.longitude)]);
-  }
-  currentDay.places.forEach((p) => {
-    if (p.latitude && p.longitude) {
-      activeDayPoints.push([parseFloat(p.latitude), parseFloat(p.longitude)]);
-    }
-  });
+  const activeBounds = allMarkers.filter((m) => m.day === activeDay).map((m) => [m.lat, m.lon]);
+  const activeDayPts = [];
+  if (currentDay.hotel?.latitude) activeDayPts.push([parseFloat(currentDay.hotel.latitude), parseFloat(currentDay.hotel.longitude)]);
+  (currentDay.places || []).forEach((p) => { if (p.latitude && p.longitude) activeDayPts.push([parseFloat(p.latitude), parseFloat(p.longitude)]); });
 
-  // Extract bounds for active day's coordinates
-  const activeBounds = allPlaces
-    .filter((p) => p.day === activeDay)
-    .map((p) => [p.latitude, p.longitude]);
+  const schedule = buildSchedule(currentDay, activeDay - 1, days.length);
+  const sightseeingPlaces = (currentDay.places || []).filter((p) => p.type !== "meal");
+  const totalDist = currentDay.total_travel_km || (currentDay.places || []).reduce((sum, p) => sum + (p.travel_dist_km || 0), 0) || 0;
 
-  // Click card zooms to marker and opens popup
-  const handlePlaceCardClick = (place) => {
-    setHighlightedPlaceId(place.place_id);
-    if (place.latitude && place.longitude) {
-      setMapCenter([parseFloat(place.latitude), parseFloat(place.longitude)]);
-      setMapZoom(15);
-      setTimeout(() => {
-        const marker = markerRefs.current[place.place_id];
-        if (marker) {
-          marker.openPopup();
-        }
-      }, 100);
-    }
+  const focusPlace = (place) => {
+    setHighlightedId(place.place_id);
+    setMapCenter([parseFloat(place.latitude), parseFloat(place.longitude)]);
+    setMapZoom(15);
+    setTimeout(() => { markerRefs.current[place.place_id]?.openPopup(); }, 100);
   };
 
-  const handleHotelCardClick = (hotel, dayNum) => {
-    setHighlightedPlaceId(`hotel-${dayNum}`);
-    if (hotel.latitude && hotel.longitude) {
-      setMapCenter([parseFloat(hotel.latitude), parseFloat(hotel.longitude)]);
-      setMapZoom(15);
-      setTimeout(() => {
-        const marker = markerRefs.current[`hotel-${dayNum}`];
-        if (marker) {
-          marker.openPopup();
-        }
-      }, 100);
-    }
+  const focusHotel = (hotel, day) => {
+    setHighlightedId(`hotel-${day}`);
+    setMapCenter([parseFloat(hotel.latitude), parseFloat(hotel.longitude)]);
+    setMapZoom(15);
+    setTimeout(() => { markerRefs.current[`hotel-${day}`]?.openPopup(); }, 100);
   };
 
-  const handleMarkerClick = (markerId) => {
-    setHighlightedPlaceId(markerId);
-    const elementId = markerId.toString().startsWith("hotel") ? "hotel-card-active" : `place-card-${markerId}`;
-    const el = document.getElementById(elementId);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
+  const focusMarker = (id) => {
+    setHighlightedId(id);
+    const el = document.getElementById(`tl-${id}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
+
+  const isArrivalDay = activeDay === 1 && days.length > 1;
+  const isLastDay = activeDay === days.length && days.length > 1;
 
   return (
-    <div className="itinerary-split-layout">
-      {/* LEFT COLUMN: Travel Timeline */}
-      <div className="itinerary-timeline-side">
-        {/* HEADER */}
-        <div className="ir-header">
-          <div className="ir-header-bg" />
-          <div className="ir-header-content">
-            <h1 className="ir-title">
-              <span className="ir-title-icon">🗺️</span>
-              Your Journey
-            </h1>
-            {corridor && corridor.length > 1 && (
-              <p className="ir-corridor">
-                {corridor.join("  →  ")}
-              </p>
-            )}
-            <p className="ir-subtitle">
-              {days.length} {days.length === 1 ? "day" : "days"} of adventure across Nepal
-            </p>
-            <span className="ir-badge">Trip #{preferenceId}</span>
+    <div className="ir-layout">
+      <div className="ir-left">
+        <div className="ir-hdr">
+          <div className="ir-hdr-row">
+            <div>
+              <h1 className="ir-hdr-title">Your Journey</h1>
+              {corridor?.length > 1 && <p className="ir-hdr-route">{corridor.join(" / ")}</p>}
+              <p className="ir-hdr-sub">{days.length} day{days.length > 1 ? "s" : ""}</p>
+            </div>
+            <button className="ir-save-btn" onClick={() => downloadItinerary(days, corridor, preferenceId)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save
+            </button>
           </div>
         </div>
 
-        {/* DAY TABS */}
-        <div className="ir-day-tabs">
-          {days.map((d, idx) => (
-            <button
-              key={d.day}
-              className={`ir-day-tab ${activeDay === d.day ? "active" : ""}`}
-              onClick={() => changeDay(d.day)}
-              style={{
-                "--tab-color": `hsl(${(idx * 35 + 200) % 360}, 70%, 50%)`,
-              }}
-            >
-              <span className="ir-day-num">{d.day}</span>
-              <span className="ir-day-label">
-                {d.district?.substring(0, 6) || `Day ${d.day}`}
-              </span>
-              {d.weather_day_warning && <span className="ir-day-warn">⚠️</span>}
+        <div className="ir-tabs">
+          {days.map((d) => (
+            <button key={d.day} className={`ir-tab ${activeDay === d.day ? "on" : ""}`} onClick={() => changeDay(d.day)}>
+              <span className="ir-tab-n">{d.day}</span>
+              <span className="ir-tab-l">{isArrivalDay ? "Arr" : isLastDay ? "Dep" : `Day ${d.day}`}</span>
             </button>
           ))}
         </div>
 
-        {/* DAY CONTENT with slide animation */}
-        <div key={activeDay} className={`ir-day-content slide-${animDir}`}>
-          {/* DISTRICT HERO */}
-          <div
-            className="ir-district-hero"
-            style={{
-              backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${getDistrictImage(currentDay.district)})`,
-            }}
-          >
-            <div className="ir-district-info">
-              <h2>{currentDay.district || "Kathmandu"}</h2>
-              <div className="ir-district-stats">
-                <span>📍 {currentDay.places.filter(p => p.type !== "meal").length} places</span>
-                <span>🚗 {currentDay.total_travel_km} km</span>
-              </div>
-            </div>
+        <div key={activeDay} className={`ir-dc slide-${animDir}`}>
+          <div className="ir-summary">
+            <div className="ir-sum-item"><span className="ir-sum-val">{sightseeingPlaces.length}</span><span className="ir-sum-lbl">Places</span></div>
+            <div className="ir-sum-item"><span className="ir-sum-val">{totalDist > 0 ? `${totalDist} km` : "—"}</span><span className="ir-sum-lbl">Travel</span></div>
+            <div className="ir-sum-item"><span className="ir-sum-val">{currentDay.hotel?.hotel_name?.split(" ").slice(0, 2).join(" ") || "—"}</span><span className="ir-sum-lbl">Hotel</span></div>
+            <div className="ir-sum-item"><span className="ir-sum-val">{isArrivalDay ? "Arr" : isLastDay ? "Dep" : "Full"}</span><span className="ir-sum-lbl">Type</span></div>
           </div>
 
-          {/* WEATHER */}
-          {weatherToday?.is_bad_weather && (
-            <div className="ir-weather-banner">
-              <span className="ir-weather-icon">🌧️</span>
-              <span>Bad weather forecast — pack an umbrella!</span>
-            </div>
-          )}
-          {currentDay.weather_day_warning && (
-            <div className="ir-weather-banner warning">
-              <span className="ir-weather-icon">⚠️</span>
-              <span>{currentDay.weather_day_warning}</span>
-            </div>
+          {weatherForecast?.find((w) => w.day === activeDay)?.is_bad_weather && (
+            <div className="ir-weather">Rain expected — pack an umbrella.</div>
           )}
 
-          {/* TRAVEL TIMELINE HEADER & STATS */}
-          <div className="itinerary-day-title-wrap">
-            <h2>Day {currentDay.day}: {currentDay.district}</h2>
-            <div className="itinerary-day-stats">
-              <span><i className="fa-solid fa-location-dot"></i> {currentDay.places.filter(p => p.type !== "place").length ? currentDay.places.filter(p => p.type !== "meal").length : 0} destinations</span>
-              <span><i className="fa-solid fa-car"></i> {currentDay.total_travel_km} km travel</span>
-              {currentDay.places.length > 0 && currentDay.places.some(p => p.transport_mode) && (
-                <span>
-                  <i className="fa-solid fa-bus"></i> {currentDay.places.find(p => p.transport_mode)?.transport_mode}
-                </span>
-              )}
-            </div>
-          </div>
+          <div className="ir-tl">
+            {schedule.map((item, i) => {
+              const isPlace = item.type === "place";
+              const isMeal = item.type === "meal";
+              const isTransit = item.type === "transit";
+              const isActivity = item.type === "activity";
+              const place = item.place;
+              const catColor = isPlace ? getCatColor(place?.category) : isMeal ? "#f59e0b" : isActivity ? "#3b82f6" : "#94a3b8";
+              const hl = highlightedId === place?.place_id;
+              const icon = tlIcon(isPlace, isMeal, isTransit, isActivity, item.icon, catColor);
 
-          {/* HOTEL CARD STAY */}
-          {currentDay.hotel && (
-            <div 
-              id="hotel-card-active" 
-              className={`ir-hotel-card ${highlightedPlaceId === `hotel-${activeDay}` ? "highlighted-card" : ""}`}
-              onClick={() => handleHotelCardClick(currentDay.hotel, activeDay)}
-              style={{ cursor: "pointer" }}
-            >
-              <div className="ir-hotel-icon-wrap">
-                <span className="ir-hotel-emoji">🏨</span>
-              </div>
-              <div className="ir-hotel-body">
-                <span className="ir-hotel-label">Overnight Stay</span>
-                <h3>{currentDay.hotel.hotel_name}</h3>
-                {currentDay.hotel.note && <p className="ir-hotel-note">{currentDay.hotel.note}</p>}
-              </div>
-              <div className="ir-hotel-stars">
-                {"★".repeat(4)}{"☆".repeat(1)}
-              </div>
-            </div>
-          )}
-
-          {/* TIMELINE PLACES */}
-          <div className="ir-timeline">
-            {currentDay.places.map((place, idx) => {
-              const isMeal = place.type === "meal";
-
-              // Travel route connector details between cards
-              const showConnector = idx === 0 || (!isMeal && currentDay.places[idx - 1]?.type !== "meal");
-              const dist = place.travel_dist_km || 0;
-              const mode = place.transport_mode || "Drive";
-
-              if (isMeal) {
-                const mealColors = {
-                  Breakfast: { bg: "linear-gradient(135deg, #D4973C33, #9B1B3011)", border: "#D4973C", text: "#F5E6C8" },
-                  Lunch: { bg: "linear-gradient(135deg, #1B9B8A33, #D4973C11)", border: "#1B9B8A", text: "#A8E6CF" },
-                  Dinner: { bg: "linear-gradient(135deg, #9B1B3033, #1B1A1811)", border: "#9B1B30", text: "#F5C6C6" },
-                };
-                const mc = mealColors[place.name] || mealColors.Lunch;
-                return (
-                  <div 
-                    key={idx} 
-                    id={`place-card-${place.place_id || idx}`}
-                    className={`ir-timeline-item ir-meal-item ${highlightedPlaceId === place.place_id ? "highlighted-card" : ""}`}
-                  >
-                    <div className="ir-timeline-node" style={{ "--node-color": mc.border }}>
-                      <span style={{ background: mc.border, fontSize: 16 }}>{place.icon}</span>
-                    </div>
-                    <div className="ir-meal-card" style={{ background: mc.bg, borderColor: mc.border }}>
-                      <div className="ir-meal-body">
-                        <h4 style={{ color: mc.text }}>
-                          {place.start_time && <span className="ir-time">{place.start_time}</span>}
-                          {place.icon} {place.name}
-                        </h4>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              const catKey = getCategoryKey(place.category);
-              const cfg = categoryConfig[catKey] || { color: "#6b7280", bg: "#1f2937", icon: "📍", img: "/images/lake.jpg" };
               return (
-                <React.Fragment key={idx}>
-                  {showConnector && (
-                    <div className="timeline-travel-connector">
-                      <i className="fa-solid fa-route"></i>
-                      <span>{mode} {dist > 0 ? `(${dist} km)` : ""}</span>
-                    </div>
-                  )}
-
-                  <div 
-                    id={`place-card-${place.place_id}`} 
-                    className={`ir-timeline-item ${highlightedPlaceId === place.place_id ? "highlighted-card" : ""}`}
-                    onClick={() => handlePlaceCardClick(place)}
-                    style={{ cursor: "pointer" }}
+                <div key={i} id={`tl-${place?.place_id || item.type + i}`} className={`ir-tl-row ${hl ? "hl" : ""}`}>
+                  <div className="ir-tl-time">{item.time}</div>
+                  <div className="ir-tl-dot" style={{ background: catColor }} />
+                  <div className="ir-tl-line" />
+                  <div
+                    className={`ir-tl-card ${isPlace ? "clickable" : ""}`}
+                    onClick={isPlace ? () => focusPlace(place) : isActivity && item.icon === "hotel" ? () => focusHotel(currentDay.hotel, activeDay) : undefined}
                   >
-                    <div className="ir-timeline-node" style={{ "--node-color": cfg.color }}>
-                      <span>{idx + 1}</span>
+                    <div className="ir-tl-card-top">
+                      <span className="ir-tl-icon" style={{ background: catColor + "15" }} dangerouslySetInnerHTML={{ __html: icon }} />
+                      <span className="ir-tl-label">{item.label}</span>
                     </div>
-                    <div className="ir-timeline-card" style={{ borderColor: cfg.color }}>
-                      <div className="ir-place-img-wrap">
-                        <div className="ir-place-img" style={{ backgroundImage: `url(${cfg.img})` }} />
-                        <span className="ir-place-cat-badge" style={{ background: cfg.color }}>{cfg.icon} {place.category}</span>
+                    {(isPlace && (item.transport || item.dist)) && (
+                      <div className="ir-tl-meta">
+                        {item.transport && <span>{item.transport}</span>}
+                        {item.dist > 0 && <span>{item.dist} km</span>}
                       </div>
-                      <div className="ir-place-body">
-                        <h4>
-                          {place.start_time && <span className="ir-time">{place.start_time}</span>}
-                          {place.name}
-                        </h4>
-                        <div className="ir-place-meta">
-                          <span className="ir-meta-chip" style={{ background: "#3b82f622", color: "#3b82f6" }}>
-                            {transportIcons[place.transport_mode] || "🚗"} {place.transport_mode}
-                          </span>
-                          {place.travel_dist_km > 0 && (
-                            <span className="ir-meta-chip" style={{ background: "#10b98122", color: "#10b981" }}>
-                              📍 {place.travel_dist_km} km
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
-                </React.Fragment>
+                </div>
               );
             })}
-            {currentDay.places.length === 0 && (
-              <div className="ir-empty">
-                <span className="ir-empty-icon">🏝️</span>
-                <p>A well-deserved rest day. Relax and explore at your own pace!</p>
+          </div>
+
+          <div className="ir-bottom-actions">
+            {currentDay.hotel && (
+              <div className="ir-hotel-line" onClick={() => focusHotel(currentDay.hotel, activeDay)}>
+                <span className="ir-hotel-dot" />
+                <span className="ir-hotel-name">{currentDay.hotel.hotel_name}</span>
+                <span className="ir-hotel-hint">view on map</span>
               </div>
             )}
           </div>
-
-          {/* STATS SUMMARY BOTTOM ROW */}
-          {(() => {
-            const realPlaces = currentDay.places.filter(p => p.type !== "meal");
-            return (
-              <div className="ir-stats-row">
-                <div className="ir-stat">
-                  <span className="ir-stat-icon">📍</span>
-                  <span className="ir-stat-val"><AnimatedCounter value={realPlaces.length} /></span>
-                  <span className="ir-stat-lbl">Places</span>
-                </div>
-                <div className="ir-stat">
-                  <span className="ir-stat-icon">🚗</span>
-                  <span className="ir-stat-val"><AnimatedCounter value={currentDay.total_travel_km} suffix="km" /></span>
-                  <span className="ir-stat-lbl">Travel</span>
-                </div>
-                <div className="ir-stat">
-                  <span className="ir-stat-icon">🏨</span>
-                  <span className="ir-stat-val">{currentDay.hotel?.hotel_name?.substring(0, 10) || "None"}</span>
-                  <span className="ir-stat-lbl">Hotel</span>
-                </div>
-              </div>
-            );
-          })()}
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Interactive Leaflet Map */}
-      <div className="itinerary-map-side">
-        <MapContainer
-          center={activeBounds.length > 0 ? activeBounds[0] : [27.7, 85.3]}
-          zoom={12}
-          scrollWheelZoom={true}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          {allPlaces.map((place) => {
-            const isToday = place.day === activeDay;
-            const isHighlighted = highlightedPlaceId === place.id || highlightedPlaceId === place.order;
-
-            // Define coloring based on type and category
-            let color = "#6b7280"; // Muted gray for inactive day
-            if (isToday) {
-              if (place.type === "hotel") {
-                color = "#D4973C"; // Active Gold for hotel
-              } else {
-                const catKey = getCategoryKey(place.category);
-                color = categoryConfig[catKey]?.color || "#3b82f6"; // Active color
-              }
-            } else {
-              // Lighter/semi-transparent color for other days
-              if (place.type === "hotel") {
-                color = "rgba(212, 151, 60, 0.4)";
-              } else {
-                color = "rgba(100, 116, 139, 0.4)";
-              }
-            }
-
-            const label = place.type === "hotel" ? "🏨" : (place.order || "•");
-
+      <div className="ir-right">
+        <MapContainer center={activeBounds[0] || [27.7, 85.3]} zoom={12} scrollWheelZoom>
+          <TileLayer attribution='&copy; <a href="https://osm.org/copyright">OSM</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          {allMarkers.map((m) => {
+            const isToday = m.day === activeDay;
+            const c = m.type === "hotel" ? (isToday ? "#2563eb" : "rgba(37,99,235,.35)") : (isToday ? getCatColor(m.category) : "rgba(107,114,128,.35)");
+            const label = m.type === "hotel" ? "H" : (m.order || ".");
+            const popup = buildPopupHTML({ type: m.type, name: m.name, district: m.district, category: m.category, duration: m.duration, lat: m.lat, lon: m.lon, hotelName: m.name });
             return (
-              <Marker
-                key={place.id}
-                position={[place.latitude, place.longitude]}
-                icon={getCustomIcon(color, label, isToday, !isToday)}
-                ref={(el) => {
-                  if (el) markerRefs.current[place.id] = el;
-                }}
-                eventHandlers={{
-                  click: () => {
-                    handleMarkerClick(place.id);
-                  }
-                }}
-              >
-                <Popup>
-                  <div style={{ color: "#000", fontFamily: "sans-serif", padding: "5px" }}>
-                    <strong style={{ fontSize: "14px" }}>{place.name}</strong><br/>
-                    <span style={{ fontSize: "12px", color: "#555" }}>Day {place.day} • {place.type === "hotel" ? "Hotel stay" : place.category}</span>
-                  </div>
-                </Popup>
+              <Marker key={m.id} position={[m.lat, m.lon]} icon={markerIcon(c, label, isToday)} ref={(el) => { if (el) markerRefs.current[m.id] = el; }} eventHandlers={{ click: () => focusMarker(m.id) }}>
+                <Popup><div dangerouslySetInnerHTML={{ __html: popup }} /></Popup>
               </Marker>
             );
           })}
-
-          {activeDayPoints.length > 1 && (
-            <Polyline
-              positions={activeDayPoints}
-              color="#D4973C"
-              weight={4}
-              opacity={0.8}
-            />
-          )}
-
-          <MapController
-            center={mapCenter}
-            zoom={mapZoom}
-            activeBounds={activeBounds}
-            activeDay={activeDay}
-          />
+          {days.map((d) => {
+            if (d.day === activeDay) return null;
+            const pts = [];
+            if (d.hotel?.latitude && d.hotel?.longitude) pts.push([parseFloat(d.hotel.latitude), parseFloat(d.hotel.longitude)]);
+            (d.places || []).forEach((p) => { if (p.latitude && p.longitude) pts.push([parseFloat(p.latitude), parseFloat(p.longitude)]); });
+            return pts.length > 1 ? <Polyline key={`route-${d.day}`} positions={pts} color="#cbd5e1" weight={2} opacity={0.5} dashArray="6 4" /> : null;
+          })}
+          {activeDayPts.length > 1 && <Polyline positions={activeDayPts} color="#3b82f6" weight={3.5} opacity={0.85} />}
+          <MapCtrl center={mapCenter} zoom={mapZoom} bounds={activeBounds} />
         </MapContainer>
       </div>
     </div>

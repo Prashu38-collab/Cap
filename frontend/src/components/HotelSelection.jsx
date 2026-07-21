@@ -167,7 +167,13 @@ export default function HotelSelection({ hotels, corridor, onSelect, loading }) 
       <div className="hs-bg-ornament" />
 
       <div className="hs-header">
-        <div className="hs-header-icon">🏨</div>
+        <div className="hs-header-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 21V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14"/>
+            <path d="M9 21V11h6v10"/>
+            <path d="M3 21h18"/>
+          </svg>
+        </div>
         <h2 className="hs-title">Choose Your Sanctuary</h2>
         <p className="hs-subtitle">
           Pick where you'll rest in <strong>{routeText}</strong> — select a
@@ -184,7 +190,7 @@ export default function HotelSelection({ hotels, corridor, onSelect, loading }) 
         <div className="hs-left-side">
           {Object.entries(grouped).map(([district, districtHotels]) => (
             <div key={district} className="hs-district-group">
-              <h3 className="hs-district-title">🏠 {district}</h3>
+              <h3 className="hs-district-title">{district}</h3>
               <div className="hs-grid">
                 {districtHotels.map((hotel, idx) => (
                   <HotelCard
@@ -221,7 +227,7 @@ export default function HotelSelection({ hotels, corridor, onSelect, loading }) 
                 <Marker
                   key={hotel.hotel_id}
                   position={[hotel.latitude, hotel.longitude]}
-                  icon={getCustomIcon(pinColor, "🏨", isHovered)}
+                  icon={getCustomIcon(pinColor, "H", isHovered)}
                   ref={(el) => {
                     if (el) markerRefs.current[hotel.hotel_id] = el;
                   }}
@@ -251,8 +257,8 @@ export default function HotelSelection({ hotels, corridor, onSelect, loading }) 
       <div className="hs-footer">
         <p className="hs-footer-hint">
           {selectedId
-            ? "You've selected a hotel. Confirm to generate your itinerary."
-            : "Tap a hotel card to select it as your starting stay."}
+            ? "Confirm to generate your itinerary."
+            : "Select a hotel below, then generate your itinerary."}
         </p>
         <button
           className="hs-confirm-btn"
@@ -265,7 +271,7 @@ export default function HotelSelection({ hotels, corridor, onSelect, loading }) 
               Weaving Your Journey...
             </span>
           ) : (
-            <span>✨ Generate My Itinerary</span>
+            <span>Generate My Itinerary</span>
           )}
         </button>
       </div>

@@ -12,10 +12,10 @@ const trekImages = [
 ];
 
 const categoryColors = {
-  adventure: { color: "#ef4444", bg: "#450a0a", icon: "⛰️" },
-  nature: { color: "#22c55e", bg: "#052e16", icon: "🌿" },
-  cultural: { color: "#8b5cf6", bg: "#2e1065", icon: "🏛️" },
-  religious: { color: "#f59e0b", bg: "#451a03", icon: "🛕" },
+  adventure: { color: "#ef4444", bg: "#450a0a", icon: "A" },
+  nature: { color: "#22c55e", bg: "#052e16", icon: "N" },
+  cultural: { color: "#8b5cf6", bg: "#2e1065", icon: "C" },
+  religious: { color: "#f59e0b", bg: "#451a03", icon: "R" },
 };
 
 function getCategoryCfg(cat) {
@@ -24,7 +24,7 @@ function getCategoryCfg(cat) {
   if (c.includes("nature")) return categoryColors.nature;
   if (c.includes("cultural")) return categoryColors.cultural;
   if (c.includes("religious")) return categoryColors.religious;
-  return { color: "#6b7280", bg: "#1f2937", icon: "📍" };
+  return { color: "#6b7280", bg: "#1f2937", icon: "P" };
 }
 
 const getTrekIcon = (color, label, isActive = false) => {
@@ -141,8 +141,9 @@ export default function TrekSelection({ treks, onSelect, loading }) {
                 <div className="trek-card-body">
                   <h3>{trek.place_name}</h3>
                   <div className="trek-card-meta-row">
-                    <span>{cfg.icon} {trek.category || "Adventure"}</span>
-                    <span>📍 {trek.district}</span>
+                    <span style={{ color: cfg.color, fontWeight: 700 }}>{cfg.icon}</span>
+                    <span>{trek.category || "Adventure"}</span>
+                    <span style={{ color: "#64748b" }}>{trek.district}</span>
                   </div>
                   <button className="view-trek-btn">
                     {isSelected ? "✓ Selected" : "View Trek Itinerary →"}
@@ -198,7 +199,7 @@ export default function TrekSelection({ treks, onSelect, loading }) {
                   <div style={{ color: "#000", fontFamily: "sans-serif", padding: "5px" }}>
                     <strong style={{ fontSize: "14px" }}>{trek.place_name}</strong><br />
                     <span style={{ fontSize: "12px", color: "#555" }}>
-                      {cfg.icon} {trek.category || "Adventure"} · {trek.district}
+                      {trek.category || "Adventure"} · {trek.district}
                     </span><br />
                     <span style={{ fontSize: "12px", fontWeight: 600, color: "#ef4444" }}>
                       Click card to select
