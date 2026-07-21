@@ -38,11 +38,9 @@ function PlanTrip() {
   const [result, setResult] = useState(null);
   const [weatherForecast, setWeatherForecast] = useState([]);
 
-  // Coordinate states for dynamic map markers
   const [startCoords, setStartCoords] = useState(null);
   const [endCoords, setEndCoords] = useState(null);
 
-  // Fetch coordinates dynamically when starting district changes
   useEffect(() => {
     if (form.starting_district) {
       getPlacesByDistrict(form.starting_district)
@@ -56,16 +54,12 @@ function PlanTrip() {
             setStartCoords(null);
           }
         })
-        .catch((err) => {
-          console.error("Error fetching start district coordinates", err);
-          setStartCoords(null);
-        });
+        .catch(() => setStartCoords(null));
     } else {
       setStartCoords(null);
     }
   }, [form.starting_district]);
 
-  // Fetch coordinates dynamically when ending district changes
   useEffect(() => {
     if (form.ending_district) {
       getPlacesByDistrict(form.ending_district)
@@ -79,31 +73,25 @@ function PlanTrip() {
             setEndCoords(null);
           }
         })
-        .catch((err) => {
-          console.error("Error fetching end district coordinates", err);
-          setEndCoords(null);
-        });
+        .catch(() => setEndCoords(null));
     } else {
       setEndCoords(null);
     }
   }, [form.ending_district]);
 
-  // Determine local YYYY-MM-DD for date validation
   const today = new Date();
   const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
   const todayStr = `${yyyy}-${mm}-${dd}`;
 
-  // Trek specific state
-  const [selectedTrek, setSelectedTrek] = useState(null);
   const [trekItinerary, setTrekItinerary] = useState(null);
   const [trekHotelSelections, setTrekHotelSelections] = useState({});
 
-  // Insufficient places / transit state
   const [insufficientInfo, setInsufficientInfo] = useState(null);
   const [selectedTransitDistricts, setSelectedTransitDistricts] = useState([]);
   const [noTrekFallback, setNoTrekFallback] = useState(null);
+  const [showInsufficientModal, setShowInsufficientModal] = useState(false);
 
   const update = (e) => {
     const { name, value, type, checked } = e.target;
@@ -111,12 +99,11 @@ function PlanTrip() {
       const cats = checked
         ? [...form.categories, value]
         : form.categories.filter((c) => c !== value);
-      
       const isAdventure = cats.includes("Adventure");
       setForm((prev) => ({
         ...prev,
         categories: cats,
-        mobility: isAdventure ? "Difficult" : prev.mobility
+        mobility: isAdventure ? "Difficult" : prev.mobility,
       }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
@@ -153,27 +140,22 @@ function PlanTrip() {
       setPrefId(data.preference_id);
       setCorridor(data.corridor || []);
 
-      // ── No-trek fallback ──
       if (data.flow === "no_trek_fallback") {
         setNoTrekFallback(data);
         setHotels(data.hotels || []);
-        // Show the fallback message and fall through to hotel selection
         setInsufficientInfo(null);
         setStep("hotels");
         return;
       }
 
-      // ── Trek selection ──
       if (data.flow === "trek_selection" && data.treks?.length) {
         setTreks(data.treks);
         setStep("treks");
         return;
       }
 
-      // ── Normal hotel selection ──
       setHotels(data.hotels || []);
 
-      // Check for insufficient places
       if (data.insufficient_places) {
         setInsufficientInfo({
           message: data.message,
@@ -182,8 +164,9 @@ function PlanTrip() {
           requestedDays: data.requested_days,
           nearbyDistricts: data.nearby_districts || [],
           maxDaysWithNearby: data.max_days_with_nearby || 0,
+          options: data.options || [],
         });
-        setStep("insufficient_warning");
+        setShowInsufficientModal(true);
       } else {
         setStep("hotels");
       }
@@ -194,10 +177,15 @@ function PlanTrip() {
     }
   };
 
-  // ── Handle insufficient places choices ──
-  const handleContinueAnyway = () => {
-    setInsufficientInfo(null);
-    setStep("hotels");
+  const handleInsufficientOption = (optionId) => {
+    setShowInsufficientModal(false);
+    if (optionId === "nearby") {
+      setStep("insufficient_nearby");
+    } else if (optionId === "relaxed") {
+      setStep("hotels");
+    } else if (optionId === "change_destination") {
+      setStep("form");
+    }
   };
 
   const handleIncludeNearby = (selectedDistricts) => {
@@ -208,18 +196,14 @@ function PlanTrip() {
 
   const toggleTransitDistrict = (district) => {
     setSelectedTransitDistricts((prev) =>
-      prev.includes(district)
-        ? prev.filter((d) => d !== district)
-        : [...prev, district]
+      prev.includes(district) ? prev.filter((d) => d !== district) : [...prev, district]
     );
   };
 
-  // Called when user clicks a trek card
   const handleTrekSelect = async (trek) => {
     setSubmitting(true);
     setError(null);
     try {
-      setSelectedTrek(trek);
       const data = await generateTrek(trek.place_id, parseInt(form.travel_days));
       setTrekItinerary(data);
       setStep("trek_result");
@@ -230,7 +214,6 @@ function PlanTrip() {
     }
   };
 
-  // Called when user selects a hotel for a specific trek day
   const handleTrekHotelSelect = async (dayNumber, hotelId) => {
     try {
       await selectTrekHotel(prefId, dayNumber, hotelId);
@@ -267,12 +250,12 @@ function PlanTrip() {
     setResult(null);
     setWeatherForecast([]);
     setError(null);
-    setSelectedTrek(null);
     setTrekItinerary(null);
     setTrekHotelSelections({});
     setInsufficientInfo(null);
     setSelectedTransitDistricts([]);
     setNoTrekFallback(null);
+    setShowInsufficientModal(false);
     setForm({
       starting_district: "",
       ending_district: "",
@@ -285,37 +268,11 @@ function PlanTrip() {
     });
   };
 
-  const trekLabel = treks.length ? "Trek" : "Hotel";
-  const stepLabel =
-    step === "insufficient_warning"
-      ? "Destination"
-      : step === "no_trek_fallback"
-      ? "Destination"
-      : trekLabel;
-
   return (
     <>
       <Navbar />
       <div className={`planImage step-${step}`}>
         <div className="formContainer">
-
-          {/* STEPPER */}
-          <div className="wizard-stepper">
-            <div className={`ws-step ${step === "form" ? "active" : step !== "form" ? "done" : ""}`}>
-              <span className="ws-num">{step !== "form" ? "✓" : "1"}</span>
-              <span className="ws-label">Preferences</span>
-            </div>
-            <div className={`ws-line ${step !== "form" ? "active" : ""}`} />
-            <div className={`ws-step ${step === "treks" || step === "hotels" || step === "insufficient_warning" || step === "no_trek_fallback" ? "active" : step === "result" || step === "trek_result" ? "done" : ""}`}>
-              <span className="ws-num">{step === "result" || step === "trek_result" ? "✓" : "2"}</span>
-              <span className="ws-label">{stepLabel}</span>
-            </div>
-            <div className={`ws-line ${step === "result" || step === "trek_result" ? "active" : ""}`} />
-            <div className={`ws-step ${step === "result" || step === "trek_result" ? "active" : ""}`}>
-              <span className="ws-num">3</span>
-              <span className="ws-label">Itinerary</span>
-            </div>
-          </div>
 
           <div className="plan-title" id="plan">
             <h1>
@@ -324,21 +281,62 @@ function PlanTrip() {
               {step === "hotels" && "Choose Your Hotel"}
               {step === "trek_result" && "Your Trek Itinerary"}
               {step === "result" && "Your Journey"}
-              {step === "insufficient_warning" && "Destination Notice"}
+              {step === "insufficient_nearby" && "Include Nearby Districts"}
               {step === "no_trek_fallback" && "Explore Instead"}
             </h1>
             <p>
               {step === "form" && "Enter your travel preferences to generate personalized itineraries."}
               {step === "treks" && "Select a trek or adventure activity in your destination district."}
               {step === "hotels" && "Pick a starting hotel in your first district."}
-              {step === "trek_result" && "Here is your day by day trek plan with hotel suggestions at each stop."}
-              {step === "result" && "Here is your complete travel plan with meals."}
-              {step === "insufficient_warning" && insufficientInfo?.message}
+              {step === "trek_result" && "Your day-by-day trek plan with hotel suggestions at each stop."}
+              {step === "result" && "Journey Overview"}
+              {step === "insufficient_nearby" && "Include nearby districts to enrich your itinerary."}
               {step === "no_trek_fallback" && noTrekFallback?.message}
             </p>
           </div>
 
           {error && <div className="error-banner">{error}</div>}
+
+          {/* INSUFFICIENT PLACES MODAL */}
+          {showInsufficientModal && insufficientInfo && (
+            <div className="modal-overlay" onClick={() => { setShowInsufficientModal(false); setStep("form"); }}>
+              <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-icon">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <h2 className="modal-title">Destination Notice</h2>
+                <p className="modal-msg">{insufficientInfo.message}</p>
+
+                <div className="modal-stats">
+                  <div className="modal-stat">
+                    <span className="modal-stat-val">{insufficientInfo.placeCount}</span>
+                    <span className="modal-stat-lbl">Places Available</span>
+                  </div>
+                  <div className="modal-stat">
+                    <span className="modal-stat-val">{insufficientInfo.maxDays}</span>
+                    <span className="modal-stat-lbl">Max Days</span>
+                  </div>
+                  <div className="modal-stat">
+                    <span className="modal-stat-val">{insufficientInfo.requestedDays}</span>
+                    <span className="modal-stat-lbl">You Selected</span>
+                  </div>
+                </div>
+
+                <div className="modal-options">
+                  {insufficientInfo.options.map((opt) => (
+                    <button key={opt.id} className="modal-option-btn" onClick={() => handleInsufficientOption(opt.id)}>
+                      <span className="modal-option-title">{opt.title}</span>
+                      <span className="modal-option-desc">{opt.description}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <button className="modal-close-btn" onClick={() => { setShowInsufficientModal(false); setStep("form"); }}>
+                  Back to Form
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* STEP 1: FORM */}
           {step === "form" && (
@@ -379,20 +377,20 @@ function PlanTrip() {
                           const isMobilityDisabled = isAdventure && m !== "Difficult";
                           return (
                             <div className="radio" key={m}>
-                              <input 
-                                type="radio" 
-                                id={`mob-${m}`} 
-                                name="mobility" 
-                                value={m} 
-                                checked={form.mobility === m} 
-                                onChange={update} 
+                              <input
+                                type="radio"
+                                id={`mob-${m}`}
+                                name="mobility"
+                                value={m}
+                                checked={form.mobility === m}
+                                onChange={update}
                                 disabled={isMobilityDisabled}
                               />
-                              <label 
+                              <label
                                 htmlFor={`mob-${m}`}
                                 style={{
                                   opacity: isMobilityDisabled ? 0.5 : 1,
-                                  cursor: isMobilityDisabled ? "not-allowed" : "pointer"
+                                  cursor: isMobilityDisabled ? "not-allowed" : "pointer",
                                 }}
                               >
                                 {m}
@@ -443,38 +441,17 @@ function PlanTrip() {
             </div>
           )}
 
-          {/* INSUFFICIENT PLACES WARNING */}
-          {step === "insufficient_warning" && insufficientInfo && (
+          {/* INSUFFICIENT NEARBY DISTRICTS SELECTION */}
+          {step === "insufficient_nearby" && insufficientInfo && (
             <div className="insufficient-wrap">
               <div className="insufficient-card">
-                <div className="insufficient-icon">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                </div>
-                <h2>Not Enough Attractions</h2>
-                <p className="insufficient-msg">{insufficientInfo.message}</p>
-
-                <div className="insufficient-stats">
-                  <div className="insufficient-stat">
-                    <span className="insufficient-stat-val">{insufficientInfo.placeCount}</span>
-                    <span className="insufficient-stat-lbl">Places Available</span>
-                  </div>
-                  <div className="insufficient-stat">
-                    <span className="insufficient-stat-val">{insufficientInfo.maxDays}</span>
-                    <span className="insufficient-stat-lbl">Max Days</span>
-                  </div>
-                  <div className="insufficient-stat">
-                    <span className="insufficient-stat-val">{insufficientInfo.requestedDays}</span>
-                    <span className="insufficient-stat-lbl">You Selected</span>
-                  </div>
-                </div>
+                <h2>Select Nearby Districts</h2>
+                <p className="insufficient-msg">
+                  Choose nearby districts to include. Max days with nearby: <strong>{insufficientInfo.maxDaysWithNearby}</strong>
+                </p>
 
                 {insufficientInfo.nearbyDistricts.length > 0 && (
                   <div className="insufficient-nearby">
-                    <h3>Neighbouring Districts with More Attractions</h3>
-                    <p className="insufficient-nearby-hint">
-                      Include nearby transit districts to fill your {insufficientInfo.requestedDays}-day trip.
-                      Max days with nearby: <strong>{insufficientInfo.maxDaysWithNearby}</strong>
-                    </p>
                     <div className="insufficient-district-list">
                       {insufficientInfo.nearbyDistricts.map((nd) => (
                         <label
@@ -499,22 +476,14 @@ function PlanTrip() {
                     className="generate-btn"
                     onClick={() => handleIncludeNearby(selectedTransitDistricts)}
                     disabled={selectedTransitDistricts.length === 0}
-                    style={{ marginRight: 12 }}
                   >
                     {selectedTransitDistricts.length > 0
-                      ? `🗺 Include ${selectedTransitDistricts.length} Nearby District${selectedTransitDistricts.length > 1 ? "s" : ""}`
+                      ? `Include ${selectedTransitDistricts.length} Nearby District${selectedTransitDistricts.length > 1 ? "s" : ""}`
                       : "Select districts above"}
-                  </button>
-                  <button
-                    className="generate-btn"
-                    onClick={handleContinueAnyway}
-                    style={{ background: "#6b7280" }}
-                  >
-                    ⏭ Continue Anyway
                   </button>
                 </div>
                 <button className="insufficient-back-btn" onClick={() => setStep("form")}>
-                  ← Change Preferences
+                  Back to Form
                 </button>
               </div>
             </div>
@@ -527,15 +496,18 @@ function PlanTrip() {
                 <div className="insufficient-icon">
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3l4 8 5-5 3 14H2z"/></svg>
                 </div>
-                <h2>No Treks Found</h2>
+                <h2>No Adventure Activities Found</h2>
                 <p className="insufficient-msg">{noTrekFallback.message}</p>
                 <div className="insufficient-actions">
-                  <button className="generate-btn" onClick={() => setStep("hotels")}>
-                    Generate Sightseeing Itinerary
+                  <button className="generate-btn" onClick={() => setStep("hotels")} style={{ marginRight: 12 }}>
+                    Continue
+                  </button>
+                  <button className="generate-btn" onClick={() => setStep("form")} style={{ background: "#6b7280" }}>
+                    Choose Another District
                   </button>
                 </div>
                 <button className="insufficient-back-btn" onClick={() => setStep("form")}>
-                  ← Change Preferences
+                  Back to Form
                 </button>
               </div>
             </div>
@@ -551,13 +523,13 @@ function PlanTrip() {
               />
               <div className="btn-container">
                 <button className="generate-btn" onClick={() => setStep("form")} style={{ background: "#555" }}>
-                  ← Back
+                  Back
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 2B: HOTEL SELECTION (non-adventure) */}
+          {/* STEP 2B: HOTEL SELECTION */}
           {step === "hotels" && (
             <div className="hotel-selection-wrap">
               {selectedTransitDistricts.length > 0 && (
@@ -589,7 +561,7 @@ function PlanTrip() {
               />
               <div className="btn-container">
                 <button className="generate-btn" onClick={() => setStep("treks")} style={{ background: "#555", marginRight: 12 }}>
-                  ← Choose Different Trek
+                  Choose Different Trek
                 </button>
                 <button className="generate-btn" onClick={resetForm}>
                   Plan Another Trip

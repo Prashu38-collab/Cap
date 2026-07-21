@@ -31,13 +31,28 @@ const markerIcon = (color, label, active = true) => {
   });
 };
 
-function buildPopupHTML({ type, name, district, category, duration, lat, lon, hotelName }) {
+function buildPopupHTML({ type, name, district, category, duration, hotelName, order, lat, lon }) {
   if (type === "hotel") {
-    return `<div style="font-family:system-ui,sans-serif;min-width:170px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#2563eb;font-weight:700;margin-bottom:3px">Hotel</div><div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">${hotelName || name}</div><div style="font-size:11px;color:#475569;margin-bottom:2px">${district || ""}</div><div style="font-size:10px;color:#94a3b8">${lat.toFixed(5)}, ${lon.toFixed(5)}</div></div>`;
+    return `<div style="font-family:system-ui,sans-serif;min-width:180px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#2563eb;font-weight:700;margin-bottom:3px">Hotel</div>
+      <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">${hotelName || name}</div>
+      <div style="font-size:11px;color:#475569;margin-bottom:2px">${district || ""}</div>
+      ${lat && lon ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px">${lat.toFixed(4)}, ${lon.toFixed(4)}</div>` : ""}
+    </div>`;
   }
-  const durText = duration ? `${duration}h` : "";
+  const durText = duration ? `${duration}` : "";
   const catText = category || "";
-  return `<div style="font-family:system-ui,sans-serif;min-width:170px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:${getCatColor(category)};font-weight:700;margin-bottom:3px">Place</div><div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">${name}</div><div style="font-size:11px;color:#475569;margin-bottom:2px">${district || ""}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${catText ? `<span style="font-size:10px;background:#f1f5f9;padding:1px 5px;border-radius:3px;color:#475569">${catText}</span>` : ""}${durText ? `<span style="font-size:10px;background:#f1f5f9;padding:1px 5px;border-radius:3px;color:#475569">${durText}</span>` : ""}</div></div>`;
+  const orderText = order ? `#${order}` : "";
+  return `<div style="font-family:system-ui,sans-serif;min-width:180px">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:${getCatColor(category)};font-weight:700;margin-bottom:3px">Place ${orderText}</div>
+    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">${name}</div>
+    <div style="font-size:11px;color:#475569;margin-bottom:2px">${district || ""}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${catText ? `<span style="font-size:10px;background:#f1f5f9;padding:1px 5px;border-radius:3px;color:#475569">${catText}</span>` : ""}
+      ${durText ? `<span style="font-size:10px;background:#f1f5f9;padding:1px 5px;border-radius:3px;color:#475569">${durText}</span>` : ""}
+    </div>
+    ${lat && lon ? `<div style="font-size:10px;color:#94a3b8;margin-top:3px">${lat.toFixed(4)}, ${lon.toFixed(4)}</div>` : ""}
+  </div>`;
 }
 
 function MapCtrl({ center, zoom, bounds }) {
@@ -49,51 +64,118 @@ function MapCtrl({ center, zoom, bounds }) {
   return null;
 }
 
+function placeDurationLabel(place) {
+  const val = place.estimated_duration_value;
+  const unit = (place.estimated_duration_unit || "hours").toLowerCase();
+  if (val) return `${val} ${unit}`;
+  return null;
+}
+
+function advanceTime(timeStr, minutes) {
+  const [h, m] = timeStr.split(":").map(Number);
+  const totalMin = h * 60 + m + minutes;
+  const hh = String(Math.floor(totalMin / 60) % 24).padStart(2, "0");
+  const mm = String(totalMin % 60).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 function buildSchedule(day, dayIndex, totalDays) {
   const places = day.places || [];
-  const isArrival = dayIndex === 0 && totalDays > 1;
+  const isFirst = dayIndex === 0 && totalDays > 1;
   const isLast = dayIndex === totalDays - 1 && totalDays > 1;
-  const sightseeing = places.filter((p) => p.type !== "meal");
+  const isSingle = totalDays === 1;
+  const isExploredAll = day.day_type === "explored_all";
   const items = [];
 
-  if (isArrival) {
-    items.push({ time: "07:00", label: "Breakfast", type: "meal" });
-    items.push({ time: "09:00", label: "Hotel Check-in", type: "activity", icon: "hotel" });
-    if (sightseeing.length > 0) items.push({ time: "10:30", label: sightseeing[0].name, type: "place", place: sightseeing[0], transport: sightseeing[0].transport_mode, dist: sightseeing[0].travel_dist_km });
-    items.push({ time: "12:30", label: "Lunch", type: "meal" });
-    items.push({ time: "14:00", label: "Explore nearby area", type: "activity", icon: "explore" });
-    items.push({ time: "19:00", label: "Dinner", type: "meal" });
+  if (isExploredAll) {
+    items.push({ time: "07:30", label: "Breakfast", type: "meal", icon: "meal" });
+    items.push({ time: "09:00", label: "Your planned sightseeing has been completed. Enjoy a relaxed day at your own pace.", type: "activity", icon: "explore" });
+    items.push({ time: "12:30", label: "Lunch", type: "meal", icon: "meal" });
+    items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
+    return items;
+  }
+
+  if (isFirst) {
+    items.push({ time: "07:00", label: "Breakfast", type: "meal", icon: "meal" });
+    items.push({ time: "08:00", label: "Depart for destination", type: "activity", icon: "depart" });
+    items.push({ time: "09:00", label: "Arrive and check in", type: "activity", icon: "hotel" });
+    if (places.length > 0) {
+      let t = "10:00";
+      places.forEach((p, i) => {
+        items.push({ time: t, label: p.name, type: "place", place: p, icon: "place", order: i + 1 });
+        const durMin = Math.ceil((p.estimated_duration_value || 2) * 60);
+        t = advanceTime(t, durMin + 20);
+      });
+    } else {
+      items.push({ time: "11:00", label: "Explore nearby area", type: "activity", icon: "explore" });
+    }
+    items.push({ time: "13:00", label: "Lunch", type: "meal", icon: "meal" });
+    items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
     return items;
   }
 
   if (isLast) {
-    items.push({ time: "07:00", label: "Breakfast", type: "meal" });
-    items.push({ time: "09:00", label: "Check-out", type: "activity", icon: "checkout" });
-    if (sightseeing.length > 0) items.push({ time: "10:00", label: sightseeing[0].name, type: "place", place: sightseeing[0], transport: sightseeing[0].transport_mode, dist: sightseeing[0].travel_dist_km });
-    items.push({ time: "12:00", label: "Return journey", type: "activity", icon: "return" });
+    items.push({ time: "07:00", label: "Breakfast", type: "meal", icon: "meal" });
+    if (places.length > 0) {
+      let t = "08:30";
+      places.forEach((p, i) => {
+        items.push({ time: t, label: p.name, type: "place", place: p, icon: "place", order: i + 1 });
+        const durMin = Math.ceil((p.estimated_duration_value || 2) * 60);
+        t = advanceTime(t, durMin + 20);
+      });
+    }
+    items.push({ time: "12:00", label: "Lunch", type: "meal", icon: "meal" });
+    items.push({ time: "13:30", label: "Begin return journey", type: "activity", icon: "return" });
     return items;
   }
 
-  const timeSlots = ["07:00", "08:30", "10:00", "12:00", "13:30", "15:00", "17:00", "19:00"];
-  let slotIdx = 0;
-  items.push({ time: timeSlots[slotIdx++], label: "Breakfast", type: "meal" });
-
-  sightseeing.forEach((p, i) => {
-    if (slotIdx < timeSlots.length - 2) {
-      const t = timeSlots[slotIdx++];
-      if (i > 0) {
-        const prev = sightseeing[i - 1];
-        if (prev.transport_mode) {
-          items.push({ time: t, label: `${prev.transport_mode}${prev.travel_dist_km ? ` (${prev.travel_dist_km} km)` : ""} to ${p.name}`, type: "transit", transport: prev.transport_mode });
-          if (slotIdx < timeSlots.length - 1) slotIdx++;
-        }
-      }
-      items.push({ time: timeSlots[slotIdx - 1] || t, label: p.name, type: "place", place: p, transport: p.transport_mode, dist: p.travel_dist_km });
+  if (isSingle) {
+    items.push({ time: "07:00", label: "Breakfast", type: "meal", icon: "meal" });
+    if (places.length > 0) {
+      let t = "09:00";
+      places.forEach((p, i) => {
+        items.push({ time: t, label: p.name, type: "place", place: p, icon: "place", order: i + 1 });
+        const durMin = Math.ceil((p.estimated_duration_value || 2) * 60);
+        t = advanceTime(t, durMin + 20);
+      });
     }
+    items.push({ time: "13:00", label: "Lunch", type: "meal", icon: "meal" });
+    items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
+    return items;
+  }
+
+  // ── Middle / Sightseeing day ──
+  items.push({ time: "07:00", label: "Breakfast", type: "meal", icon: "meal" });
+
+  if (places.length === 0) {
+    items.push({ time: "09:00", label: "Free day — revisit favourites or relax", type: "activity", icon: "explore" });
+    items.push({ time: "12:30", label: "Lunch", type: "meal", icon: "meal" });
+    items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
+    return items;
+  }
+
+  const half = Math.ceil(places.length / 2);
+  const morning = places.slice(0, half);
+  const afternoon = places.slice(half);
+
+  let t = "09:00";
+  morning.forEach((p) => {
+    items.push({ time: t, label: p.name, type: "place", place: p, icon: "place" });
+    const durMin = Math.ceil((p.estimated_duration_value || 2) * 60);
+    t = advanceTime(t, durMin + 20);
   });
 
-  items.push({ time: "12:00", label: "Lunch", type: "meal" });
-  items.push({ time: "19:00", label: "Dinner", type: "meal" });
+  items.push({ time: "13:00", label: "Lunch", type: "meal", icon: "meal" });
+
+  let t2 = "14:00";
+  afternoon.forEach((p) => {
+    items.push({ time: t2, label: p.name, type: "place", place: p, icon: "place" });
+    const durMin = Math.ceil((p.estimated_duration_value || 2) * 60);
+    t2 = advanceTime(t2, durMin + 20);
+  });
+
+  items.push({ time: "17:00", label: "Return to hotel", type: "activity", icon: "hotel" });
+  items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
   return items;
 }
 
@@ -102,8 +184,9 @@ const tlIcon = (isPlace, isMeal, isTransit, isActivity, iconType, catColor) => {
   if (isMeal) return `<svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="${catColor}" stroke-width="1.5" stroke-linecap="round"/></svg>`;
   if (isTransit) return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 7,5 5,2" fill="none" stroke="${catColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   if (iconType === "hotel") return `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="3" width="8" height="5" rx="1" fill="none" stroke="${catColor}" stroke-width="1.2"/><line x1="1" y1="6" x2="9" y2="6" stroke="${catColor}" stroke-width="1.2"/></svg>`;
-  if (iconType === "checkout") return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="3,7 5,3 7,7" fill="none" stroke="${catColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if (iconType === "depart") return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="3,3 7,3 7,7" fill="none" stroke="${catColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   if (iconType === "return") return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="7,3 3,3 3,7" fill="none" stroke="${catColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if (iconType === "explore") return `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3" fill="none" stroke="${catColor}" stroke-width="1.2"/><circle cx="5" cy="5" r="1" fill="${catColor}"/></svg>`;
   return `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="1.5" fill="${catColor}"/></svg>`;
 };
 
@@ -142,11 +225,30 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
   const allMarkers = [];
   days.forEach((d) => {
     if (d.hotel?.latitude && d.hotel?.longitude) {
-      allMarkers.push({ id: `hotel-${d.day}`, name: d.hotel.hotel_name, lat: parseFloat(d.hotel.latitude), lon: parseFloat(d.hotel.longitude), day: d.day, type: "hotel", district: d.hotel.district || d.district || "" });
+      allMarkers.push({
+        id: `hotel-${d.day}`,
+        name: d.hotel.hotel_name,
+        lat: parseFloat(d.hotel.latitude),
+        lon: parseFloat(d.hotel.longitude),
+        day: d.day,
+        type: "hotel",
+        district: d.hotel.district || d.district || "",
+      });
     }
     (d.places || []).forEach((p, i) => {
       if (p.latitude && p.longitude) {
-        allMarkers.push({ id: p.place_id || `p-${d.day}-${i}`, name: p.name, lat: parseFloat(p.latitude), lon: parseFloat(p.longitude), day: d.day, type: "place", category: p.category, district: p.district || d.district || "", duration: p.estimated_duration_value || p.duration || null, order: i + 1 });
+        allMarkers.push({
+          id: p.place_id || `p-${d.day}-${i}`,
+          name: p.name,
+          lat: parseFloat(p.latitude),
+          lon: parseFloat(p.longitude),
+          day: d.day,
+          type: "place",
+          category: p.category,
+          district: p.district || d.district || "",
+          duration: placeDurationLabel(p),
+          order: i + 1,
+        });
       }
     });
   });
@@ -180,16 +282,13 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
     if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
-  const isArrivalDay = activeDay === 1 && days.length > 1;
-  const isLastDay = activeDay === days.length && days.length > 1;
-
   return (
     <div className="ir-layout">
       <div className="ir-left">
         <div className="ir-hdr">
           <div className="ir-hdr-row">
             <div>
-              <h1 className="ir-hdr-title">Your Journey</h1>
+              <h1 className="ir-hdr-title">Journey Overview</h1>
               {corridor?.length > 1 && <p className="ir-hdr-route">{corridor.join(" / ")}</p>}
               <p className="ir-hdr-sub">{days.length} day{days.length > 1 ? "s" : ""}</p>
             </div>
@@ -204,7 +303,7 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
           {days.map((d) => (
             <button key={d.day} className={`ir-tab ${activeDay === d.day ? "on" : ""}`} onClick={() => changeDay(d.day)}>
               <span className="ir-tab-n">{d.day}</span>
-              <span className="ir-tab-l">{isArrivalDay ? "Arr" : isLastDay ? "Dep" : `Day ${d.day}`}</span>
+              <span className="ir-tab-l">{`Day ${d.day}`}</span>
             </button>
           ))}
         </div>
@@ -212,9 +311,8 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
         <div key={activeDay} className={`ir-dc slide-${animDir}`}>
           <div className="ir-summary">
             <div className="ir-sum-item"><span className="ir-sum-val">{sightseeingPlaces.length}</span><span className="ir-sum-lbl">Places</span></div>
-            <div className="ir-sum-item"><span className="ir-sum-val">{totalDist > 0 ? `${totalDist} km` : "—"}</span><span className="ir-sum-lbl">Travel</span></div>
-            <div className="ir-sum-item"><span className="ir-sum-val">{currentDay.hotel?.hotel_name?.split(" ").slice(0, 2).join(" ") || "—"}</span><span className="ir-sum-lbl">Hotel</span></div>
-            <div className="ir-sum-item"><span className="ir-sum-val">{isArrivalDay ? "Arr" : isLastDay ? "Dep" : "Full"}</span><span className="ir-sum-lbl">Type</span></div>
+            <div className="ir-sum-item"><span className="ir-sum-val">{totalDist > 0 ? `${totalDist} km` : "\u2014"}</span><span className="ir-sum-lbl">Distance</span></div>
+            <div className="ir-sum-item"><span className="ir-sum-val">{currentDay.hotel?.hotel_name?.split(" ").slice(0, 2).join(" ") || "\u2014"}</span><span className="ir-sum-lbl">Hotel</span></div>
           </div>
 
           {weatherForecast?.find((w) => w.day === activeDay)?.is_bad_weather && (
@@ -245,17 +343,18 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
                       <span className="ir-tl-icon" style={{ background: catColor + "15" }} dangerouslySetInnerHTML={{ __html: icon }} />
                       <span className="ir-tl-label">{item.label}</span>
                     </div>
-                    {(isPlace && (item.transport || item.dist)) && (
-                      <div className="ir-tl-meta">
-                        {item.transport && <span>{item.transport}</span>}
-                        {item.dist > 0 && <span>{item.dist} km</span>}
-                      </div>
-                    )}
                   </div>
                 </div>
               );
             })}
           </div>
+
+          {currentDay.day_type === "explored_all" && (
+            <div className="ir-empty">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 4 }}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              <p>Your planned sightseeing has been completed. Enjoy a relaxed day at your own pace.</p>
+            </div>
+          )}
 
           <div className="ir-bottom-actions">
             {currentDay.hotel && (
@@ -276,7 +375,7 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
             const isToday = m.day === activeDay;
             const c = m.type === "hotel" ? (isToday ? "#2563eb" : "rgba(37,99,235,.35)") : (isToday ? getCatColor(m.category) : "rgba(107,114,128,.35)");
             const label = m.type === "hotel" ? "H" : (m.order || ".");
-            const popup = buildPopupHTML({ type: m.type, name: m.name, district: m.district, category: m.category, duration: m.duration, lat: m.lat, lon: m.lon, hotelName: m.name });
+            const popup = buildPopupHTML({ type: m.type, name: m.name, district: m.district, category: m.category, duration: m.duration, hotelName: m.name, order: m.order, lat: m.lat, lon: m.lon });
             return (
               <Marker key={m.id} position={[m.lat, m.lon]} icon={markerIcon(c, label, isToday)} ref={(el) => { if (el) markerRefs.current[m.id] = el; }} eventHandlers={{ click: () => focusMarker(m.id) }}>
                 <Popup><div dangerouslySetInnerHTML={{ __html: popup }} /></Popup>

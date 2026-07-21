@@ -232,6 +232,203 @@ def get_trek_options(payload: dict, db: Session = Depends(get_db)):
 
 
 # ──────────────────────────────────────────────
+#  Trek timeline builder
+# ──────────────────────────────────────────────
+
+import re
+
+
+def _parse_travel_hours(text: str) -> tuple:
+    """Extract (hours: float, mode: str) from travel_time or activity text.
+
+    Returns (0.0, "") when nothing parseable is found.
+    """
+    if not text:
+        return 0.0, ""
+
+    t = text.strip().lower()
+
+    # Detect travel mode
+    mode = ""
+    if any(w in t for w in ("drive", "bus", "vehicle", "ride")):
+        mode = "drive"
+    elif any(w in t for w in ("trek", "hike", "climb", "ascend", "descend", "cross")):
+        mode = "trek"
+    elif "walk" in t:
+        mode = "walk"
+    elif "flight" in t or "fly" in t:
+        mode = "fly"
+
+    # Extract hour numbers (handle ranges like "7–8", "7-8", "6.5-7")
+    nums = re.findall(r"(\d+(?:\.\d+)?)", t)
+    hours = 0.0
+    if len(nums) >= 2:
+        hours = (float(nums[0]) + float(nums[1])) / 2.0
+    elif len(nums) == 1:
+        hours = float(nums[0])
+
+    return hours, mode
+
+
+def _advance_time(time_str: str, minutes: int) -> str:
+    """Add *minutes* to a HH:MM time string, return new HH:MM."""
+    h, m = map(int, time_str.split(":"))
+    total = h * 60 + m + minutes
+    return f"{(total // 60) % 24:02d}:{total % 60:02d}"
+
+
+def _build_day_timeline(
+    stop_name: str,
+    activity: str,
+    travel_time: str,
+    overnight: bool,
+    day_number: int,
+    total_days: int,
+    prev_stop_name: str = "",
+) -> list:
+    """Convert a single trek stop into a realistic daily timeline.
+
+    Returns a list of dicts: {time, label, type} where type is one of:
+    breakfast, departure, travel, arrival, explore, activity, check_in,
+    dinner, rest, overnight.
+    """
+    is_first = day_number == 1
+    is_last = day_number == total_days
+    is_trekking_day = not is_first  # first day is usually a drive day
+
+    travel_hours, travel_mode = _parse_travel_hours(travel_time or activity)
+
+    # ── Fallback: if no travel time found, infer from mode ──
+    if travel_hours == 0:
+        if travel_mode == "drive":
+            travel_hours = 5.0
+        elif travel_mode == "trek":
+            travel_hours = 6.0
+        else:
+            travel_hours = 4.0
+
+    # ── Helper: mode label ──
+    def mode_label():
+        if travel_mode == "drive":
+            return "Drive"
+        if travel_mode == "trek":
+            return "Trek"
+        if travel_mode == "walk":
+            return "Walk"
+        if travel_mode == "fly":
+            return "Flight"
+        return "Travel"
+
+    # ── Helper: hours to readable range ──
+    def hours_range():
+        lo = int(round(travel_hours))
+        hi = lo + 1
+        return f"{lo}–{hi} hrs"
+
+    # ── Compute key times ──
+    departure_time = "06:00" if is_first else "07:00"
+    travel_start = _advance_time(departure_time, 15)
+    travel_end = _advance_time(travel_start, int(travel_hours * 60))
+
+    if is_first:
+        arrival_label = f"Arrive at {stop_name}"
+        lunch_time = _advance_time(travel_end, -30)
+        explore_time = _advance_time(travel_end, 60)
+        dinner_time = "19:00"
+    else:
+        arrival_label = f"Reach {stop_name}"
+        lunch_time = "12:30" if travel_hours <= 4 else travel_end
+        explore_time = _advance_time(travel_end, 60)
+        dinner_time = "19:30"
+
+    # ── Build events ──
+    events = []
+
+    # Breakfast
+    events.append({
+        "time": "06:00" if is_first else "06:00",
+        "label": "Breakfast",
+        "type": "breakfast",
+    })
+
+    # Departure
+    depart_from = "Depart from hotel" if is_first else (
+        f"Start trek from {prev_stop_name}" if is_trekking_day else f"Depart from {prev_stop_name}"
+    )
+    events.append({
+        "time": departure_time,
+        "label": depart_from,
+        "type": "departure",
+    })
+
+    # Travel
+    travel_label = f"{mode_label()} {hours_range()}"
+    events.append({
+        "time": travel_start,
+        "label": travel_label,
+        "type": "travel",
+        "travel_mode": travel_mode,
+        "travel_hours": round(travel_hours, 1),
+    })
+
+    # Arrival
+    events.append({
+        "time": travel_end,
+        "label": arrival_label,
+        "type": "arrival",
+    })
+
+    # Mid-day lunch (only if travel is long enough)
+    if travel_hours >= 3:
+        events.append({
+            "time": lunch_time,
+            "label": "Lunch",
+            "type": "lunch",
+        })
+
+    # Activity / explore (for overnight stops, add exploration)
+    if overnight and activity and not any(
+        kw in (activity or "").lower() for kw in ("drive", "trek", "hike", "climb", "descend", "cross")
+    ):
+        events.append({
+            "time": explore_time,
+            "label": activity if activity else f"Explore {stop_name}",
+            "type": "explore",
+        })
+
+    # Hotel check-in (overnight stops only)
+    if overnight:
+        events.append({
+            "time": _advance_time(explore_time, 30),
+            "label": "Hotel Check-in",
+            "type": "check_in",
+        })
+
+    # Dinner
+    events.append({
+        "time": dinner_time,
+        "label": "Dinner",
+        "type": "dinner",
+    })
+
+    # Overnight / rest
+    if overnight:
+        events.append({
+            "time": _advance_time(dinner_time, 90),
+            "label": "Overnight Stay",
+            "type": "overnight",
+        })
+    elif is_last:
+        events.append({
+            "time": _advance_time(dinner_time, 60),
+            "label": "Rest for the night",
+            "type": "rest",
+        })
+
+    return events
+
+
+# ──────────────────────────────────────────────
 #  POST /itinerary/generate-trek
 # ──────────────────────────────────────────────
 @router.post("/itinerary/generate-trek")
@@ -279,6 +476,7 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
         ).fetchall()
 
         days = []
+        prev_stop = None
         for stop in stops:
             day_data = {
                 "day_number": stop.day_number,
@@ -289,6 +487,17 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
                 "travel_time": stop.travel_time,
                 "overnight": bool(stop.overnight),
             }
+
+            # ── Build structured timeline from trek stop data ──
+            day_data["timeline"] = _build_day_timeline(
+                stop_name=stop.stop_name or "",
+                activity=stop.activity or "",
+                travel_time=stop.travel_time or "",
+                overnight=bool(stop.overnight),
+                day_number=stop.day_number,
+                total_days=len(stops),
+                prev_stop_name=prev_stop.stop_name if prev_stop else "",
+            )
 
             if stop.overnight:
                 nearby = []
@@ -314,6 +523,7 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
                 day_data["nearby_hotels"] = nearby[:3]
 
             days.append(day_data)
+            prev_stop = stop
 
         return {
             "trek_name": trek_info.place_name,
@@ -476,8 +686,9 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
                     "corridor": corridor,
                     "flow": "no_trek_fallback",
                     "message": (
-                        f"{ending} is better known for its culture, heritage and nature "
-                        "than multi-day trekking. We can generate a sightseeing itinerary instead."
+                        f"{ending} is better known for its culture, heritage "
+                        "and nature than adventure activities. Would you like "
+                        "to continue with those experiences instead?"
                     ),
                     "hotels": fetch_hotels(db, ending, hotel_budget),
                 }
@@ -497,11 +708,9 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
             )
 
         # ── Adventure preference fallback ──
-        # User chose Adventure but district has no treks → suggest sightseeing
         cats_lower = categories.lower()
         user_wants_adventure = any(kw in cats_lower for kw in ["adventure", "trek"])
         district_has_treks = _has_adventure_places(db, ending)
-        adventure_redirect_offered = False
 
         response = {
             "preference_id": pref_id,
@@ -510,14 +719,13 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
             "hotels": hotels,
         }
 
-        # If user wanted adventure but no treks exist, inform them
         if user_wants_adventure and not district_has_treks:
             response["adventure_fallback"] = True
             response["adventure_fallback_message"] = (
-                f"{ending} doesn't have multi-day trek options, "
-                "but we've found great sightseeing attractions for your trip."
+                f"{ending} is better known for its culture, heritage and nature "
+                "than adventure activities. Would you like to continue with "
+                "those experiences instead?"
             )
-        # If user didn't ask for adventure but treks exist, offer redirect
         elif district_has_treks and not user_wants_adventure:
             adventure_places = _fetch_adventure_places(db, ending)
             if adventure_places:
@@ -537,16 +745,42 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
                     nearby_info.append({"district": nd, "place_count": nd_count})
 
             total_with_nearby = num_places + sum(n["place_count"] for n in nearby_info)
-            max_days_with_nearby = estimate_max_days(total_with_nearby)
+            max_days_with_nearby = estimate_max_days(total_with_nearby, places or None)
 
             response["insufficient_places"] = True
             response["place_count"] = num_places
             response["max_sightseeing_days"] = max_days
             response["requested_days"] = travel_days
             response["message"] = (
+                f"The selected district does not have enough attractions to "
+                f"comfortably fill your {travel_days}-day trip. "
                 f"{ending} has enough attractions for approximately {max_days} "
-                f"sightseeing days. You selected {travel_days} days."
+                f"sightseeing day(s)."
             )
+            response["options"] = [
+                {
+                    "id": "nearby",
+                    "title": "Explore Nearby Districts",
+                    "description": (
+                        f"Include nearby transit districts ({len(nearby_info)} available) "
+                        f"to enrich your itinerary — up to {max_days_with_nearby} days."
+                    ),
+                },
+                {
+                    "id": "relaxed",
+                    "title": "Relaxed Itinerary",
+                    "description": (
+                        f"Generate a {travel_days}-day relaxed itinerary with "
+                        f"{num_places} attraction(s) followed by rest days at your "
+                        "own pace."
+                    ),
+                },
+                {
+                    "id": "change_destination",
+                    "title": "Change Destination",
+                    "description": "Go back and choose a different destination.",
+                },
+            ]
             response["nearby_districts"] = nearby_info
             response["max_days_with_nearby"] = max_days_with_nearby
 

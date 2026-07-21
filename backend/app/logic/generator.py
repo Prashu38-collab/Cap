@@ -1,6 +1,5 @@
-from typing import List, Dict, Optional
+from typing import List, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 import math
 
 
@@ -15,34 +14,9 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-def estimate_max_days(num_places: int, places: Optional[List[dict]] = None) -> int:
-    """Estimate max sightseeing days given a pool of places.
-
-    If *places* is provided, uses estimated durations to calculate capacity;
-    otherwise falls back to the fixed rule:
-      Day 1 = 1 place (arrival), last day = 1 place (departure),
-      middle days = up to 3 places each.
-    """
-    if num_places <= 0:
-        return 0
-    if num_places == 1:
-        return 1
-    if num_places == 2:
-        return 2
-
-    # Duration-aware: compute per-day capacity from real durations
-    if places:
-        durations = [_place_duration_hours(p) for p in places if not p.get("is_trek")]
-        durations = [d for d in durations if d > 0]
-        avg_dur = sum(durations) / len(durations) if durations else 2.0
-        per_day = _max_places_for_hours(5.0, avg_dur)
-        per_day = max(1, min(per_day, 5))
-    else:
-        per_day = 3
-
-    middle = num_places - 2
-    return 2 + math.ceil(middle / per_day)
-
+# ──────────────────────────────────────────────
+#  Duration helpers
+# ──────────────────────────────────────────────
 
 def _place_duration_hours(place: dict) -> float:
     """Return the estimated duration of a place in hours.
@@ -56,59 +30,109 @@ def _place_duration_hours(place: dict) -> float:
     except (TypeError, ValueError):
         val = 2.0
     if unit in ("day", "days"):
-        return val * 8.0   # treat a sightseeing "day" as ~8 hours
+        return val * 8.0
     if unit in ("minute", "minutes", "min"):
         return val / 60.0
-    return val              # assume hours
+    return val
 
 
-def _max_places_for_hours(target_hours: float, avg_hours: float) -> int:
-    """How many places (at avg_hours each) fit within target_hours."""
-    if avg_hours <= 0:
-        return 3
-    return max(1, int(target_hours / avg_hours))
+def _total_duration_hours(places: List[dict]) -> float:
+    """Sum of estimated durations for a list of places."""
+    return sum(_place_duration_hours(p) for p in places)
 
+
+# ──────────────────────────────────────────────
+#  Capacity estimation
+# ──────────────────────────────────────────────
+
+# A reasonable sightseeing day holds ~5 hours of activities
+# (09:30–12:30 morning block + 14:00–17:00 afternoon block).
+SIGHTSEEING_HOURS_PER_DAY = 5.0
+
+
+def estimate_max_days(num_places: int, places: Optional[List[dict]] = None) -> int:
+    """Estimate how many sightseeing days a pool of places can fill.
+
+    Uses the ACTUAL average duration of all provided places, not just the first
+    one, to give an accurate capacity estimate.  Day-1 and last-day each hold
+    at most 1 place; middle days fill to SIGHTSEEING_HOURS_PER_DAY.
+    """
+    if num_places <= 0:
+        return 0
+    if num_places == 1:
+        return 1
+    if num_places == 2:
+        return 2
+
+    if places:
+        durations = [_place_duration_hours(p) for p in places[:num_places]]
+        avg_dur = sum(durations) / len(durations) if durations else 2.0
+        per_day = max(1, min(5, int(SIGHTSEEING_HOURS_PER_DAY / max(avg_dur, 0.5))))
+        middle = num_places - 2
+        return 2 + math.ceil(middle / per_day)
+
+    middle = num_places - 2
+    return 2 + math.ceil(middle / 3)
+
+
+# ──────────────────────────────────────────────
+#  Balanced allocation (duration-aware)
+# ──────────────────────────────────────────────
 
 def allocate_places_balanced(
     num_places: int,
     travel_days: int,
     places: Optional[List[dict]] = None,
 ) -> List[int]:
-    """Distribute places across days, duration-aware when *places* is supplied.
+    """Distribute places across days, respecting duration constraints.
 
     Rules:
-      - Day 1 gets at most 1 place (arrival / settle in).
-      - Last day (if > 1 day) gets at most 1 place.
-      - Middle days: if duration info is available, pack based on ~5 hours of
-        sightseeing per day; otherwise fall back to a max of 3 places/day.
-      - Never leave a day empty if places remain.
-      - Never invent places: if pool runs out, remaining days get 0.
+      - Day 1 (arrival): at most 1 place.
+      - Last day (departure): at most 1 place.
+      - Middle days: pack to ~SIGHTSEEING_HOURS_PER_DAY using actual durations
+        when available; otherwise max 3.
+      - Never invent places. If pool runs out remaining days get 0.
+      - Rebalance: move one place to the last day when possible so every day
+        feels meaningful.
     """
     if num_places <= 0 or travel_days <= 0:
         return []
 
-    # Determine per-day capacity
-    if places:
-        durations = [_place_duration_hours(p) for p in places if not p.get("is_trek")]
-        durations = [d for d in durations if d > 0]
-        avg_dur = sum(durations) / len(durations) if durations else 2.0
-        max_per_day = _max_places_for_hours(5.0, avg_dur)  # ~5h sightseeing/day
-        max_per_day = max(1, min(max_per_day, 5))          # clamp 1–5
-    else:
-        avg_dur = 2.0
-        max_per_day = 3
-
+    # ── single-day ──
     if travel_days == 1:
-        return [min(num_places, max_per_day)]
+        if places:
+            dur = _total_duration_hours(places[:num_places])
+            cap = max(1, min(5, int(SIGHTSEEING_HOURS_PER_DAY / max(dur / num_places, 0.5))))
+        else:
+            cap = 3
+        return [min(num_places, cap)]
 
+    # ── exactly 1 place ──
     if num_places == 1:
         return [1] + [0] * (travel_days - 1)
 
-    if travel_days == 2:
-        half = min(num_places // 2, max_per_day)
-        return [half, num_places - half]
+    # ── exactly 2 places ──
+    if num_places == 2:
+        return [1, 1] + [0] * (travel_days - 2)
 
-    # travel_days >= 3
+    # ── two days ──
+    if travel_days == 2:
+        if places:
+            per = max(1, min(5, int(SIGHTSEEING_HOURS_PER_DAY / max(_place_duration_hours(places[0]), 0.5))))
+        else:
+            per = 3
+        first = min(max(1, num_places // 2), per)
+        return [first, num_places - first]
+
+    # ── travel_days >= 3 ──
+    # Determine middle-day capacity using ACTUAL average durations
+    if places:
+        durations = [_place_duration_hours(p) for p in places[:num_places]]
+        avg_dur = sum(durations) / len(durations) if durations else 2.0
+        max_per_day = max(1, min(5, int(SIGHTSEEING_HOURS_PER_DAY / max(avg_dur, 0.5))))
+    else:
+        max_per_day = 3
+
     allocations = [1]  # Day 1
     pool = num_places - 1
     middle_days = travel_days - 2
@@ -118,30 +142,46 @@ def allocate_places_balanced(
         allocations.append(0)
         return allocations
 
-    # Distribute middle days evenly, respecting duration-based capacity
-    per_day = min(max_per_day, max(1, pool // middle_days))
-    for _ in range(middle_days):
-        give = min(per_day, pool)
+    # Fill middle days evenly
+    base = pool // middle_days
+    remainder = pool % middle_days
+    for i in range(middle_days):
+        give = min(base + (1 if i < remainder else 0), max_per_day)
         allocations.append(give)
-        pool -= give
 
-    # Distribute remainder one-by-one to middle days under capacity
+    # How many places went to middle days
+    middle_used = sum(allocations[1:])
+    last_day_give = pool - middle_used
+    last_day_give = min(max(last_day_give, 0), max_per_day)
+    allocations.append(last_day_give)
+    leftover = pool - middle_used - last_day_give
+
+    # Redistribute leftover to middle days under capacity
     day_idx = 1
-    while pool > 0 and day_idx < len(allocations):
+    while leftover > 0 and day_idx < len(allocations) - 1:
         if allocations[day_idx] < max_per_day:
             allocations[day_idx] += 1
-            pool -= 1
+            leftover -= 1
         day_idx += 1
-        if day_idx >= len(allocations):
+        if day_idx >= len(allocations) - 1:
             day_idx = 1
 
-    # Last day — give whatever remains (at least 1 if possible)
-    allocations.append(pool + 1 if pool > 0 else 1)
+    # Rebalance: if last day < 2 and a middle day has > 1, move one there
+    if allocations[-1] < 2 and any(a > 1 for a in allocations[1:-1]):
+        for i in range(1, len(allocations) - 1):
+            if allocations[i] > 1:
+                allocations[i] -= 1
+                allocations[-1] += 1
+                break
 
     return allocations
 
 
-def optimize_route(places: List[dict], hotel: dict):
+# ──────────────────────────────────────────────
+#  Route optimisation
+# ──────────────────────────────────────────────
+
+def optimize_route(places: List[dict], hotel: dict) -> List[dict]:
     """Nearest-neighbour greedy route optimisation."""
     if not places:
         return []
@@ -166,6 +206,10 @@ def optimize_route(places: List[dict], hotel: dict):
     return route
 
 
+# ──────────────────────────────────────────────
+#  Itinerary generation
+# ──────────────────────────────────────────────
+
 def generate_itinerary(
     db: Session,
     preference_id: int,
@@ -179,16 +223,18 @@ def generate_itinerary(
     extra_places: Optional[List[dict]] = None,
     district: Optional[str] = None,
 ):
-    """Generate a balanced sightseeing itinerary.
+    """Generate a balanced, duration-aware sightseeing itinerary.
 
-    Args:
-        include_transit: If True, merge extra_places into the pool.
-        extra_places: Places from nearby transit districts.
+    Returns a dict with:
+      - preference_id, planning_mode, days
+      - itinerary: list of day dicts, each with:
+          day, district, hotel, places, total_places, day_type, schedule
+      - total_places_available, total_places_used
     """
     if not hotels:
         raise Exception("No hotels available")
 
-    # Resolve anchor hotel
+    # ── Resolve anchor hotel ──
     if planning_mode == "user_anchor" and selected_hotel_id:
         anchor_hotel = next(
             (h for h in hotels if h["hotel_id"] == selected_hotel_id), None
@@ -198,11 +244,8 @@ def generate_itinerary(
     else:
         anchor_hotel = hotels[0]
 
-    # Filter out treks from normal itinerary
+    # ── Filter: treks must NEVER appear in sightseeing ──
     normal_places = [p for p in places if not p.get("is_trek")]
-
-    # Detect adventure places in pool — caller may redirect to trek flow
-    adventure_places = [p for p in places if p.get("is_trek")]
 
     if include_transit and extra_places:
         normal_places.extend([p for p in extra_places if not p.get("is_trek")])
@@ -210,27 +253,27 @@ def generate_itinerary(
     if not normal_places:
         raise Exception("No non-trek places found for itinerary")
 
-    # Sort all places by distance from hotel
+    # ── Sort by distance from hotel ──
     for p in normal_places:
         p["_dist"] = haversine(
             anchor_hotel["latitude"], anchor_hotel["longitude"],
-            p["latitude"], p["longitude"]
+            p["latitude"], p["longitude"],
         )
     normal_places.sort(key=lambda x: x["_dist"])
 
-    # Duration-aware balanced allocation
+    # ── Duration-aware allocation ──
     allocations = allocate_places_balanced(
         len(normal_places), travel_days, places=normal_places
     )
 
-    # Track which places have been used (for balanced fill)
-    used_indices = set()
+    # ── Build each day ──
+    used_indices: set = set()
     itinerary = []
 
     for day_num in range(1, travel_days + 1):
         count = allocations[day_num - 1] if day_num <= len(allocations) else 0
 
-        # Pick next available places (closest-first since list is sorted)
+        # Pick closest available places
         day_places = []
         for idx, place in enumerate(normal_places):
             if idx not in used_indices:
@@ -239,16 +282,16 @@ def generate_itinerary(
                 if len(day_places) >= count:
                     break
 
-        # Optimize route within the day
+        # Optimise intra-day route
         ordered = optimize_route(day_places, anchor_hotel)
 
-        # Add distance info
+        # Distance metadata
         for p in ordered:
             p["distance_from_hotel_km"] = round(p["_dist"], 2)
 
-        # Day label
-        is_arrival_day = (day_num == 1 and travel_days > 1 and len(allocations) > 1)
-        is_last_day = (day_num == travel_days and travel_days > 1)
+        is_first = day_num == 1 and travel_days > 1
+        is_last = day_num == travel_days and travel_days > 1
+        is_single = travel_days == 1
 
         day_entry = {
             "day": day_num,
@@ -264,38 +307,52 @@ def generate_itinerary(
             "total_places": len(ordered),
         }
 
-        if is_arrival_day and not ordered:
+        # Assign day_type + note
+        if is_first:
             day_entry["day_type"] = "arrival"
-            day_entry["note"] = (
-                "Arrival day — settle in and explore the area around your hotel."
-            )
-        elif is_last_day and not ordered:
+            if ordered:
+                day_entry["note"] = (
+                    "Arrival day — check in and explore one nearby attraction."
+                )
+            else:
+                day_entry["note"] = (
+                    "Arrival day — settle in and explore the area around your hotel."
+                )
+        elif is_last:
             day_entry["day_type"] = "departure"
-            day_entry["note"] = (
-                "Departure day — check out and begin your journey home."
-            )
+            if ordered:
+                day_entry["note"] = (
+                    "Last day — visit a final attraction before heading home."
+                )
+            else:
+                day_entry["note"] = (
+                    "Departure day — check out and begin your journey home."
+                )
         elif not ordered and day_num < travel_days:
             day_entry["day_type"] = "explored_all"
             day_entry["note"] = (
-                "You have explored all recommended attractions in this destination."
+                "Your planned sightseeing has been completed. "
+                "Enjoy a relaxed day at your own pace — revisit a "
+                "favourite spot or explore the area around your hotel."
             )
         else:
             day_entry["day_type"] = "sightseeing"
 
         itinerary.append(day_entry)
 
-    # Check if any sightseeing day is empty when places still exist unused
-    # This should not happen with balanced allocation, but handle edge case
-    unused_count = len(normal_places) - len(used_indices)
-    if unused_count > 0:
-        # Try to fill empty days by redistributing from unused pool
-        unused = [p for i, p in enumerate(normal_places) if i not in used_indices]
-        for day_entry in itinerary:
-            if day_entry["total_places"] == 0 and day_entry["day_type"] == "sightseeing":
-                if unused:
-                    day_entry["places"] = [unused.pop(0)]
-                    day_entry["total_places"] = 1
-                    day_entry["day_type"] = "sightseeing"
+    # ── Final safety: if a middle day is empty but places remain, fill it ──
+    unused = [p for i, p in enumerate(normal_places) if i not in used_indices]
+    for day_entry in itinerary:
+        if not unused:
+            break
+        dt = day_entry.get("day_type")
+        if dt in ("sightseeing", "explored_all") and day_entry["total_places"] == 0:
+            day_entry["places"] = [unused.pop(0)]
+            day_entry["total_places"] = 1
+            day_entry["day_type"] = "sightseeing"
+            day_entry["note"] = ""
+
+    used_count = sum(d["total_places"] for d in itinerary)
 
     return {
         "preference_id": preference_id,
@@ -303,5 +360,5 @@ def generate_itinerary(
         "days": travel_days,
         "itinerary": itinerary,
         "total_places_available": len(normal_places),
-        "total_places_used": len(used_indices),
+        "total_places_used": used_count,
     }
