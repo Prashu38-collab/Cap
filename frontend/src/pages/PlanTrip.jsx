@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ItineraryResult from "../components/ItineraryResult";
 import HotelSelection from "../components/HotelSelection";
-import { createPreference, generateFromHotel, generateTrek, selectTrekHotel } from "../utils/api";
+import TrekSelection from "../components/TrekSelection";
+import TrekItineraryResult from "../components/TrekItineraryResult";
+import PlanTripMap from "../components/PlanTripMap";
+import { createPreference, generateFromHotel, generateTrek, selectTrekHotel, getPlacesByDistrict } from "../utils/api";
 
 import "../styles/plantrip.css";
 
@@ -35,6 +38,63 @@ function PlanTrip() {
   const [result, setResult] = useState(null);
   const [weatherForecast, setWeatherForecast] = useState([]);
 
+  // Coordinate states for dynamic map markers
+  const [startCoords, setStartCoords] = useState(null);
+  const [endCoords, setEndCoords] = useState(null);
+
+  // Fetch coordinates dynamically when starting district changes
+  useEffect(() => {
+    if (form.starting_district) {
+      getPlacesByDistrict(form.starting_district)
+        .then((places) => {
+          const coords = places.filter((p) => p.latitude && p.longitude);
+          if (coords.length > 0) {
+            const avgLat = coords.reduce((sum, p) => sum + p.latitude, 0) / coords.length;
+            const avgLon = coords.reduce((sum, p) => sum + p.longitude, 0) / coords.length;
+            setStartCoords([avgLat, avgLon]);
+          } else {
+            setStartCoords(null);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching start district coordinates", err);
+          setStartCoords(null);
+        });
+    } else {
+      setStartCoords(null);
+    }
+  }, [form.starting_district]);
+
+  // Fetch coordinates dynamically when ending district changes
+  useEffect(() => {
+    if (form.ending_district) {
+      getPlacesByDistrict(form.ending_district)
+        .then((places) => {
+          const coords = places.filter((p) => p.latitude && p.longitude);
+          if (coords.length > 0) {
+            const avgLat = coords.reduce((sum, p) => sum + p.latitude, 0) / coords.length;
+            const avgLon = coords.reduce((sum, p) => sum + p.longitude, 0) / coords.length;
+            setEndCoords([avgLat, avgLon]);
+          } else {
+            setEndCoords(null);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching end district coordinates", err);
+          setEndCoords(null);
+        });
+    } else {
+      setEndCoords(null);
+    }
+  }, [form.ending_district]);
+
+  // Determine local YYYY-MM-DD for date validation
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+
   // Trek specific state
   const [selectedTrek, setSelectedTrek] = useState(null);
   const [trekItinerary, setTrekItinerary] = useState(null);
@@ -46,7 +106,13 @@ function PlanTrip() {
       const cats = checked
         ? [...form.categories, value]
         : form.categories.filter((c) => c !== value);
-      setForm((prev) => ({ ...prev, categories: cats }));
+      
+      const isAdventure = cats.includes("Adventure");
+      setForm((prev) => ({
+        ...prev,
+        categories: cats,
+        mobility: isAdventure ? "Difficult" : prev.mobility
+      }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -60,6 +126,7 @@ function PlanTrip() {
     if (!form.ending_district) { setError("Please select an ending district"); return; }
     if (!form.travel_days || parseInt(form.travel_days) < 1) { setError("Please enter valid travel days"); return; }
     if (!form.travel_date) { setError("Please select a travel date"); return; }
+    if (form.travel_date < todayStr) { setError("Travel date cannot be in the past"); return; }
     if (!form.total_budget || parseInt(form.total_budget) < 1) { setError("Please enter a valid total budget"); return; }
     if (!form.hotel_budget || parseInt(form.hotel_budget) < 1) { setError("Please enter a valid hotel budget"); return; }
     if (form.categories.length === 0) { setError("Please select at least one interest category"); return; }
@@ -204,110 +271,115 @@ function PlanTrip() {
 
           {/* STEP 1: FORM */}
           {step === "form" && (
-            <div className="form-card">
-              <form onSubmit={handleSubmit}>
-                <div className="input-group">
-                  <label>Starting District <span className="required">*</span></label>
-                  <select name="starting_district" value={form.starting_district} onChange={update} required>
-                    <option value="" disabled>Select starting district...</option>
-                    {DISTRICTS.map((d) => (<option key={d} value={d}>{d}</option>))}
-                  </select>
-                </div>
-                <div className="input-group">
-                  <label>Ending District <span className="required">*</span></label>
-                  <select name="ending_district" value={form.ending_district} onChange={update} required>
-                    <option value="" disabled>Select ending district...</option>
-                    {DISTRICTS.map((d) => (<option key={d} value={d}>{d}</option>))}
-                  </select>
-                </div>
-                <div className="input-group">
-                  <label>Interests <span className="required">*</span></label>
-                  <div className="checkbox-group">
-                    {["Adventure", "Nature", "Culture", "Religious"].map((cat) => (
-                      <div className="checkbox" key={cat}>
-                        <input type="checkbox" id={`cat-${cat}`} value={cat} checked={form.categories.includes(cat)} onChange={update} />
-                        <label htmlFor={`cat-${cat}`}>{cat}</label>
+            <div className="plantrip-layout">
+              <div className="plantrip-form-side">
+                <div className="form-card">
+                  <form onSubmit={handleSubmit}>
+                    <div className="input-group">
+                      <label>Starting District <span className="required">*</span></label>
+                      <select name="starting_district" value={form.starting_district} onChange={update} required>
+                        <option value="" disabled>Select starting district...</option>
+                        {DISTRICTS.map((d) => (<option key={d} value={d}>{d}</option>))}
+                      </select>
+                    </div>
+                    <div className="input-group">
+                      <label>Ending District <span className="required">*</span></label>
+                      <select name="ending_district" value={form.ending_district} onChange={update} required>
+                        <option value="" disabled>Select ending district...</option>
+                        {DISTRICTS.map((d) => (<option key={d} value={d}>{d}</option>))}
+                      </select>
+                    </div>
+                    <div className="input-group">
+                      <label>Interests <span className="required">*</span></label>
+                      <div className="checkbox-group">
+                        {["Adventure", "Nature", "Culture", "Religious"].map((cat) => (
+                          <div className="checkbox" key={cat}>
+                            <input type="checkbox" id={`cat-${cat}`} value={cat} checked={form.categories.includes(cat)} onChange={update} />
+                            <label htmlFor={`cat-${cat}`}>{cat}</label>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="input-group">
-                  <label>Mobility <span className="required">*</span></label>
-                  <div className="radio-group">
-                    {["Easy", "Moderate", "Difficult"].map((m) => (
-                      <div className="radio" key={m}>
-                        <input type="radio" id={`mob-${m}`} name="mobility" value={m} checked={form.mobility === m} onChange={update} />
-                        <label htmlFor={`mob-${m}`}>{m}</label>
+                    </div>
+                    <div className="input-group">
+                      <label>Mobility <span className="required">*</span></label>
+                      <div className="radio-group">
+                        {["Easy", "Moderate", "Difficult"].map((m) => {
+                          const isAdventure = form.categories.includes("Adventure");
+                          const isMobilityDisabled = isAdventure && m !== "Difficult";
+                          return (
+                            <div className="radio" key={m}>
+                              <input 
+                                type="radio" 
+                                id={`mob-${m}`} 
+                                name="mobility" 
+                                value={m} 
+                                checked={form.mobility === m} 
+                                onChange={update} 
+                                disabled={isMobilityDisabled}
+                              />
+                              <label 
+                                htmlFor={`mob-${m}`}
+                                style={{
+                                  opacity: isMobilityDisabled ? 0.5 : 1,
+                                  cursor: isMobilityDisabled ? "not-allowed" : "pointer"
+                                }}
+                              >
+                                {m}
+                              </label>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                    <div className="input-row">
+                      <div className="input-group">
+                        <label>Total Budget (NPR) <span className="required">*</span></label>
+                        <input type="number" name="total_budget" placeholder="e.g. 50000" value={form.total_budget} onChange={update} min="1000" />
+                      </div>
+                      <div className="input-group">
+                        <label>Hotel Budget (NPR) <span className="required">*</span></label>
+                        <input type="number" name="hotel_budget" placeholder="e.g. 5000" value={form.hotel_budget} onChange={update} min="500" />
+                      </div>
+                    </div>
+                    <div className="input-row">
+                      <div className="input-group">
+                        <label>Travel Date <span className="required">*</span></label>
+                        <input type="date" name="travel_date" value={form.travel_date} onChange={update} min={todayStr} required />
+                      </div>
+                      <div className="input-group">
+                        <label>Duration (days) <span className="required">*</span></label>
+                        <input type="number" name="travel_days" placeholder="e.g. 3" value={form.travel_days} onChange={update} min="1" max="30" />
+                      </div>
+                    </div>
+                    <div className="btn-container">
+                      <button type="submit" className="generate-btn" disabled={submitting}>
+                        {submitting
+                          ? "⏳ Loading..."
+                          : form.categories.includes("Adventure")
+                            ? "🏔 Find Adventures"
+                            : "🏨 Find Hotels"}
+                      </button>
+                    </div>
+                  </form>
                 </div>
-                <div className="input-row">
-                  <div className="input-group">
-                    <label>Total Budget (NPR) <span className="required">*</span></label>
-                    <input type="number" name="total_budget" placeholder="e.g. 50000" value={form.total_budget} onChange={update} min="1000" />
-                  </div>
-                  <div className="input-group">
-                    <label>Hotel Budget (NPR) <span className="required">*</span></label>
-                    <input type="number" name="hotel_budget" placeholder="e.g. 5000" value={form.hotel_budget} onChange={update} min="500" />
-                  </div>
-                </div>
-                <div className="input-row">
-                  <div className="input-group">
-                    <label>Travel Date <span className="required">*</span></label>
-                    <input type="date" name="travel_date" value={form.travel_date} onChange={update} required />
-                  </div>
-                  <div className="input-group">
-                    <label>Duration (days) <span className="required">*</span></label>
-                    <input type="number" name="travel_days" placeholder="e.g. 3" value={form.travel_days} onChange={update} min="1" max="30" />
-                  </div>
-                </div>
-                <div className="btn-container">
-                  <button type="submit" className="generate-btn" disabled={submitting}>
-                    {submitting
-                      ? "⏳ Loading..."
-                      : form.categories.includes("Adventure")
-                        ? "🏔 Find Adventures"
-                        : "🏨 Find Hotels"}
-                  </button>
-                </div>
-              </form>
+              </div>
+              <PlanTripMap
+                startCoords={startCoords}
+                endCoords={endCoords}
+                startingDistrict={form.starting_district}
+                endingDistrict={form.ending_district}
+              />
             </div>
           )}
 
           {/* STEP 2A: TREK SELECTION */}
           {step === "treks" && (
             <div className="trek-selection-wrap">
-              {treks.map((t) => (
-                <div
-                  key={t.place_id}
-                  className="trek-card"
-                  onClick={() => handleTrekSelect(t)}
-                  style={{
-                    background: "#1a1a2e",
-                    borderRadius: 12,
-                    padding: 20,
-                    marginBottom: 16,
-                    border: "1px solid #e94560",
-                    cursor: "pointer",
-                    transition: "transform 0.2s",
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.02)"}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-                >
-                  <h3 style={{ color: "#e94560", margin: "0 0 8px" }}>{t.place_name}</h3>
-                  <p style={{ color: "#ccc", margin: "0 0 4px" }}>
-                    <strong>Category:</strong> {t.category || "Adventure"}
-                  </p>
-                  <p style={{ color: "#aaa", margin: "0 0 4px", fontSize: 13 }}>
-                    📍 {t.district}
-                  </p>
-                  <p style={{ color: "#e94560", margin: "8px 0 0", fontSize: 13, fontWeight: 600 }}>
-                    Click to view trek itinerary →
-                  </p>
-                </div>
-              ))}
-              {submitting && <p style={{ color: "#ccc", textAlign: "center" }}>⏳ Generating trek itinerary...</p>}
+              <TrekSelection
+                treks={treks}
+                onSelect={handleTrekSelect}
+                loading={submitting}
+              />
               <div className="btn-container">
                 <button className="generate-btn" onClick={() => setStep("form")} style={{ background: "#555" }}>
                   ← Back
@@ -331,85 +403,11 @@ function PlanTrip() {
           {/* STEP 3A: TREK ITINERARY RESULT */}
           {step === "trek_result" && trekItinerary && (
             <div className="trek-result-wrap">
-              <h2 style={{ color: "#e94560", marginBottom: 8 }}>
-                🏔 {trekItinerary.trek_name}
-              </h2>
-              <p style={{ color: "#aaa", marginBottom: 24 }}>
-                {trekItinerary.total_days} day trek in {trekItinerary.district}
-              </p>
-
-              {trekItinerary.days.map((day) => (
-                <div
-                  key={day.day_number}
-                  style={{
-                    background: "#1a1a2e",
-                    borderRadius: 12,
-                    padding: 20,
-                    marginBottom: 20,
-                    border: "1px solid #333",
-                  }}
-                >
-                  <h3 style={{ color: "#e94560", marginBottom: 8 }}>
-                    Day {day.day_number} — {day.stop_name}
-                  </h3>
-                  <p style={{ color: "#ccc", marginBottom: 4 }}>
-                    🚶 {day.travel_time}
-                  </p>
-                  <p style={{ color: "#aaa", marginBottom: 12, fontSize: 14 }}>
-                    {day.activity}
-                  </p>
-
-                  {day.overnight && day.nearby_hotels && (
-                    <div>
-                      <p style={{ color: "#fff", fontWeight: 600, marginBottom: 8 }}>
-                        🏨 Select Hotel for Tonight:
-                      </p>
-                      {day.nearby_hotels.length === 0 && (
-                        <p style={{ color: "#888", fontSize: 13 }}>
-                          No hotels found within 5km. Tea houses or camping available.
-                        </p>
-                      )}
-                      {day.nearby_hotels.map((h) => (
-                        <div
-                          key={h.hotel_id}
-                          onClick={() => handleTrekHotelSelect(day.day_number, h.hotel_id)}
-                          style={{
-                            background: trekHotelSelections[day.day_number] === h.hotel_id
-                              ? "#e94560"
-                              : "#0f3460",
-                            borderRadius: 8,
-                            padding: "10px 14px",
-                            marginBottom: 8,
-                            cursor: "pointer",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <div>
-                            <p style={{ color: "#fff", margin: 0, fontWeight: 600 }}>
-                              {h.hotel_name}
-                            </p>
-                            <p style={{ color: "#ddd", margin: "2px 0 0", fontSize: 12 }}>
-                              NPR {h.budget} / night · {h.distance_km} km away
-                            </p>
-                          </div>
-                          {trekHotelSelections[day.day_number] === h.hotel_id && (
-                            <span style={{ color: "#fff", fontWeight: 700 }}>✓ Selected</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {!day.overnight && (
-                    <p style={{ color: "#888", fontSize: 13, fontStyle: "italic" }}>
-                      Day hike — return to previous stop for overnight stay.
-                    </p>
-                  )}
-                </div>
-              ))}
-
+              <TrekItineraryResult
+                trekItinerary={trekItinerary}
+                hotelSelections={trekHotelSelections}
+                onHotelSelect={handleTrekHotelSelect}
+              />
               <div className="btn-container">
                 <button className="generate-btn" onClick={() => setStep("treks")} style={{ background: "#555", marginRight: 12 }}>
                   ← Choose Different Trek
