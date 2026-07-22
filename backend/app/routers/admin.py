@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 # from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
 from app.database import get_db
-from app.main import limiter
+from app.security.limiter import limiter
 
 import re
 

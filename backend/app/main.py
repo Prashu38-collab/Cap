@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import User_Preferences, auth,hotels, itinerary, weather,weather_places, traffic, places, map, admin, contact
 
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from app.security.limiter import limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -15,7 +14,6 @@ app = FastAPI(
 )
 
 # configure limiter
-limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 # catch exception andreturn error
 app.add_exception_handler(
@@ -26,13 +24,9 @@ app.add_exception_handler(
 app.add_middleware(SlowAPIMiddleware)
 
 # CORS
-origins = [
-    "http://localhost:5173",   # React (Vite)
-]
 
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=origins,
     allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],

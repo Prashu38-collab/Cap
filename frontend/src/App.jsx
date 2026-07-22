@@ -17,6 +17,8 @@ import ManageDestinations from "./components/admin/ManageDestinations";
 import ManageHotels from "./components/admin/ManageHotels";
 import ManageGeneratedItineraries from './components/admin/ManageGeneratedItineraries';
 
+import NotFound from "./pages/NotFound";
+
 // const ProtectedRoute = ({ children }) => {
 //   const token = localStorage.getItem("token");
 //   return token ? children : <Navigate to="/login" replace />;
@@ -65,10 +67,13 @@ function App() {
           <Route path="generated-itineraries" element={<ManageGeneratedItineraries />} />
       </Route>
 
-      <Route path="*" element={
+      <Route path="*" element={<NotFound />} />
+
+      {/* <Route path="*" element={
         <Navigate to={localStorage.getItem("token") ? "/dashboard" : "/login"} replace/>
-        }/>
-      </Routes>
+      }/> */}
+
+    </Routes>
   );
 }
 

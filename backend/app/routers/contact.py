@@ -1,7 +1,7 @@
 from fastapi import Request, APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.main import limiter
+from app.security.limiter import limiter
 
 from app.database import get_db
 
