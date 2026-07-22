@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import '../styles/Login.css'
 
-import axios from "axios";
+import api from "../utils/api";
 
 // import { loginUser, getCurrentUser } from '../utils/authStorage'
 
@@ -34,12 +34,15 @@ export default function Login() {
 
   const [showPassword, setShowPassword] = useState(false);
 
-  const API_URL = "http://localhost:8000/login";
-
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if(token){
-      navigate("/dashboard", { replace: true });
+    const role = localStorage.getItem("role");
+    if (token) {
+      if (role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     }
 
     return () => {
@@ -74,14 +77,32 @@ export default function Login() {
 
     try {
 
-      const response = await axios.post(API_URL,
+      const response = await api.post("/login",
         {
           email: form.email,
           password: form.password
         }
       );
 
-      if (response.data.user.status === "Inactive") {
+      console.log(response.data);
+
+      // Admin Login
+      if (response.data.admin) {
+      localStorage.setItem("token", response.data.access_token);
+      localStorage.setItem("admin", JSON.stringify(response.data.admin));
+      localStorage.setItem("role", response.data.admin.role);
+      
+      showNotice("success", "Admin login successful.");
+      if (redirectTimerRef.current)
+        clearTimeout(redirectTimerRef.current);
+      redirectTimerRef.current = setTimeout(() => {
+        navigate("/admin");
+      }, 800);
+      return;
+    }
+
+    // User Login 
+    if (response.data.user.status === "Inactive") {
         showNotice(
           "error",
           "Your account is inactive. Please verify your email."
@@ -98,14 +119,12 @@ export default function Login() {
       }
 
       localStorage.setItem("token", response.data.access_token);
-
       localStorage.setItem("user", JSON.stringify(response.data.user));
+      localStorage.setItem("role", response.data.user.role);
 
       showNotice("success", "Login successful.");
-
       if (redirectTimerRef.current)
         clearTimeout(redirectTimerRef.current);
-
       redirectTimerRef.current = setTimeout(() => {
         navigate("/dashboard");
       }, 800);
@@ -126,7 +145,7 @@ export default function Login() {
   return (
     <div className="auth-container">
       <div className="auth-left">
-        <img src="/images/login.png" alt="Login illustration" />
+        <img src="/images/login2.avif" alt="Login illustration" />
       </div>
       <div className="auth-right">
         <div className="card">

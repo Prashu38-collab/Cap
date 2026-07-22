@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import axios from "axios";
+import api from "../../utils/api.js";
 import Swal from "sweetalert2";
 
 function ManageHotels() {
-
-  const API = "http://localhost:8000/api/admin/hotels";
 
   const [hotels, setHotels] = useState([]);
   const [search, setSearch] = useState("");
@@ -36,7 +34,7 @@ function ManageHotels() {
 
   const fetchHotels = async () => {
     try {
-      const res = await axios.get(API);
+      const res = await api.get("/api/admin/hotels");
       setHotels(res.data);
     } catch (error) {
       console.log(error);
@@ -74,7 +72,7 @@ function ManageHotels() {
     }
 
     try {
-      await axios.post(API, newHotel);
+      await api.get("/api/admin/destinations", newHotel);
       Swal.fire("Success", "Hotel added successfully.", "success");
       fetchHotels();
       setShowAdd(false);
@@ -109,7 +107,7 @@ function ManageHotels() {
     if (!result.isConfirmed) return;
 
     try {
-      await axios.delete(`${API}/${id}`);
+      await api.delete(`/api/admin/hotels/${id}`);
       fetchHotels();
       Swal.fire("Deleted!", "Hotel removed successfully.", "success");
     } catch {
@@ -121,7 +119,7 @@ function ManageHotels() {
   const handleUpdate = async () => {
     try{
       console.log(selectedHotel);
-      const response = await axios.put( `${API}/${selectedHotel.hotel_id}`, selectedHotel );
+      await api.put(`/api/admin/hotels/${selectedHotel.hotel_id}`, selectedHotel);
       Swal.fire("Success", "Hotel updated successfully.", "success");
       fetchHotels();
       setShowEdit(false);

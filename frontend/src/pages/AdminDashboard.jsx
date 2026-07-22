@@ -9,8 +9,7 @@ function AdminDashboard() {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       sessionStorage.clear();
-
-      navigate("/login");
+      navigate("/login", { replace: true }); 
     };
 
     return (
@@ -81,81 +80,3 @@ function AdminDashboard() {
 }
 
 export default AdminDashboard;
-
-// import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
-
-// import DashboardSection from "../components/admin/AdminDashboardSection";
-// import UsersSection from "../components/admin/ManageUsers";
-// import ContactSection from "../components/admin/ContactMessages";
-
-// import "../styles/admin.css";
-
-// function AdminDashboard() {
-  
-//   const navigate = useNavigate();
-//   const handleLogout = () => {
-
-//     localStorage.removeItem("token");
-//     // localStorage.removeItem("user");
-//     sessionStorage.clear();
-//     navigate("/login");
-//   };
-
-//   const [activePage, setActivePage] = useState("dashboard");
-
-//   return (
-//     <div className="admin-layout">
-
-//       {/* Sidebar */}
-//       <aside className="admin-sidebar">
-
-//         <h2>Go Travel</h2>
-
-//         <ul>
-
-//           <li
-//             className={activePage === "dashboard" ? "active" : ""}
-//             onClick={() => setActivePage("dashboard")}
-//           >
-//             Dashboard
-//           </li>
-
-//           <li
-//             className={activePage === "users" ? "active" : ""}
-//             onClick={() => setActivePage("users")}
-//           >
-//             Manage Users
-//           </li>
-
-//           <li
-//             className={activePage === "messages" ? "active" : ""}
-//             onClick={() => setActivePage("messages")}
-//           >
-//             Contact Messages
-//           </li>
-
-//           <li className="logout" onClick={handleLogout}>
-//             Logout
-//           </li>
-
-//         </ul>
-
-//       </aside>
-
-//       {/* Main Content */}
-//       <main className="admin-content">
-
-//         {activePage === "dashboard" && <DashboardSection />}
-
-//         {activePage === "users" && (<UsersSection setActivePage={setActivePage} /> )}
-
-//         {activePage === "messages" && (<ContactSection setActivePage={setActivePage} /> )}
-
-//       </main>
-
-//     </div>
-//   );
-// }
-
-// export default AdminDashboard;

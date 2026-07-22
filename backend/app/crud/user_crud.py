@@ -16,7 +16,6 @@ def get_user_by_email(db: Session, email: str):
                 phone_number,
                 password,
                 terms_accepted,
-                confirm_password,
                 is_verified,
                 otp,
                 otp_expiry,
@@ -42,7 +41,6 @@ def get_user_by_id(db: Session, user_id: int):
                 phone_number,
                 password,
                 terms_accepted,
-                confirm_password,
                 is_verified,
                 otp,
                 otp_expiry,
@@ -84,7 +82,6 @@ def create_user(
     phone_number: str,
     hashed_password: str,
     terms_accepted: bool,
-    confirm_password: str,
     otp: str = None,
     otp_expiry=None,
     is_verified: bool = False,
@@ -100,7 +97,6 @@ def create_user(
                 phone_number,
                 password,
                 terms_accepted,
-                confirm_password,
                 is_verified,
                 otp,
                 otp_expiry,
@@ -114,7 +110,6 @@ def create_user(
                 :phone_number,
                 :password,
                 :terms_accepted,
-                :confirm_password,
                 :is_verified,
                 :otp,
                 :otp_expiry,
@@ -127,7 +122,6 @@ def create_user(
             "phone_number": phone_number,
             "password": hashed_password,
             "terms_accepted": terms_accepted,
-            "confirm_password": confirm_password,
             "is_verified": is_verified,
             "otp": otp,
             "otp_expiry": otp_expiry,
@@ -194,28 +188,6 @@ def update_otp(
 
 # Update User Status (Admin)
 
-# def update_user_status(
-#     db: Session,
-#     user_id: int,
-#     status: str
-# ):
-
-#     result = db.execute(
-#         text("""
-#             UPDATE users
-#             SET status = :status
-#             WHERE user_id = :user_id
-#         """),
-#         {
-#             "status": status,
-#             "user_id": user_id
-#         }
-#     )
-
-#     db.commit()
-
-#     return result.rowcount > 0
-
 def update_user_status(
     db: Session,
     user_id: int,
@@ -267,25 +239,6 @@ def update_user_status(
     return result.rowcount > 0
 
 # Delete User
-
-# def delete_user(
-#     db: Session,
-#     user_id: int
-# ):
-
-#     result = db.execute(
-#         text("""
-#             DELETE FROM users
-#             WHERE user_id = :user_id
-#         """),
-#         {
-#             "user_id": user_id
-#         }
-#     )
-
-#     db.commit()
-
-#     return result.rowcount > 0
 
 def delete_user(
     db: Session,

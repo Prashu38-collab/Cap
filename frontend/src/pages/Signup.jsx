@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import '../styles/Signup.css'
 // import { registerUser, getCurrentUser } from '../utils/authStorage'
-import axios from "axios";
+import api from "../utils/api";
 
 function EyeIcon() {
   return (
@@ -116,7 +116,7 @@ export default function Signup() {
     }
 
    try {
-    const response = await axios.post("http://localhost:8000/register",
+    const response = await api.post("/register",
       {
           name: form.name,
           email: form.email,
@@ -143,7 +143,7 @@ export default function Signup() {
   return (
     <div className="auth-container">
       <div className="auth-left">
-        <img src="/images/login.png" alt="Travel illustration" />
+        <img src="/images/login2.avif" alt="Travel illustration" />
       </div>
       <div className="auth-right">
         <div className="card">

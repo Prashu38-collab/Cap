@@ -2,14 +2,30 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import User_Preferences, auth,hotels, itinerary, weather,weather_places, traffic, places, map, admin, contact
 
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi import _rate_limit_exceeded_handler
+
 app = FastAPI(
     title="Travel Itinerary System API",
     description="Backend API for personalized travel itinerary planning",
     version="1.0.0"
 )
 
-# CORS
+# configure limiter
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+# catch exception andreturn error
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler
+)
+#  add middleware
+app.add_middleware(SlowAPIMiddleware)
 
+# CORS
 origins = [
     "http://localhost:5173",   # React (Vite)
 ]

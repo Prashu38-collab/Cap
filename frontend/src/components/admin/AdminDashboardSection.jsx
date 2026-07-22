@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../utils/api.js";
 
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, PieChart, Pie, Legend
@@ -15,11 +15,8 @@ function DashboardSection() {
   });
 
   const [recentMessages, setRecentMessages] = useState([]);
-
   const [activities, setActivities] = useState([]);
-
   const [districtData, setDistrictData] = useState([]);
-
   const [categoryData, setCategoryData] = useState([]);
 
   useEffect(() => {
@@ -28,58 +25,42 @@ function DashboardSection() {
 
   const fetchDashboardData = async () => {
 
+  // Stats
   try {
-    const statsResponse = await axios.get(
-      "http://localhost:8000/api/admin/stats"
-    );
-
+    const statsResponse = await api.get("/api/admin/stats");
     setStats(statsResponse.data);
-
   } catch (error) {
     console.error("Stats Error:", error);
   }
 
+  // Recent Messages
   try{
-
-    const messagesResponse = await axios.get(
-      "http://localhost:8000/api/admin/dashboard/recent-messages"
-    );
-
+    const messagesResponse = await api.get("/api/admin/dashboard/recent-messages");
     setRecentMessages(messagesResponse.data);
-
   } catch(error){
     console.error(error);
   }
 
+  // Recent Activities
   try {
-    const activitiesResponse = await axios.get(
-      "http://localhost:8000/api/admin/dashboard/recent-activities"
-    );
-
+    const activitiesResponse = await api.get("/api/admin/dashboard/recent-activities");
     setActivities(activitiesResponse.data);
-
   } catch (error) {
     console.error(error);
   }
 
+  // Category piechart
   try{
-    const categoryResponse = await axios.get(
-      "http://localhost:8000/api/admin/dashboard/category-distribution"
-    );
-
+    const categoryResponse = await api.get("/api/admin/dashboard/category-distribution");
     setCategoryData(categoryResponse.data);
-
   }catch(error){
     console.error(error);
   }
 
+  // Districts bar graph
   try {
-    const districtresponse = await axios.get(
-        "http://localhost:8000/api/admin/dashboard/districts"
-    );
-
+    const districtresponse = await api.get("/api/admin/dashboard/districts");
     setDistrictData(districtresponse.data);
-
   }catch(error){
     console.log(erroror);
   }

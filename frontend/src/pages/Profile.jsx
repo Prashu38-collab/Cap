@@ -32,20 +32,6 @@ export default function MyProfile() {
   const [isEditing, setIsEditing] = useState(false)
   const fileInputRef = useRef(null)
 
-  function logout() {
-    navigate('/login')
-  }
-
-  function handleChangePhoto() {
-    fileInputRef.current?.click()
-  }
-
-  function handlePhotoSelected(event) {
-    const file = event.target.files?.[0]
-    if (!file) return
-    setAvatarSrc(URL.createObjectURL(file))
-  }
-
   function handleEditProfile() {
     setIsEditing(prev => !prev)
   }

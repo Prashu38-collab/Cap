@@ -9,8 +9,10 @@ function Navbar() {
   const handleLogout = () => {
     // Clear all auth data
     localStorage.removeItem('token');
+    localStorage.removeItem("user");
     sessionStorage.clear();
-    navigate("/login");
+    navigate("/login", { replace: true }); 
+    // Replace true prevents the user from pressing the browser's Back button and returning to the previous page in the history.
   };
 
   const [scrolled, setScrolled] = useState(false);
@@ -57,11 +59,6 @@ function Navbar() {
               </NavLink>
 
           </nav>
-
-            {/* --Logout button-- */}
-            {/* <NavLink to="/login" className="logout">
-              Logout
-            </NavLink> */}
 
             <button onClick={handleLogout} className="logout"> Logout </button>
 
