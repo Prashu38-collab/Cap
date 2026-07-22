@@ -686,9 +686,9 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
                     "corridor": corridor,
                     "flow": "no_trek_fallback",
                     "message": (
-                        f"{ending} is better known for its culture, heritage "
-                        "and nature than adventure activities. Would you like "
-                        "to continue with those experiences instead?"
+                        f"{ending} currently has no trekking or adventure routes. "
+                        "It is well known for its culture, heritage and nature. "
+                        "Would you like to continue with those experiences instead?"
                     ),
                     "hotels": fetch_hotels(db, ending, hotel_budget),
                 }
@@ -719,14 +719,7 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
             "hotels": hotels,
         }
 
-        if user_wants_adventure and not district_has_treks:
-            response["adventure_fallback"] = True
-            response["adventure_fallback_message"] = (
-                f"{ending} is better known for its culture, heritage and nature "
-                "than adventure activities. Would you like to continue with "
-                "those experiences instead?"
-            )
-        elif district_has_treks and not user_wants_adventure:
+        if district_has_treks and not user_wants_adventure:
             adventure_places = _fetch_adventure_places(db, ending)
             if adventure_places:
                 response["trek_available"] = True

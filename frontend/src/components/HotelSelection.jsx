@@ -82,7 +82,6 @@ function StarRating({ score }) {
 }
 
 function HotelCard({ hotel, index, selected, onSelect, onMouseEnter, onMouseLeave }) {
-  const imgUrl = `${hotelImages[index % hotelImages.length]}?w=600&h=400&fit=crop`;
   return (
     <button
       id={`hotel-card-${hotel.hotel_id}`}
@@ -92,27 +91,27 @@ function HotelCard({ hotel, index, selected, onSelect, onMouseEnter, onMouseLeav
       onMouseLeave={onMouseLeave}
       style={{ "--i": index }}
     >
-      <div className="hs-card-img">
-        <img src={imgUrl} alt={hotel.hotel_name} loading="lazy" />
-        <div className="hs-card-overlay" />
-        <div className="hs-card-price">
-          <span className="hs-price-amount">NPR {hotel.budget?.toLocaleString()}</span>
-          <span className="hs-price-label">per night</span>
-        </div>
-      </div>
       <div className="hs-card-body">
-        <h3 className="hs-card-name">{hotel.hotel_name}</h3>
-        <div className="hs-card-meta">
-          <StarRating score={hotel.review_score} />
-          <span className="hs-card-score">{hotel.review_score?.toFixed(1)}</span>
+        <div className="hs-card-row">
+          <div className="hs-card-info">
+            <h3 className="hs-card-name">{hotel.hotel_name}</h3>
+            <div className="hs-card-meta">
+              <StarRating score={hotel.review_score} />
+              <span className="hs-card-score">{hotel.review_score?.toFixed(1)}</span>
+            </div>
+          </div>
+          <div className="hs-card-details">
+            {hotel.distance_km != null && (
+              <span className="hs-card-distance">{hotel.distance_km} km</span>
+            )}
+            <span className="hs-card-price">NPR {hotel.budget?.toLocaleString()}</span>
+            <span className="hs-card-unit">/night</span>
+          </div>
+          <div className="hs-card-select">
+            {selected ? "✓" : "Select"}
+          </div>
         </div>
-        <p className="hs-card-district">{hotel.district}</p>
       </div>
-      {selected && (
-        <div className="hs-card-check">
-          <span>✓</span>
-        </div>
-      )}
     </button>
   );
 }

@@ -289,6 +289,26 @@ def generate_itinerary(
         for p in ordered:
             p["distance_from_hotel_km"] = round(p["_dist"], 2)
 
+        # Travel-time metadata between consecutive stops
+        prev_lat = anchor_hotel["latitude"]
+        prev_lon = anchor_hotel["longitude"]
+        for p in ordered:
+            dist_km = haversine(prev_lat, prev_lon, p["latitude"], p["longitude"])
+            travel_min = max(10, round(dist_km * 3))
+            p["travel_time_to_next_min"] = travel_min
+            p["travel_dist_km"] = round(dist_km, 1)
+            cat = (p.get("category") or "").lower()
+            if "nature" in cat:
+                p["activity_label"] = "Explore"
+            elif "religious" in cat:
+                p["activity_label"] = "Visit"
+            elif "cultural" in cat:
+                p["activity_label"] = "Visit"
+            else:
+                p["activity_label"] = "Visit"
+            prev_lat = p["latitude"]
+            prev_lon = p["longitude"]
+
         is_first = day_num == 1 and travel_days > 1
         is_last = day_num == travel_days and travel_days > 1
         is_single = travel_days == 1

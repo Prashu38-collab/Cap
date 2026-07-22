@@ -144,7 +144,7 @@ function PlanTrip() {
         setNoTrekFallback(data);
         setHotels(data.hotels || []);
         setInsufficientInfo(null);
-        setStep("hotels");
+        setStep("no_trek_fallback");
         return;
       }
 
