@@ -222,6 +222,7 @@ def generate_itinerary(
     include_transit: bool = False,
     extra_places: Optional[List[dict]] = None,
     district: Optional[str] = None,
+    transit_districts: Optional[List[str]] = None,
 ):
     """Generate a balanced, duration-aware sightseeing itinerary.
 
@@ -253,7 +254,23 @@ def generate_itinerary(
     if not normal_places:
         raise Exception("No non-trek places found for itinerary")
 
-    # ── Sort by distance from hotel ──
+    # ── Group hotels by district for multi-district hotel assignment ──
+    hotels_by_district = {}
+    for h in hotels:
+        d = (h.get("district") or "").strip()
+        if d:
+            hotels_by_district.setdefault(d, []).append(h)
+    # Fuzzy lookup helper
+    def _find_hotels_for_district(place_district):
+        if not place_district:
+            return []
+        pd = place_district.strip().lower()
+        for d, hlist in hotels_by_district.items():
+            if d.lower() == pd or pd in d.lower() or d.lower() in pd:
+                return hlist
+        return []
+
+    # ── Sort ALL places by distance from hotel ──
     for p in normal_places:
         p["_dist"] = haversine(
             anchor_hotel["latitude"], anchor_hotel["longitude"],
@@ -269,6 +286,7 @@ def generate_itinerary(
     # ── Build each day ──
     used_indices: set = set()
     itinerary = []
+    current_hotel = anchor_hotel
 
     for day_num in range(1, travel_days + 1):
         count = allocations[day_num - 1] if day_num <= len(allocations) else 0
@@ -282,16 +300,60 @@ def generate_itinerary(
                 if len(day_places) >= count:
                     break
 
+        # ── Multi-district hotel: reassign hotel if day's places are in a different district ──
+        if day_places:
+            districts_in_day = set()
+            for p in day_places:
+                pd = (p.get("district") or "").strip()
+                if pd:
+                    districts_in_day.add(pd)
+
+            if len(districts_in_day) == 1:
+                day_district = districts_in_day.pop()
+            elif len(districts_in_day) > 1:
+                # Pick the district with most places
+                from collections import Counter
+                day_district = Counter(
+                    (p.get("district") or "").strip() for p in day_places
+                ).most_common(1)[0][0]
+            else:
+                day_district = district or anchor_hotel.get("district", "")
+
+            # Check if hotel needs to change
+            current_hotel_district = (current_hotel.get("district") or "").strip().lower()
+            if day_district and day_district.lower() != current_hotel_district:
+                # Distance from current hotel to first place in this day's district
+                first_place = day_places[0]
+                dist_to_current = haversine(
+                    current_hotel["latitude"], current_hotel["longitude"],
+                    first_place["latitude"], first_place["longitude"],
+                )
+                # If significant distance (>100km) or different district, find a local hotel
+                if dist_to_current > 100 or day_district.lower() != current_hotel_district:
+                    local_hotels = _find_hotels_for_district(day_district)
+                    if local_hotels:
+                        # Pick closest local hotel to the day's places
+                        best_local = min(
+                            local_hotels,
+                            key=lambda h: min(
+                                haversine(h["latitude"], h["longitude"], p["latitude"], p["longitude"])
+                                for p in day_places
+                            ),
+                        )
+                        current_hotel = best_local
+        else:
+            day_district = district or anchor_hotel.get("district", "")
+
         # Optimise intra-day route
-        ordered = optimize_route(day_places, anchor_hotel)
+        ordered = optimize_route(day_places, current_hotel)
 
         # Distance metadata
         for p in ordered:
             p["distance_from_hotel_km"] = round(p["_dist"], 2)
 
         # Travel-time metadata between consecutive stops
-        prev_lat = anchor_hotel["latitude"]
-        prev_lon = anchor_hotel["longitude"]
+        prev_lat = current_hotel["latitude"]
+        prev_lon = current_hotel["longitude"]
         for p in ordered:
             dist_km = haversine(prev_lat, prev_lon, p["latitude"], p["longitude"])
             travel_min = max(10, round(dist_km * 3))
@@ -315,13 +377,13 @@ def generate_itinerary(
 
         day_entry = {
             "day": day_num,
-            "district": district or anchor_hotel.get("district", ""),
+            "district": day_district or district or anchor_hotel.get("district", ""),
             "hotel": {
-                "hotel_id": anchor_hotel["hotel_id"],
-                "hotel_name": anchor_hotel["hotel_name"],
-                "latitude": anchor_hotel["latitude"],
-                "longitude": anchor_hotel["longitude"],
-                "district": anchor_hotel.get("district", district or ""),
+                "hotel_id": current_hotel["hotel_id"],
+                "hotel_name": current_hotel["hotel_name"],
+                "latitude": current_hotel["latitude"],
+                "longitude": current_hotel["longitude"],
+                "district": current_hotel.get("district", day_district or ""),
             },
             "places": ordered,
             "total_places": len(ordered),

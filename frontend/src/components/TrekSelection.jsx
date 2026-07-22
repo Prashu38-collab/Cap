@@ -73,12 +73,23 @@ function MapController({ center, zoom, bounds }) {
   return null;
 }
 
-export default function TrekSelection({ treks, onSelect, loading }) {
+export default function TrekSelection({ treks, onSelect, loading, recommendedTrekId }) {
   const [hoveredId, setHoveredId] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(recommendedTrekId || null);
   const [mapCenter, setMapCenter] = useState(null);
   const [mapZoom, setMapZoom] = useState(11);
   const markerRefs = useRef({});
+
+  useEffect(() => {
+    if (recommendedTrekId) {
+      setSelectedId(recommendedTrekId);
+      const trek = treks.find((t) => t.place_id === recommendedTrekId);
+      if (trek?.latitude && trek?.longitude) {
+        setMapCenter([trek.latitude, trek.longitude]);
+        setMapZoom(14);
+      }
+    }
+  }, [recommendedTrekId, treks]);
 
   const validTreks = treks.filter((t) => t.latitude && t.longitude);
   const bounds = validTreks.map((t) => [t.latitude, t.longitude]);
@@ -129,7 +140,7 @@ export default function TrekSelection({ treks, onSelect, loading }) {
                 onClick={() => handleCardClick(trek)}
                 onMouseEnter={() => setHoveredId(trek.place_id)}
                 onMouseLeave={() => setHoveredId(null)}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", position: "relative" }}
               >
                 <div className="trek-card-img-wrap">
                   <img src={imgUrl} alt={trek.place_name} loading="lazy" />
@@ -137,6 +148,11 @@ export default function TrekSelection({ treks, onSelect, loading }) {
                   <span className="trek-difficulty-badge difficult">
                     {trek.mobility || "Difficult"}
                   </span>
+                  {trek.place_id === recommendedTrekId && (
+                    <span style={{ position: "absolute", top: 12, right: 12, padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#fff", background: "#10b981", boxShadow: "0 2px 4px rgba(0,0,0,0.15)", zIndex: 2 }}>
+                      Recommended
+                    </span>
+                  )}
                 </div>
                 <div className="trek-card-body">
                   <h3>{trek.place_name}</h3>

@@ -285,20 +285,22 @@ def _build_day_timeline(
     day_number: int,
     total_days: int,
     prev_stop_name: str = "",
+    is_travel_day: bool = False,
+    is_trek_day: bool = False,
+    is_return_day: bool = False,
 ) -> list:
-    """Convert a single trek stop into a realistic daily timeline.
+    """Build a realistic daily timeline from trek_stops data.
 
-    Returns a list of dicts: {time, label, type} where type is one of:
-    breakfast, departure, travel, arrival, explore, activity, check_in,
-    dinner, rest, overnight.
+    Uses trek_stops.travel_time and trek_stops.activity as the PRIMARY source.
+    Only adds breakfast/lunch/dinner/check-in around the database values.
+    Never invents generic activities.
     """
-    is_first = day_number == 1
-    is_last = day_number == total_days
-    is_trekking_day = not is_first  # first day is usually a drive day
+    is_first_trek_day = is_trek_day and day_number == 2
+    is_last = is_return_day or day_number == total_days
 
     travel_hours, travel_mode = _parse_travel_hours(travel_time or activity)
 
-    # ── Fallback: if no travel time found, infer from mode ──
+    # ── Fallback defaults when no parseable travel time ──
     if travel_hours == 0:
         if travel_mode == "drive":
             travel_hours = 5.0
@@ -307,7 +309,6 @@ def _build_day_timeline(
         else:
             travel_hours = 4.0
 
-    # ── Helper: mode label ──
     def mode_label():
         if travel_mode == "drive":
             return "Drive"
@@ -319,49 +320,52 @@ def _build_day_timeline(
             return "Flight"
         return "Travel"
 
-    # ── Helper: hours to readable range ──
     def hours_range():
         lo = int(round(travel_hours))
         hi = lo + 1
-        return f"{lo}–{hi} hrs"
+        return f"{lo}\u2013{hi} hrs"
 
-    # ── Compute key times ──
-    departure_time = "06:00" if is_first else "07:00"
+    # ── Compute key times from travel data ──
+    if is_first_trek_day:
+        departure_time = "07:00"
+    else:
+        departure_time = "07:00"
+
     travel_start = _advance_time(departure_time, 15)
     travel_end = _advance_time(travel_start, int(travel_hours * 60))
 
-    if is_first:
-        arrival_label = f"Arrive at {stop_name}"
-        lunch_time = _advance_time(travel_end, -30)
-        explore_time = _advance_time(travel_end, 60)
-        dinner_time = "19:00"
+    if travel_hours >= 3:
+        lunch_time = _advance_time(travel_start, int(travel_hours * 60 * 0.5))
     else:
-        arrival_label = f"Reach {stop_name}"
-        lunch_time = "12:30" if travel_hours <= 4 else travel_end
-        explore_time = _advance_time(travel_end, 60)
-        dinner_time = "19:30"
+        lunch_time = _advance_time(travel_end, 30)
 
-    # ── Build events ──
+    rest_time = _advance_time(travel_end, 60)
+
+    # ── Build events from DATABASE values ──
     events = []
 
-    # Breakfast
+    # 1. Breakfast (always first)
     events.append({
-        "time": "06:00" if is_first else "06:00",
+        "time": "06:00",
         "label": "Breakfast",
         "type": "breakfast",
     })
 
-    # Departure
-    depart_from = "Depart from hotel" if is_first else (
-        f"Start trek from {prev_stop_name}" if is_trekking_day else f"Depart from {prev_stop_name}"
-    )
+    # 2. Departure
+    if is_first_trek_day:
+        depart_label = f"Depart from hotel"
+    elif prev_stop_name:
+        depart_label = f"Start trek from {prev_stop_name}"
+    else:
+        depart_label = "Start trek"
+
     events.append({
         "time": departure_time,
-        "label": depart_from,
+        "label": depart_label,
         "type": "departure",
     })
 
-    # Travel
+    # 3. Travel segment (uses trek_stops.travel_time directly)
     travel_label = f"{mode_label()} {hours_range()}"
     events.append({
         "time": travel_start,
@@ -371,14 +375,7 @@ def _build_day_timeline(
         "travel_hours": round(travel_hours, 1),
     })
 
-    # Arrival
-    events.append({
-        "time": travel_end,
-        "label": arrival_label,
-        "type": "arrival",
-    })
-
-    # Mid-day lunch (only if travel is long enough)
+    # 4. Lunch (for long travel days)
     if travel_hours >= 3:
         events.append({
             "time": lunch_time,
@@ -386,41 +383,55 @@ def _build_day_timeline(
             "type": "lunch",
         })
 
-    # Activity / explore (for overnight stops, add exploration)
-    if overnight and activity and not any(
-        kw in (activity or "").lower() for kw in ("drive", "trek", "hike", "climb", "descend", "cross")
-    ):
-        events.append({
-            "time": explore_time,
-            "label": activity if activity else f"Explore {stop_name}",
-            "type": "explore",
-        })
+    # 5. Arrival at stop
+    arrival_label = f"Reach {stop_name}"
+    events.append({
+        "time": travel_end,
+        "label": arrival_label,
+        "type": "arrival",
+    })
 
-    # Hotel check-in (overnight stops only)
+    # 6. Activity (uses trek_stops.activity directly — the PRIMARY source)
+    if activity:
+        act_lower = activity.lower().strip()
+        # Only show activity if it's not already a drive/travel/trek keyword
+        # (those are covered by the travel segment above)
+        is_travel_activity = any(
+            kw in act_lower
+            for kw in ("drive", "bus", "vehicle", "ride", "flight", "fly")
+        )
+        if not is_travel_activity:
+            events.append({
+                "time": _advance_time(travel_end, 30),
+                "label": activity,
+                "type": "explore",
+            })
+
+    # 7. Hotel check-in (overnight stops)
     if overnight:
         events.append({
-            "time": _advance_time(explore_time, 30),
+            "time": _advance_time(travel_end, 90),
             "label": "Hotel Check-in",
             "type": "check_in",
         })
 
-    # Dinner
+    # 8. Dinner
     events.append({
-        "time": dinner_time,
+        "time": "19:00" if travel_hours <= 4 else _advance_time(travel_end, 120),
         "label": "Dinner",
         "type": "dinner",
     })
 
-    # Overnight / rest
+    # 9. Overnight or rest
     if overnight:
         events.append({
-            "time": _advance_time(dinner_time, 90),
+            "time": "20:30",
             "label": "Overnight Stay",
             "type": "overnight",
         })
     elif is_last:
         events.append({
-            "time": _advance_time(dinner_time, 60),
+            "time": _advance_time("19:00", 60),
             "label": "Rest for the night",
             "type": "rest",
         })
@@ -436,6 +447,7 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
     try:
         place_id = payload.get("place_id")
         travel_days = int(payload.get("travel_days", 1))
+        starting_district = payload.get("starting_district", "")
 
         if not place_id:
             raise HTTPException(status_code=400, detail="place_id is required")
@@ -450,6 +462,33 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
 
         if not trek_info:
             raise HTTPException(status_code=404, detail="Trek not found")
+
+        # ── Fetch starting district coordinates ──
+        start_coords = None
+        if starting_district:
+            start_row = db.execute(
+                text("""
+                    SELECT AVG("Latitude") AS avg_lat, AVG("Longitude") AS avg_lon
+                    FROM itinerary_places
+                    WHERE "District" ILIKE :district
+                """),
+                {"district": f"%{starting_district}%"},
+            ).fetchone()
+            if start_row and start_row.avg_lat and start_row.avg_lon:
+                start_coords = (float(start_row.avg_lat), float(start_row.avg_lon))
+
+        # Fallback: use trek district coords if no starting district provided
+        if not start_coords:
+            trek_coords_row = db.execute(
+                text("""
+                    SELECT AVG("Latitude") AS avg_lat, AVG("Longitude") AS avg_lon
+                    FROM itinerary_places
+                    WHERE "District" ILIKE :district
+                """),
+                {"district": f"%{trek_info.District}%"},
+            ).fetchone()
+            if trek_coords_row and trek_coords_row.avg_lat and trek_coords_row.avg_lon:
+                start_coords = (float(trek_coords_row.avg_lat), float(trek_coords_row.avg_lon))
 
         stops = db.execute(
             text("""
@@ -467,6 +506,8 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
 
         stops = stops[:travel_days]
 
+        stops = stops[:travel_days]
+
         all_hotels = db.execute(
             text("""
                 SELECT hotel_id, hotel_name, latitude, longitude,
@@ -475,28 +516,146 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
             """),
         ).fetchall()
 
+        # ── Prepend travel day (Day 1) before trek days start ──
+        # DB day_number is "day on trail", we shift all by +1 and add travel day
         days = []
         prev_stop = None
+
+        # Travel day: journey from starting district to first trek stop
+        first_stop = stops[0]
+        starting_district_label = starting_district or trek_info.District or ""
+
+        # Calculate travel distance and hours from starting coords to first stop
+        travel_hours = 5.0  # default fallback
+        travel_distance_km = 0.0
+        if start_coords and first_stop.latitude and first_stop.longitude:
+            try:
+                from app.services.osrm_service import get_road_distance
+                osrm_result = get_road_distance(
+                    start_coords[0], start_coords[1],
+                    float(first_stop.latitude), float(first_stop.longitude),
+                )
+                if osrm_result:
+                    travel_distance_km = osrm_result["distance_km"]
+                    travel_hours = max(1.0, osrm_result["duration_min"] / 60.0)
+                else:
+                    raise ValueError("OSRM returned None")
+            except Exception:
+                travel_distance_km = _haversine_km(
+                    start_coords[0], start_coords[1],
+                    float(first_stop.latitude), float(first_stop.longitude),
+                )
+                if travel_distance_km > 0:
+                    travel_hours = max(1.0, travel_distance_km / 40.0)
+                else:
+                    travel_hours = 5.0
+
+        travel_hours_lo = int(round(travel_hours))
+        travel_hours_hi = travel_hours_lo + 1
+        travel_time_label = f"{travel_hours_lo}\u2013{travel_hours_hi} hrs"
+        travel_distance_label = f"{int(round(travel_distance_km))} km" if travel_distance_km > 0 else ""
+
+        travel_day = {
+            "day_number": 1,
+            "stop_name": first_stop.stop_name,
+            "latitude": float(first_stop.latitude) if first_stop.latitude else None,
+            "longitude": float(first_stop.longitude) if first_stop.longitude else None,
+            "activity": f"Drive to {first_stop.stop_name}",
+            "travel_time": f"{travel_time_label} drive ({travel_distance_label})" if travel_distance_label else f"{travel_time_label} drive",
+            "overnight": True,
+            "is_travel_day": True,
+            "is_trek_day": False,
+            "is_return_day": False,
+        }
+
+        # Build travel day timeline with calculated times
+        td_depart = "07:00"
+        td_travel_start = _advance_time(td_depart, 15)
+        td_travel_end = _advance_time(td_travel_start, int(travel_hours * 60))
+        td_lunch = _advance_time(td_travel_start, int(travel_hours * 60 * 0.5)) if travel_hours >= 3 else _advance_time(td_travel_end, 30)
+        td_hotel_checkin = _advance_time(td_travel_end, 60)
+
+        travel_day_timeline = [
+            {"time": "06:00", "label": "Breakfast", "type": "breakfast"},
+            {"time": td_depart, "label": f"Depart from {starting_district_label}", "type": "departure"},
+            {"time": td_travel_start, "label": f"Drive to {first_stop.stop_name} ({travel_time_label})", "type": "travel", "travel_mode": "drive", "travel_hours": round(travel_hours, 1)},
+        ]
+        if travel_hours >= 3:
+            travel_day_timeline.append({"time": td_lunch, "label": "Lunch en route", "type": "lunch"})
+        travel_day_timeline.extend([
+            {"time": td_travel_end, "label": f"Arrive at {first_stop.stop_name}", "type": "arrival"},
+            {"time": td_hotel_checkin, "label": "Hotel Check-in", "type": "check_in"},
+            {"time": "19:00", "label": "Dinner", "type": "dinner"},
+            {"time": "20:30", "label": "Overnight Stay", "type": "overnight"},
+        ])
+        travel_day["timeline"] = travel_day_timeline
+
+        # Find hotel near first stop
+        if first_stop.latitude and first_stop.longitude:
+            nearby_travel = []
+            for h in all_hotels:
+                if h.latitude is None or h.longitude is None:
+                    continue
+                dist = _haversine_km(
+                    float(first_stop.latitude), float(first_stop.longitude),
+                    float(h.latitude), float(h.longitude),
+                )
+                if dist <= 5.0:
+                    nearby_travel.append({
+                        "hotel_id": h.hotel_id,
+                        "hotel_name": h.hotel_name,
+                        "budget": float(h.budget) if h.budget else 0,
+                        "review_score": float(h.review_score) if h.review_score else 0,
+                        "district": h.district,
+                        "distance_km": round(dist, 2),
+                        "latitude": float(h.latitude),
+                        "longitude": float(h.longitude),
+                    })
+            nearby_travel.sort(key=lambda x: x["distance_km"])
+            travel_day["nearby_hotels"] = nearby_travel[:3]
+
+        days.append(travel_day)
+        prev_stop = first_stop
+
         for stop in stops:
+            shifted_day = stop.day_number + 1  # DB Day 1 → Display Day 2
+            stop_activity = (stop.activity or "").lower()
+            stop_name = (stop.stop_name or "").lower()
+            stop_lat = float(stop.latitude) if stop.latitude else 0.0
+            stop_lon = float(stop.longitude) if stop.longitude else 0.0
+            is_actual_return = (
+                stop_lat == 0.0 and stop_lon == 0.0
+            ) or (
+                "origin" in stop_name or "home" in stop_name
+            ) or (
+                "return" in stop_activity and ("origin" in stop_activity or "home" in stop_activity or "start" in stop_activity)
+            )
+            is_trek_day_flag = not is_actual_return
+
             day_data = {
-                "day_number": stop.day_number,
+                "day_number": shifted_day,
                 "stop_name": stop.stop_name,
                 "latitude": float(stop.latitude) if stop.latitude else None,
                 "longitude": float(stop.longitude) if stop.longitude else None,
                 "activity": stop.activity,
                 "travel_time": stop.travel_time,
                 "overnight": bool(stop.overnight),
+                "is_travel_day": False,
+                "is_trek_day": is_trek_day_flag,
+                "is_return_day": is_actual_return,
             }
 
-            # ── Build structured timeline from trek stop data ──
             day_data["timeline"] = _build_day_timeline(
                 stop_name=stop.stop_name or "",
                 activity=stop.activity or "",
                 travel_time=stop.travel_time or "",
                 overnight=bool(stop.overnight),
-                day_number=stop.day_number,
-                total_days=len(stops),
+                day_number=shifted_day,
+                total_days=len(stops) + 1,
                 prev_stop_name=prev_stop.stop_name if prev_stop else "",
+                is_travel_day=False,
+                is_trek_day=is_trek_day_flag,
+                is_return_day=is_actual_return,
             )
 
             if stop.overnight:
@@ -639,6 +798,10 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
         # ── Check if adventure/trek flow ──
         cats_lower = categories.lower()
         is_adventure = any(kw in cats_lower for kw in ["adventure", "trek"])
+        is_nature_hard = (
+            any(kw in cats_lower for kw in ["nature"])
+            and mobility.lower() in ("difficult", "hard")
+        )
 
         if is_adventure and ending:
             trek_rows = db.execute(
@@ -652,7 +815,6 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
             ).fetchall()
 
             if trek_rows:
-                # ── Pick best-matching trek for the requested travel days ──
                 best = _find_best_trek(db, ending, travel_days)
                 treks = []
                 for r in trek_rows:
@@ -665,12 +827,19 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
                     })
 
                 trek_match = None
+                trek_duration_message = None
                 if best:
                     trek_match = {
                         "place_id": best[0],
                         "place_name": best[1],
                         "trek_days": best[2],
                     }
+                    if best[2] != travel_days:
+                        trek_duration_message = (
+                            f"The closest available trek is {best[2]} days. "
+                            "Trek durations are fixed, so this itinerary may "
+                            "be slightly longer than your requested duration."
+                        )
 
                 return {
                     "preference_id": pref_id,
@@ -678,9 +847,9 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
                     "flow": "trek_selection",
                     "treks": treks,
                     "recommended_trek": trek_match,
+                    "trek_duration_message": trek_duration_message,
                 }
             else:
-                # ── District has NO trek ──
                 return {
                     "preference_id": pref_id,
                     "corridor": corridor,
@@ -700,12 +869,8 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
         insufficient = travel_days > max_days and num_places > 0
 
         hotels = fetch_hotels(db, ending, hotel_budget)
-
         if not hotels:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No hotels found in {ending} within budget"
-            )
+            hotels = fetch_hotels(db, ending, None)
 
         # ── Adventure preference fallback ──
         cats_lower = categories.lower()
@@ -728,6 +893,31 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
                     "Would you like to explore those instead?"
                 )
                 response["available_treks"] = adventure_places
+
+        # ── Nature + Hard → suggest trek recommendation ──
+        if is_nature_hard and district_has_treks:
+            best_trek = _find_best_trek(db, ending, travel_days)
+            if best_trek:
+                trek_rec = {
+                    "place_id": best_trek[0],
+                    "place_name": best_trek[1],
+                    "trek_days": best_trek[2],
+                }
+                rec_msg = (
+                    f"{ending} offers trekking adventures. Since you selected "
+                    "Hard difficulty, would you like to explore the available "
+                    "trek instead?"
+                )
+                duration_note = None
+                if best_trek[2] != travel_days:
+                    duration_note = (
+                        f"The closest available trek is {best_trek[2]} days. "
+                        "Trek durations are fixed, so this itinerary may be "
+                        "slightly longer than your requested duration."
+                    )
+                response["trek_recommendation"] = trek_rec
+                response["trek_recommendation_message"] = rec_msg
+                response["trek_duration_note"] = duration_note
 
         if insufficient:
             nearby = _get_nearby_districts(ending)
@@ -853,73 +1043,78 @@ def generate_from_hotel(
 
         ending = pref.ending_district or pref.starting_district
         travel_days = pref.travel_days or 3
-        hotel_budget = pref.hotel_budget
-        categories = pref.category or ""
 
-        # Fetch places excluding treks
-        places = fetch_places(db, ending, categories)
+        # ── Save user's hotel selection to selected_hotels table ──
+        existing = db.execute(
+            text("""
+                SELECT id FROM selected_hotels
+                WHERE preference_id = :pid AND is_user_selected = true
+            """),
+            {"pid": preference_id}
+        ).fetchall()
 
-        # Fetch transit district places if requested
-        extra_places = []
-        if include_transit and transit_districts:
-            for td in transit_districts:
-                extra_places.extend(fetch_places(db, td))
-
-        if not places and not extra_places:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No places found in {ending}"
+        if existing:
+            db.execute(
+                text("DELETE FROM selected_hotels WHERE preference_id = :pid AND is_user_selected = true"),
+                {"pid": preference_id}
             )
 
-        # Fetch hotels (use ending district, or first transit district if no hotels)
-        hotels = fetch_hotels(db, ending, hotel_budget)
-        if not hotels and transit_districts:
-            for td in transit_districts:
-                hotels = fetch_hotels(db, td, hotel_budget)
-                if hotels:
-                    break
-
-        if not hotels:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No hotels found in {ending} within budget"
-            )
-
-        # Generate itinerary using improved generator
-        result = generate_itinerary(
-            db=db,
-            preference_id=preference_id,
-            places=places,
-            hotels=hotels,
-            planning_mode="user_anchor",
-            selected_hotel_id=starting_hotel_id,
-            travel_days=travel_days,
-            categories=categories,
-            include_transit=include_transit,
-            extra_places=extra_places or None,
-            district=ending,
+        db.execute(
+            text("""
+                INSERT INTO selected_hotels (preference_id, day_number, hotel_id, is_user_selected)
+                VALUES (:pid, 1, :hid, true)
+            """),
+            {"pid": preference_id, "hid": starting_hotel_id}
         )
+        db.commit()
 
-        # ── Attach trek redirect hint when treks exist but user picked sightseeing ──
-        cats_lower = categories.lower()
+        # ── Use the Master Engine for comprehensive itinerary ──
+        from app.logic.itinerary_engine import generate_master_itinerary, get_preferences
+        from app.logic.transit_corridors import compute_corridor
+
+        pref_full = get_preferences(db, preference_id)
+        start_d = getattr(pref_full, "starting_district", "") or ""
+        end_d = getattr(pref_full, "ending_district", "") or start_d
+        corridor = compute_corridor(start_d, end_d)
+
+        # If transit districts are selected, extend the corridor to include them
+        if include_transit and transit_districts:
+            extended_corridor = list(corridor)
+            for td in transit_districts:
+                td_norm = td.strip().title()
+                if td_norm not in extended_corridor:
+                    try:
+                        sub = compute_corridor(extended_corridor[-1], td_norm)
+                        for s in sub[1:]:
+                            if s not in extended_corridor:
+                                extended_corridor.append(s)
+                    except Exception:
+                        extended_corridor.append(td_norm)
+            corridor = extended_corridor
+
+        result = generate_master_itinerary(db, preference_id, corridor_override=corridor)
+
+        cats_lower = (pref.category or "").lower()
         user_wants_adventure = any(kw in cats_lower for kw in ["adventure", "trek"])
         if not user_wants_adventure:
-            trek_hint = _fetch_adventure_places(db, ending)
+            trek_hint = _fetch_adventure_places(db, end_d)
             if trek_hint:
                 result["trek_available"] = True
                 result["trek_redirect_message"] = (
-                    f"{ending} also has {len(trek_hint)} trek option(s) "
+                    f"{end_d} also has {len(trek_hint)} trek option(s) "
                     "if you'd prefer an adventure itinerary."
                 )
 
         return {
             "status": "success",
             "preference_id": preference_id,
-            "district": ending,
+            "district": end_d,
             "data": result,
         }
 
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

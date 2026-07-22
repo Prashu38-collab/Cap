@@ -2,24 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 
-const hotelImages = [
-  "https://images.unsplash.com/photo-1566073771259-6a8506099945",
-  "https://images.unsplash.com/photo-1582719508461-905c673771fd",
-  "https://images.unsplash.com/photo-1564501049412-61c2a3083791",
-  "https://images.unsplash.com/photo-1584132967334-10e028bd69f7",
-  "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb",
-  "https://images.unsplash.com/photo-1578683010236-d716f9a3f461",
-  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4",
-  "https://images.unsplash.com/photo-1549638441-b787c2e166f1",
-  "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6",
-  "https://images.unsplash.com/photo-1568084680786-a84f91d1153c",
-  "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa",
-  "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9",
-  "https://images.unsplash.com/photo-1586023492125-27b2c045efd7",
-  "https://images.unsplash.com/photo-1564501049412-61c2a3083791",
-  "https://images.unsplash.com/photo-1590490359683-658d3d23f972",
-];
-
 // Helper to generate a customizable elegant Leaflet icon
 const getCustomIcon = (color, label, hovered = false) => {
   return L.divIcon({
@@ -118,7 +100,6 @@ function HotelCard({ hotel, index, selected, onSelect, onMouseEnter, onMouseLeav
 
 export default function HotelSelection({ hotels, corridor, onSelect, loading }) {
   const [selectedId, setSelectedId] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
 
   // Map linking states
   const [hoveredHotelId, setHoveredHotelId] = useState(null);
@@ -128,7 +109,6 @@ export default function HotelSelection({ hotels, corridor, onSelect, loading }) 
 
   const handleConfirm = () => {
     if (!selectedId) return;
-    setSubmitting(true);
     onSelect(selectedId);
   };
 
@@ -261,10 +241,10 @@ export default function HotelSelection({ hotels, corridor, onSelect, loading }) 
         </p>
         <button
           className="hs-confirm-btn"
-          disabled={!selectedId || submitting}
+          disabled={!selectedId || loading}
           onClick={handleConfirm}
         >
-          {submitting ? (
+          {loading ? (
             <span className="hs-btn-loading">
               <span className="hs-spinner" />
               Weaving Your Journey...

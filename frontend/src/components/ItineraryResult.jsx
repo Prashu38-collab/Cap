@@ -85,10 +85,14 @@ function placeDurationLabel(place) {
 }
 
 function placeDurationMinutes(place) {
-  const val = parseFloat(place.estimated_duration_value) || 2;
-  const unit = (place.estimated_duration_unit || "hours").toLowerCase();
-  if (unit.includes("min")) return Math.round(val);
-  return Math.round(val * 60);
+  if (place.estimated_duration_value) {
+    const val = parseFloat(place.estimated_duration_value);
+    const unit = (place.estimated_duration_unit || "hours").toLowerCase();
+    if (unit.includes("min")) return Math.round(val);
+    return Math.round(val * 60);
+  }
+  if (place.duration) return Math.round(place.duration * 60);
+  return 120;
 }
 
 function advanceTime(timeStr, minutes) {

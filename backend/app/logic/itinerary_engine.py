@@ -145,13 +145,11 @@ def get_preferences(db: Session, preference_id: int):
 
 def get_hotels(db: Session, district: str, budget: float):
     norm = _normalize(district)
+    alt = norm.replace("chowk", "chok").replace("Chowk", "Chok")
     q = text(""" SELECT * FROM hotels WHERE district ILIKE :district AND budget <= :budget ORDER BY review_score DESC """)
     hotels = db.execute(q, {"district": f"%{norm}%", "budget": budget}).fetchall()
-    if not hotels:
-        # Try alternative spelling (without 'w' for chowk/chok variants)
-        alt = norm.replace("chowk", "chok").replace("Chowk", "Chok")
-        if alt != norm:
-            hotels = db.execute(q, {"district": f"%{alt}%", "budget": budget}).fetchall()
+    if not hotels and alt != norm:
+        hotels = db.execute(q, {"district": f"%{alt}%", "budget": budget}).fetchall()
     if not hotels:
         q_fallback = text(""" SELECT * FROM hotels WHERE district ILIKE :district ORDER BY review_score DESC """)
         hotels = db.execute(q_fallback, {"district": f"%{norm}%"}).fetchall()
@@ -196,10 +194,38 @@ def _needs_new_hotel(
 ) -> bool:
     """Returns True if a new hotel is needed because travel time > 90 minutes.
     Uses OSRM road distance with Haversine fallback (assumes 30 km/h on mountain roads).
-    Fast-path: valley cluster districts are always close (< 90 min)."""
+    Prevents reusing hotel across distant districts (e.g. Kathmandu vs Chitwan)."""
     norm = _normalize(curr_district)
 
-    # Get destination coordinates
+    # 1. Fetch the previous hotel's district from database using coordinates
+    prev_hotel_district = ""
+    try:
+        prev_district_row = db.execute(
+            text("""
+                SELECT district FROM hotels
+                WHERE ABS(latitude - :plat) < 0.0001 AND ABS(longitude - :plon) < 0.0001
+                LIMIT 1
+            """),
+            {"plat": prev_lat, "plon": prev_lon}
+        ).fetchone()
+        if prev_district_row:
+            prev_hotel_district = _normalize(prev_district_row[0])
+    except Exception:
+        pass
+
+    # 2. If same district, we do not need a new hotel
+    if norm == prev_hotel_district:
+        return False
+
+    # 3. Valley cluster rule: Kathmandu, Lalitpur, Bhaktapur are in the same cluster and can reuse hotel
+    if norm in VALLEY_CLUSTER and prev_hotel_district in VALLEY_CLUSTER:
+        return False
+
+    # 4. If one is in valley cluster and the other is not, force switch
+    if (norm in VALLEY_CLUSTER) != (prev_hotel_district in VALLEY_CLUSTER):
+        return True
+
+    # 5. Get destination coordinates for travel time check
     dest_coords = _get_district_coords(curr_district, db)
     if not dest_coords:
         return True
@@ -452,121 +478,260 @@ def get_transit_info(from_district: str, to_district: str, db: Optional[Session]
 
 
 def _inject_meals(itinerary_days: list, districts_per_day: Optional[list] = None, starting_district: Optional[str] = None, db: Optional[Session] = None, corridor: Optional[list] = None) -> list:
-    """Inject Breakfast/Lunch/Dinner segments at fixed times each day.
-    Also adds 'Travel to [District]' segments when the district changes between days,
-    and a 'Return to [Starting District]' segment on the last day.
-    Uses OSRM for transit duration when db is available."""
-
-    def _get_travel_info(from_district: str, to_district: str) -> dict:
-        return get_transit_info(from_district, to_district, db)
-
-    def _meal_dict(key: str, district: str) -> dict:
-        t = MEAL_TEMPLATES[key]
-        return {
-            "type": "meal", "name": t["name"],
-            "time_of_day": t["time_of_day"], "start_time": t["start_time"],
-            "duration": t["duration_hours"], "cost_estimate": t["cost_estimate"],
-            "icon": t["icon"], "category": "meal",
-            "indoor_outdoor": "indoor", "weather_sensitive": False,
-            "transport_mode": "", "travel_dist_km": 0.0,
-            "district": district, "is_anchor_activity": False,
-        }
-
-    def _transit_dict(district: str, prev_district: str) -> dict:
-        info = _get_travel_info(prev_district, district)
-        dur_h = info["duration_hours"]
-        # Start early if the journey is long
-        start_h = max(5, 6 - int(dur_h - 1)) if dur_h > 2 else 6
-        return {
-            "type": "transit", "name": f"Travel to {district}",
-            "start_time": f"{start_h:02d}:00", "duration": round(dur_h, 1),
-            "icon": "🚌", "category": "transit",
-            "indoor_outdoor": "outdoor", "weather_sensitive": False,
-            "transport_mode": "Tourist Bus / Micro" if info["distance_km"] > 80 else "Private Car / Local Bus",
-            "travel_dist_km": round(info["distance_km"], 1),
-            "district": district, "is_anchor_activity": False,
-            "time_of_day": "morning" if start_h < 12 else "afternoon",
-        }
-
-    def _return_dict(start_district: str, curr_district: str) -> dict:
-        info = _get_travel_info(curr_district, start_district)
-        dur_h = info["duration_hours"]
-        # Return starts after afternoon activities
-        start_h = max(14, 17 - int(dur_h - 1))
-        return {
-            "type": "transit", "name": f"Return to {start_district}",
-            "start_time": f"{start_h:02d}:00", "duration": round(dur_h, 1),
-            "icon": "🚌", "category": "transit",
-            "indoor_outdoor": "outdoor", "weather_sensitive": False,
-            "transport_mode": "Tourist Bus / Micro" if info["distance_km"] > 80 else "Private Car / Local Bus",
-            "travel_dist_km": round(info["distance_km"], 1),
-            "district": start_district, "is_anchor_activity": False,
-            "time_of_day": "afternoon" if start_h < 17 else "evening",
-        }
-
-    meal_keys = ["breakfast", "lunch", "dinner"]
+    """Build a realistic daily timeline of events for each day.
+    Events include Breakfast, Hotel Checkout, Drive to destination, Arrival,
+    Explore attraction, Lunch, Travel, Explore attraction, Hotel Check-in,
+    Dinner, Overnight Stay."""
     total_days = len(itinerary_days)
-
+    
     for i, day in enumerate(itinerary_days):
-        places = day.get("places", [])
-        district = day.get("district", "")
-
-        # Build the full timeline: meals at fixed slots + places sorted by time
-        timeline = [_meal_dict(k, district) for k in meal_keys]
-
-        # On Day 1, add a single consolidated transit through all corridor segments
-        if i == 0 and starting_district and len(corridor or []) > 1:
-            total_dur_h = 0.0
-            total_dist = 0.0
-            seg_info = []
-            for seg_idx in range(1, len(corridor)):
-                info = get_transit_info(corridor[seg_idx - 1], corridor[seg_idx], db)
-                total_dur_h += info["duration_hours"]
-                total_dist += info["distance_km"]
-                seg_info.append(info)
-            start_h = max(5, 6 - int(total_dur_h - 1)) if total_dur_h > 2 else 6
-            transport = "Tourist Bus / Micro" if total_dist > 80 else "Private Car / Local Bus"
-            via_str = f" via {corridor[1]}" if len(corridor) > 2 else ""
-            day1_transit = {
-                "type": "transit", "name": f"Travel from {starting_district} to {corridor[-1]}{via_str}",
-                "start_time": f"{start_h:02d}:00", "duration": round(total_dur_h, 1),
-                "icon": "🚌", "category": "transit",
-                "indoor_outdoor": "outdoor", "weather_sensitive": False,
+        day_num = day["day"]
+        district = day["district"]
+        hotel = day["hotel"]
+        hotel_name = hotel.get("hotel_name", "Hotel")
+        
+        # Get raw attractions sorted by their start time
+        attractions = [p for p in day.get("places", []) if p.get("type", "place") == "place"]
+        attractions.sort(key=lambda x: x.get("start_time", "09:00"))
+        
+        timeline = []
+        
+        # 1. Determine if this is a transit day (district changes)
+        is_transit_day = False
+        prev_district = None
+        if i == 0:
+            if starting_district and _normalize(starting_district) != _normalize(district):
+                is_transit_day = True
+                prev_district = starting_district
+        else:
+            prev_day_district = itinerary_days[i-1]["district"]
+            if _normalize(prev_day_district) != _normalize(district):
+                is_transit_day = True
+                prev_district = prev_day_district
+                
+        # 2. Breakfast (at hotel/home before starting the day)
+        breakfast_time = "07:00" if is_transit_day else "07:30"
+        timeline.append({
+            "type": "meal",
+            "name": "Breakfast",
+            "start_time": breakfast_time,
+            "duration": 1.0,
+            "icon": "🍳",
+            "description": f"Enjoy a hearty breakfast at your hotel in {prev_district if is_transit_day and i > 0 else district}."
+        })
+        
+        # 3. Handle transit morning events
+        current_time = "08:30"
+        if is_transit_day:
+            # Hotel Checkout
+            checkout_time = "08:00"
+            timeline.append({
+                "type": "activity",
+                "name": "Hotel Checkout" if i > 0 else "Departure Prep",
+                "start_time": checkout_time,
+                "duration": 0.5,
+                "icon": "🔑" if i > 0 else "🎒",
+                "description": "Check out from hotel and prepare for travel." if i > 0 else "Get ready to depart for your journey."
+            })
+            
+            # Drive to destination (Transit)
+            info = get_transit_info(prev_district, district, db)
+            dur_h = info["duration_hours"]
+            dist_km = info["distance_km"]
+            transport = "Tourist Bus / Micro" if dist_km > 80 else "Private Car / Local Bus"
+            
+            timeline.append({
+                "type": "transit",
+                "name": f"Drive from {prev_district} to {district}",
+                "start_time": "08:30",
+                "duration": round(dur_h, 1),
+                "icon": "🚌",
                 "transport_mode": transport,
-                "travel_dist_km": round(total_dist, 1),
-                "district": corridor[-1], "is_anchor_activity": False,
-                "time_of_day": "morning",
-            }
-            timeline.insert(0, day1_transit)
-
-        # Check if district changed from previous day
-        if i > 0 and districts_per_day:
-            prev_district = districts_per_day[i - 1] if i - 1 < len(districts_per_day) else None
-            curr_district = districts_per_day[i] if i < len(districts_per_day) else None
-            if prev_district and curr_district and _normalize(prev_district) != _normalize(curr_district):
-                transit = _transit_dict(curr_district, prev_district)
-                timeline.insert(0, transit)
-
-        # On the last day, add return to starting district if different
-        is_last_day = (i == total_days - 1)
-        if is_last_day and starting_district:
-            start_norm = _normalize(starting_district)
-            end_norm = _normalize(district)
-            if start_norm != end_norm:
-                timeline.append(_return_dict(starting_district, district))
-
-        for p in places:
+                "travel_dist_km": round(dist_km, 1),
+                "description": f"Travel to {district} ({round(dist_km, 1)} km)."
+            })
+            
+            # Arrival / Hotel Check-in
+            arrival_time = time_add_hours(time(8, 30), dur_h)
+            arrival_time_str = f"{arrival_time.hour:02d}:{arrival_time.minute:02d}"
+            
+            timeline.append({
+                "type": "activity",
+                "name": f"Arrival & Hotel Check-in",
+                "start_time": arrival_time_str,
+                "duration": 0.5,
+                "icon": "🏨",
+                "description": f"Check in and settle at {hotel_name} in {district}."
+            })
+            
+            current_time = time_add_hours(arrival_time, 0.5)
+            
+        # 4. Integrate attractions, lunch, and intermediate travel
+        lunch_added = False
+        
+        for idx, p in enumerate(attractions):
+            p_start = p.get("start_time", "09:00")
+            
+            # Check if we should insert lunch before this place
+            if not lunch_added and p_start >= "12:30":
+                timeline.append({
+                    "type": "meal",
+                    "name": "Lunch",
+                    "start_time": "12:30",
+                    "duration": 1.0,
+                    "icon": "🍛",
+                    "description": f"Lunch break in {district}."
+                })
+                lunch_added = True
+            
+            # Add Travel/Transit before this place if there is a gap/distance
+            travel_dist = p.get("travel_dist_km", 0.0)
+            travel_dur_min = p.get("travel_duration_min", 0.0)
+            
+            if travel_dist > 0:
+                travel_dur_h = travel_dur_min / 60.0 if travel_dur_min > 0 else (travel_dist / 30.0)
+                travel_dur_min_val = int(travel_dur_h * 60)
+                if travel_dur_min_val < 5:
+                    travel_dur_min_val = 15
+                
+                # Deduct travel time from place start time to find travel start time
+                p_start_dt = datetime.strptime(p_start, "%H:%M")
+                travel_start_dt = p_start_dt - timedelta(minutes=travel_dur_min_val)
+                travel_start_str = travel_start_dt.strftime("%H:%M")
+                
+                timeline.append({
+                    "type": "transit",
+                    "name": f"Travel to {p['name']}",
+                    "start_time": travel_start_str,
+                    "duration": round(travel_dur_min_val / 60.0, 2),
+                    "icon": "🚗",
+                    "transport_mode": p.get("transport_mode", "Private Car / Local Bus"),
+                    "travel_dist_km": round(travel_dist, 1),
+                    "description": f"Transit to attraction ({round(travel_dist, 1)} km)."
+                })
+                
+            # Add the place itself
             timeline.append(p)
-
+            
+        # Check if lunch was added. If not (e.g. no places or all places are morning), add lunch after the last morning place or at 12:30
+        if not lunch_added:
+            timeline.append({
+                "type": "meal",
+                "name": "Lunch",
+                "start_time": "12:30",
+                "duration": 1.0,
+                "icon": "🍛",
+                "description": f"Lunch break in {district}."
+            })
+            lunch_added = True
+            
+        # 5. Last day return transit logic (if ending district is different from starting district)
+        is_last_day = (day_num == total_days)
+        has_return_transit = False
+        if is_last_day and starting_district and _normalize(district) != _normalize(starting_district):
+            # We return to starting district in the afternoon/evening
+            info = get_transit_info(district, starting_district, db)
+            dur_h = info["duration_hours"]
+            dist_km = info["distance_km"]
+            transport = "Tourist Bus / Micro" if dist_km > 80 else "Private Car / Local Bus"
+            
+            # Find return start time (e.g. after the last place, or 15:30)
+            return_start = "15:30"
+            if attractions:
+                last_p = attractions[-1]
+                last_p_end = time_add_hours(datetime.strptime(last_p["start_time"], "%H:%M").time(), last_p.get("duration", 2.0))
+                last_p_end_dt = datetime.combine(datetime.today(), last_p_end)
+                return_start_dt = last_p_end_dt + timedelta(minutes=30)
+                return_start = return_start_dt.strftime("%H:%M")
+                if return_start < "15:30":
+                    return_start = "15:30"
+            
+            # Hotel checkout before return
+            checkout_time_dt = datetime.strptime(return_start, "%H:%M") - timedelta(minutes=30)
+            checkout_time_str = checkout_time_dt.strftime("%H:%M")
+            
+            timeline.append({
+                "type": "activity",
+                "name": "Hotel Checkout",
+                "start_time": checkout_time_str,
+                "duration": 0.5,
+                "icon": "🔑",
+                "description": f"Check out from {hotel_name} before departure."
+            })
+            
+            timeline.append({
+                "type": "transit",
+                "name": f"Return to {starting_district}",
+                "start_time": return_start,
+                "duration": round(dur_h, 1),
+                "icon": "🚌",
+                "transport_mode": transport,
+                "travel_dist_km": round(dist_km, 1),
+                "description": f"Travel back to {starting_district} ({round(dist_km, 1)} km)."
+            })
+            has_return_transit = True
+            
+        # 6. Hotel Check-in / Return to Hotel
+        # (Only if not returning home on last day)
+        if not has_return_transit:
+            return_time_str = "17:30"
+            if attractions:
+                last_p = attractions[-1]
+                last_p_end = time_add_hours(datetime.strptime(last_p["start_time"], "%H:%M").time(), last_p.get("duration", 2.0))
+                last_p_end_dt = datetime.combine(datetime.today(), last_p_end)
+                return_time_dt = last_p_end_dt + timedelta(minutes=30)
+                return_time_str = return_time_dt.strftime("%H:%M")
+                if return_time_str < "17:00":
+                    return_time_str = "17:00"
+            
+            timeline.append({
+                "type": "activity",
+                "name": "Hotel Check-in" if is_transit_day else "Return to Hotel",
+                "start_time": return_time_str,
+                "duration": 0.5,
+                "icon": "🏨",
+                "description": f"Check in at {hotel_name}." if is_transit_day else f"Return to {hotel_name} and unwind."
+            })
+            
+        # 7. Dinner
+        timeline.append({
+            "type": "meal",
+            "name": "Dinner",
+            "start_time": "19:00",
+            "duration": 1.0,
+            "icon": "🍜",
+            "description": "Have dinner at a local restaurant or your hotel."
+        })
+        
+        # 8. Overnight Stay
+        if not has_return_transit:
+            timeline.append({
+                "type": "activity",
+                "name": "Overnight Stay",
+                "start_time": "20:30",
+                "duration": 9.0,
+                "icon": "🛌",
+                "description": f"Overnight at {hotel_name} in {district}."
+            })
+        else:
+            timeline.append({
+                "type": "activity",
+                "name": "Arrive Home",
+                "start_time": "20:30",
+                "icon": "🏡",
+                "description": "Welcome back! End of your tour."
+            })
+            
+        # Sort timeline by start_time
         def _sort_key(item):
             t = item.get("start_time", "09:00")
             h, m = t.split(":")
             return int(h) * 60 + int(m)
-
+            
         timeline.sort(key=_sort_key)
-
+        
         day["places"] = timeline
-
+        
     return itinerary_days
 
 
@@ -1189,16 +1354,39 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
             "hotel": {
                 "day": current_hotel["day"],
                 "hotel_id": current_hotel["hotel_id"],
-                "hotel_name": current_hotel["hotel_name"]
+                "hotel_name": current_hotel["hotel_name"],
+                "latitude": current_hotel.get("latitude"),
+                "longitude": current_hotel.get("longitude")
             },
             "places": formatted_places,
             "total_travel_km": round(travel_km, 2),
         })
 
-    # Inject meal segments and transit segments into each day's timeline
-    final_itinerary = _inject_meals(final_itinerary, districts_per_day=districts_per_day, starting_district=city, db=db, corridor=corridor)
-
     return {
         "preference_id": preference_id, "days": days,
         "itinerary": final_itinerary, "used_place_ids": list(used_place_ids),
     }
+
+
+# ==============================
+# 4. MASTER ORCHESTRATOR
+# ==============================
+def generate_master_itinerary(db: Session, preference_id: int, corridor_override: list = None):
+    """
+    Master orchestrator entry point.
+    Reads preferences, computes corridor, builds the full itinerary.
+    Used by the generate_from_hotel route.
+    """
+    pref = get_preferences(db, preference_id)
+    start = getattr(pref, "starting_district", "") or getattr(pref, "district", "")
+    end = getattr(pref, "ending_district", "") or start
+    
+    if corridor_override:
+        corridor = corridor_override
+    else:
+        corridor = compute_corridor(start, end)
+
+    result = build_itinerary(db, preference_id, corridor=corridor)
+    result["corridor"] = corridor
+    result["district"] = end
+    return result

@@ -93,6 +93,10 @@ function PlanTrip() {
   const [noTrekFallback, setNoTrekFallback] = useState(null);
   const [showInsufficientModal, setShowInsufficientModal] = useState(false);
 
+  const [trekRecommendation, setTrekRecommendation] = useState(null);
+  const [trekDurationMessage, setTrekDurationMessage] = useState(null);
+  const [recommendedTrekId, setRecommendedTrekId] = useState(null);
+
   const update = (e) => {
     const { name, value, type, checked } = e.target;
     if (type === "checkbox") {
@@ -150,11 +154,18 @@ function PlanTrip() {
 
       if (data.flow === "trek_selection" && data.treks?.length) {
         setTreks(data.treks);
+        setTrekDurationMessage(data.trek_duration_message || null);
+        setRecommendedTrekId(data.recommended_trek?.place_id || null);
         setStep("treks");
         return;
       }
 
       setHotels(data.hotels || []);
+
+      if (data.trek_recommendation) {
+        setTrekRecommendation(data.trek_recommendation);
+        setTrekDurationMessage(data.trek_duration_note || null);
+      }
 
       if (data.insufficient_places) {
         setInsufficientInfo({
@@ -194,6 +205,24 @@ function PlanTrip() {
     setStep("hotels");
   };
 
+  const handleTrekRecommendation = async () => {
+    if (!trekRecommendation) return;
+    setTrekRecommendation(null);
+    setTrekDurationMessage(null);
+    try {
+      const data = await generateTrek(trekRecommendation.place_id, parseInt(form.travel_days), form.starting_district);
+      setTrekItinerary(data);
+      setStep("trek_result");
+    } catch (err) {
+      setError(err.message || "Failed to generate trek itinerary");
+    }
+  };
+
+  const handleDismissTrekRecommendation = () => {
+    setTrekRecommendation(null);
+    setTrekDurationMessage(null);
+  };
+
   const toggleTransitDistrict = (district) => {
     setSelectedTransitDistricts((prev) =>
       prev.includes(district) ? prev.filter((d) => d !== district) : [...prev, district]
@@ -204,7 +233,7 @@ function PlanTrip() {
     setSubmitting(true);
     setError(null);
     try {
-      const data = await generateTrek(trek.place_id, parseInt(form.travel_days));
+      const data = await generateTrek(trek.place_id, parseInt(form.travel_days), form.starting_district);
       setTrekItinerary(data);
       setStep("trek_result");
     } catch (err) {
@@ -231,6 +260,36 @@ function PlanTrip() {
         includeTransit: selectedTransitDistricts.length > 0,
         transitDistricts: selectedTransitDistricts,
       });
+      if (!data?.data?.itinerary || data.data.itinerary.length === 0) {
+        setError("Could not generate itinerary for this selection. Please try a different hotel.");
+        setSubmitting(false);
+        return;
+      }
+      setResult(data);
+      setWeatherForecast(data.weather_forecast || []);
+      setStep("result");
+    } catch (err) {
+      setError(err.message || "Failed to generate itinerary");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleNoTrekContinue = async () => {
+    if (!noTrekFallback?.hotels?.length || !prefId) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const firstHotel = noTrekFallback.hotels[0];
+      const data = await generateFromHotel(prefId, firstHotel.hotel_id, {
+        includeTransit: false,
+        transitDistricts: [],
+      });
+      if (!data?.data?.itinerary || data.data.itinerary.length === 0) {
+        setError("Could not generate itinerary. Please try again.");
+        setSubmitting(false);
+        return;
+      }
       setResult(data);
       setWeatherForecast(data.weather_forecast || []);
       setStep("result");
@@ -256,6 +315,9 @@ function PlanTrip() {
     setSelectedTransitDistricts([]);
     setNoTrekFallback(null);
     setShowInsufficientModal(false);
+    setTrekRecommendation(null);
+    setTrekDurationMessage(null);
+    setRecommendedTrekId(null);
     setForm({
       starting_district: "",
       ending_district: "",
@@ -499,8 +561,8 @@ function PlanTrip() {
                 <h2>No Adventure Activities Found</h2>
                 <p className="insufficient-msg">{noTrekFallback.message}</p>
                 <div className="insufficient-actions">
-                  <button className="generate-btn" onClick={() => setStep("hotels")} style={{ marginRight: 12 }}>
-                    Continue
+                  <button className="generate-btn" onClick={handleNoTrekContinue} disabled={submitting} style={{ marginRight: 12 }}>
+                    {submitting ? "Generating..." : "Continue"}
                   </button>
                   <button className="generate-btn" onClick={() => setStep("form")} style={{ background: "#6b7280" }}>
                     Choose Another District
@@ -516,10 +578,16 @@ function PlanTrip() {
           {/* STEP 2A: TREK SELECTION */}
           {step === "treks" && (
             <div className="trek-selection-wrap">
+              {trekDurationMessage && (
+                <div className="trek-duration-message" style={{ maxWidth: 700, margin: "0 auto 16px", padding: "12px 20px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, color: "#92400e", fontSize: 14, fontWeight: 600, textAlign: "center" }}>
+                  {trekDurationMessage}
+                </div>
+              )}
               <TrekSelection
                 treks={treks}
                 onSelect={handleTrekSelect}
                 loading={submitting}
+                recommendedTrekId={recommendedTrekId}
               />
               <div className="btn-container">
                 <button className="generate-btn" onClick={() => setStep("form")} style={{ background: "#555" }}>
@@ -532,6 +600,29 @@ function PlanTrip() {
           {/* STEP 2B: HOTEL SELECTION */}
           {step === "hotels" && (
             <div className="hotel-selection-wrap">
+              {trekRecommendation && (
+                <div className="trek-recommendation-card" style={{ maxWidth: 700, margin: "0 auto 16px", padding: "20px 24px", background: "#f0fdf4", border: "2px solid #86efac", borderRadius: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#166534", marginBottom: 6 }}>
+                    {trekRecommendation.place_name}
+                  </div>
+                  <p style={{ fontSize: 14, color: "#166534", margin: "0 0 12px", lineHeight: 1.5 }}>
+                    This destination offers trekking adventures. Since you selected Hard difficulty, would you like to explore the available trek instead?
+                  </p>
+                  {trekDurationMessage && (
+                    <p style={{ fontSize: 12, color: "#92400e", margin: "0 0 12px", fontStyle: "italic" }}>
+                      {trekDurationMessage}
+                    </p>
+                  )}
+                  <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+                    <button className="generate-btn" onClick={handleTrekRecommendation} style={{ margin: 0 }}>
+                      Continue with Trek
+                    </button>
+                    <button className="generate-btn" onClick={handleDismissTrekRecommendation} style={{ margin: 0, background: "#6b7280" }}>
+                      Continue with Normal Trip
+                    </button>
+                  </div>
+                </div>
+              )}
               {selectedTransitDistricts.length > 0 && (
                 <div className="transit-badge">
                   <span>Including nearby: {selectedTransitDistricts.join(", ")}</span>
@@ -577,7 +668,7 @@ function PlanTrip() {
                 itinerary={result.data}
                 weatherForecast={weatherForecast}
                 preferenceId={result.preference_id}
-                corridor={result.corridor}
+                corridor={result.data?.corridor}
               />
               <div className="btn-container">
                 <button className="generate-btn" onClick={resetForm}>

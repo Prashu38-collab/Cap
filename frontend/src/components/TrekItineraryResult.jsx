@@ -14,11 +14,22 @@ const getTrekIcon = (color, label, isActive = true) => {
   });
 };
 
+const hotelIcon = L.divIcon({
+  html: `<div style="background:#2563eb;width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"><div style="transform:rotate(45deg);color:#fff;font-weight:700;font-size:10px">H</div></div>`,
+  className: "place-pin",
+  iconSize: [28, 33],
+  iconAnchor: [14, 33],
+  popupAnchor: [0, -33],
+});
+
 function MapController({ center, zoom, activeBounds }) {
   const map = useMap();
   useEffect(() => {
     if (center) map.setView(center, zoom || 14);
-    else if (activeBounds?.length) map.fitBounds(activeBounds, { padding: [50, 50], maxZoom: 15 });
+    else if (activeBounds?.length) {
+      const boundsArr = [...activeBounds];
+      map.fitBounds(boundsArr, { padding: [50, 50], maxZoom: 15 });
+    }
   }, [center, zoom, activeBounds, map]);
   return null;
 }
@@ -75,6 +86,16 @@ function tlIconSVG(type) {
   }
 }
 
+function getTabLabel(day, totalDays) {
+  if (day.is_travel_day) return "Travel";
+  if (day.is_return_day) return "Return";
+  if (day.is_trek_day) {
+    const trekNum = day.day_number - 1;
+    return `Trek ${trekNum}`;
+  }
+  return (day.stop_name || "").substring(0, 8) || `Day ${day.day_number}`;
+}
+
 export default function TrekItineraryResult({ trekItinerary, hotelSelections, onHotelSelect }) {
   const [activeDay, setActiveDay] = useState(1);
   const [animDir, setAnimDir] = useState("next");
@@ -102,6 +123,8 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
     activity: d.activity,
     travelTime: d.travel_time,
     district: d.district || district || "",
+    isTravelDay: d.is_travel_day,
+    isReturnDay: d.is_return_day,
   }));
 
   const activeBounds = allMarkers.filter((m) => m.day === activeDay).map((m) => [m.lat, m.lon]);
@@ -116,6 +139,13 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
     : null;
 
   const schedule = currentDay.timeline || [];
+
+  const activeMarker = allMarkers.find((m) => m.day === activeDay);
+  const hotelLinePoints = [];
+  if (activeMarker && selectedHotel && selectedHotel.latitude && selectedHotel.longitude) {
+    hotelLinePoints.push([activeMarker.lat, activeMarker.lon]);
+    hotelLinePoints.push([parseFloat(selectedHotel.latitude), parseFloat(selectedHotel.longitude)]);
+  }
 
   return (
     <div className="ir-layout">
@@ -138,16 +168,16 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
           {days.map((d) => (
             <button key={d.day_number} className={`ir-tab ${activeDay === d.day_number ? "on" : ""}`} onClick={() => changeDay(d.day_number)}>
               <span className="ir-tab-n">{d.day_number}</span>
-              <span className="ir-tab-l">{d.stop_name?.substring(0, 8) || `Day ${d.day_number}`}</span>
+              <span className="ir-tab-l">{getTabLabel(d, total_days)}</span>
             </button>
           ))}
         </div>
 
         <div key={activeDay} className={`ir-dc slide-${animDir}`}>
           <div className="ir-summary">
-            <div className="ir-sum-item"><span className="ir-sum-val">{currentDay.stop_name}</span><span className="ir-sum-lbl">Stop</span></div>
-            <div className="ir-sum-item"><span className="ir-sum-val">{currentDay.travel_time}</span><span className="ir-sum-lbl">Travel</span></div>
-            <div className="ir-sum-item"><span className="ir-sum-val">{selectedHotel ? selectedHotel.hotel_name?.split(" ").slice(0, 2).join(" ") : currentDay.overnight ? "Pick below" : "Day hike"}</span><span className="ir-sum-lbl">Overnight</span></div>
+            <div className="ir-sum-item"><span className="ir-sum-val">{currentDay.stop_name}</span><span className="ir-sum-lbl">{currentDay.is_travel_day ? "Destination" : "Stop"}</span></div>
+            <div className="ir-sum-item"><span className="ir-sum-val">{currentDay.travel_time || "\u2014"}</span><span className="ir-sum-lbl">Travel</span></div>
+            <div className="ir-sum-item"><span className="ir-sum-val">{selectedHotel ? selectedHotel.hotel_name?.split(" ").slice(0, 2).join(" ") : currentDay.overnight ? "Pick below" : currentDay.is_travel_day ? "At destination" : "Day hike"}</span><span className="ir-sum-lbl">Overnight</span></div>
             <div className="ir-sum-item"><span className="ir-sum-val">{currentDay.overnight ? "Yes" : "No"}</span><span className="ir-sum-lbl">Stay</span></div>
           </div>
 
@@ -209,15 +239,15 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
           {allMarkers.map((m) => {
             const isToday = m.day === activeDay;
             return (
-              <Marker key={m.id} position={[m.lat, m.lon]} icon={getTrekIcon(isToday ? "#ef4444" : "rgba(239,68,68,.35)", m.day, isToday)} ref={(el) => { if (el) markerRefs.current[m.id] = el; }} eventHandlers={{ click: () => handleMarkerClick(m.id) }}>
+              <Marker key={m.id} position={[m.lat, m.lon]} icon={getTrekIcon(isToday ? (m.isTravelDay ? "#3b82f6" : m.isReturnDay ? "#f97316" : "#ef4444") : (m.isTravelDay ? "rgba(59,130,246,.35)" : m.isReturnDay ? "rgba(249,115,22,.35)" : "rgba(239,68,68,.35)"), m.isTravelDay ? "T" : m.isReturnDay ? "R" : m.day, isToday)} ref={(el) => { if (el) markerRefs.current[m.id] = el; }} eventHandlers={{ click: () => handleMarkerClick(m.id) }}>
                 <Popup>
                   <div style={{ fontFamily: "system-ui, sans-serif", minWidth: 180 }}>
-                    <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5, color: "#ef4444", fontWeight: 700, marginBottom: 3 }}>Trek Stop</div>
+                    <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5, color: m.isTravelDay ? "#3b82f6" : m.isReturnDay ? "#f97316" : "#ef4444", fontWeight: 700, marginBottom: 3 }}>{m.isTravelDay ? "Travel Day" : m.isReturnDay ? "Return Day" : "Trek Stop"}</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Day {m.day}: {m.name}</div>
                     <div style={{ fontSize: 11, color: "#475569", marginBottom: 2 }}>{m.district}</div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 10, background: "#f1f5f9", padding: "1px 5px", borderRadius: 3, color: "#475569" }}>{m.activity}</span>
-                      <span style={{ fontSize: 10, background: "#f1f5f9", padding: "1px 5px", borderRadius: 3, color: "#475569" }}>{m.travelTime}</span>
+                      {m.travelTime && <span style={{ fontSize: 10, background: "#f1f5f9", padding: "1px 5px", borderRadius: 3, color: "#475569" }}>{m.travelTime}</span>}
                     </div>
                     <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 3 }}>{m.lat.toFixed(4)}, {m.lon.toFixed(4)}</div>
                   </div>
@@ -225,9 +255,26 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
               </Marker>
             );
           })}
+          {selectedHotel && selectedHotel.latitude && selectedHotel.longitude && (
+            <Marker
+              position={[parseFloat(selectedHotel.latitude), parseFloat(selectedHotel.longitude)]}
+              icon={hotelIcon}
+            >
+              <Popup>
+                <div style={{ fontFamily: "system-ui, sans-serif", minWidth: 180 }}>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5, color: "#2563eb", fontWeight: 700, marginBottom: 3 }}>Hotel</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>{selectedHotel.hotel_name}</div>
+                  <div style={{ fontSize: 11, color: "#475569", marginBottom: 2 }}>{selectedHotel.district}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#2563eb", marginBottom: 2 }}>{selectedHotel.distance_km} km from stop</div>
+                  <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{parseFloat(selectedHotel.latitude).toFixed(4)}, {parseFloat(selectedHotel.longitude).toFixed(4)}</div>
+                </div>
+              </Popup>
+            </Marker>
+          )}
           {polylinePoints.length > 1 && <Polyline positions={polylinePoints} color="#cbd5e1" weight={2} opacity={0.5} dashArray="6 4" />}
           {activeBounds.length > 1 && <Polyline positions={activeBounds} color="#ef4444" weight={3.5} opacity={0.85} />}
-          <MapController center={mapCenter} zoom={13} activeBounds={activeBounds} />
+          {hotelLinePoints.length > 1 && <Polyline positions={hotelLinePoints} color="#2563eb" weight={3} opacity={0.85} dashArray="8 4" />}
+          <MapController center={mapCenter} zoom={13} activeBounds={selectedHotel && hotelLinePoints.length > 1 ? [...activeBounds, [parseFloat(selectedHotel.latitude), parseFloat(selectedHotel.longitude)]] : activeBounds} />
         </MapContainer>
       </div>
     </div>

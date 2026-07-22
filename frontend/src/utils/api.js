@@ -73,10 +73,10 @@ export function getTrekOptions(endingDistrict) {
   });
 }
 
-export function generateTrek(placeId, travelDays) {
+export function generateTrek(placeId, travelDays, startingDistrict = "") {
   return request("/itinerary/generate-trek", {
     method: "POST",
-    body: JSON.stringify({ place_id: placeId, travel_days: travelDays }),
+    body: JSON.stringify({ place_id: placeId, travel_days: travelDays, starting_district: startingDistrict }),
   });
 }
 

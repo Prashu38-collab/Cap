@@ -188,45 +188,90 @@
    SPLIT SCREEN LAYOUTS (Standard light theme)
    ============================================= */
 
-.plantrip-layout, .hs-layout {
+/* Note: .plantrip-layout and .hs-layout are unified under the
+   .split-layout section above with .ir-layout and .trek-selection-layout */
+
+/* =============================================
+   UNIFIED SPLIT LAYOUT (Trip.com style)
+   50/50 split: left scrolls, right sticky map
+   Used by: HotelSelection, ItineraryResult,
+   TrekItineraryResult, TrekSelection, etc.
+   ============================================= */
+.split-layout,
+.ir-layout,
+.hs-layout,
+.trek-selection-layout,
+.plantrip-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 50% 50%;
   gap: 30px;
   max-width: 1400px;
   margin: 0 auto;
   align-items: start;
 }
-
 @media (max-width: 1024px) {
-  .plantrip-layout, .hs-layout {
+  .split-layout,
+  .ir-layout,
+  .hs-layout,
+  .trek-selection-layout,
+  .plantrip-layout {
     grid-template-columns: 1fr;
   }
 }
 
-.plantrip-form-side, .hs-left-side {
+.split-left,
+.ir-left,
+.hs-left-side,
+.trek-selection-left,
+.plantrip-form-side {
   width: 100%;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding-right: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 1024px) {
+  .split-left,
+  .ir-left,
+  .hs-left-side,
+  .trek-selection-left,
+  .plantrip-form-side {
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
+  }
 }
 
-.plantrip-map-side, .hs-right-side {
+.split-right,
+.ir-right,
+.hs-right-side,
+.trek-selection-map-side,
+.plantrip-map-side {
   position: sticky;
-  top: 100px;
-  height: calc(100vh - 140px);
-  min-height: 500px;
-  border-radius: 16px;
+  top: 0;
+  height: 100vh;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
   border: 1px solid #e2e8f0;
-  background: #ffffff;
+  background: #fff;
   z-index: 10;
 }
-
 @media (max-width: 1024px) {
-  .plantrip-map-side, .hs-right-side {
+  .split-right,
+  .ir-right,
+  .hs-right-side,
+  .trek-selection-map-side,
+  .plantrip-map-side {
     position: relative;
     top: 0;
-    height: 400px;
-    margin-top: 30px;
+    height: 450px;
     min-height: 350px;
+    margin-top: 16px;
   }
 }
 
@@ -266,6 +311,7 @@
   margin-bottom: 24px;
   position: relative;
   z-index: 1;
+  flex-shrink: 0;
 }
 
 .hs-header-icon {
@@ -315,11 +361,39 @@
   gap: 8px;
   position: relative;
   z-index: 1;
-  max-height: 204px;
   overflow-y: auto;
   padding-right: 4px;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
+  flex: 1;
+  min-height: 0;
+}
+
+/* District group fills remaining height */
+.hs-district-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.hs-district-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin: 12px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hs-district-group:first-child .hs-district-title {
+  margin-top: 0;
+}
+
+.hs-bg-ornament {
+  display: none;
 }
 
 /* Hotel Card — compact horizontal strip */
@@ -447,6 +521,7 @@
   border-top: 1px solid #f1f5f9;
   position: relative;
   z-index: 1;
+  flex-shrink: 0;
 }
 
 .hs-footer-hint {
@@ -568,42 +643,8 @@
    ITINERARY RESULT — COMPACT PROFESSIONAL
    ============================================= */
 
-.ir-layout {
-  display: grid;
-  grid-template-columns: 55% 45%;
-  gap: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-  align-items: start;
-}
-@media (max-width: 1024px) { .ir-layout { grid-template-columns: 1fr; } }
-
-.ir-left {
-  width: 100%;
-  max-height: 650px;
-  overflow-y: auto;
-  padding-right: 4px;
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-.ir-right {
-  position: sticky;
-  top: 80px;
-  height: 650px;
-  min-height: 650px;
-  max-height: 650px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  z-index: 10;
-}
-@media (max-width: 1024px) {
-  .ir-left { max-height: none; overflow-y: visible; padding-right: 0; }
-  .ir-right { position: relative; top: 0; height: 450px; min-height: 450px; max-height: 450px; margin-top: 16px; }
-}
+/* Note: .ir-layout, .ir-left, .ir-right are unified under the
+   .split-layout section above */
 
 /* Header */
 .ir-hdr {
@@ -871,47 +912,10 @@
 /* =============================================
    TREK SELECTION SPLIT LAYOUT
    ============================================= */
-.trek-selection-layout {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 30px;
-  max-width: 1400px;
-  margin: 0 auto;
-  align-items: start;
-}
 
-@media (max-width: 1024px) {
-  .trek-selection-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-.trek-selection-left {
-  width: 100%;
-}
-
-.trek-selection-map-side {
-  position: sticky;
-  top: 100px;
-  height: calc(100vh - 140px);
-  min-height: 500px;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  z-index: 10;
-}
-
-@media (max-width: 1024px) {
-  .trek-selection-map-side {
-    position: relative;
-    top: 0;
-    height: 400px;
-    margin-top: 30px;
-    min-height: 350px;
-  }
-}
+/* Note: .trek-selection-layout, .trek-selection-left,
+   .trek-selection-map-side are unified under the
+   .split-layout section above */
 
 .trek-detail-card.selected {
   border-color: #3b82f6;
