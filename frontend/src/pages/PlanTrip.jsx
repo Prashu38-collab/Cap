@@ -38,6 +38,11 @@ function PlanTrip() {
   const [result, setResult] = useState(null);
   const [weatherForecast, setWeatherForecast] = useState([]);
 
+  // Weather states
+  const [blockedModal, setBlockedModal] = useState(null);
+  const [weatherInfo, setWeatherInfo] = useState(null);
+
+  // Coordinate states for dynamic map markers
   const [startCoords, setStartCoords] = useState(null);
   const [endCoords, setEndCoords] = useState(null);
 
@@ -148,7 +153,12 @@ function PlanTrip() {
         return;
       }
 
-      if (data.flow === "trek_selection" && data.treks?.length) {
+      if (data.can_generate === false) {
+        setBlockedModal({
+          preference_id: data.preference_id,
+          ...data.weather,
+        });
+      } else if (data.flow === "trek_selection" && data.treks?.length) {
         setTreks(data.treks);
         setStep("treks");
         return;
@@ -168,6 +178,10 @@ function PlanTrip() {
         });
         setShowInsufficientModal(true);
       } else {
+        setHotels(data.hotels || []);
+        if (data.weather?.info_message) {
+          setWeatherInfo(data.weather.info_message);
+        }
         setStep("hotels");
       }
     } catch (err) {
@@ -241,6 +255,16 @@ function PlanTrip() {
     }
   };
 
+  // Blocked modal handlers
+  const handleChangeDate = () => {
+    setBlockedModal(null);
+  };
+
+  const handleChangeDestination = () => {
+    setBlockedModal(null);
+    resetForm();
+  };
+
   const resetForm = () => {
     setStep("form");
     setPrefId(null);
@@ -250,6 +274,9 @@ function PlanTrip() {
     setResult(null);
     setWeatherForecast([]);
     setError(null);
+    setBlockedModal(null);
+    setWeatherInfo(null);
+    setSelectedTrek(null);
     setTrekItinerary(null);
     setTrekHotelSelections({});
     setInsufficientInfo(null);
@@ -296,6 +323,27 @@ function PlanTrip() {
           </div>
 
           {error && <div className="error-banner">{error}</div>}
+
+          {/* BLOCKED GENERATION MODAL */}
+          {blockedModal && (
+            <div className="weather-warning-overlay">
+              <div className="weather-warning-modal blocked-modal">
+                <div className="ww-icon">🌦️</div>
+                <h2 className="ww-title">{blockedModal.title}</h2>
+                {blockedModal.message.split('\n').map((line, i) => (
+                  <p key={i} className="ww-message">{line}</p>
+                ))}
+                <div className="ww-options">
+                  <button className="generate-btn ww-primary" onClick={handleChangeDate}>
+                    📅 Change Travel Date
+                  </button>
+                  <button className="generate-btn ww-secondary" onClick={handleChangeDestination}>
+                    🌍 Choose Another Destination
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* INSUFFICIENT PLACES MODAL */}
           {showInsufficientModal && insufficientInfo && (
@@ -532,6 +580,11 @@ function PlanTrip() {
           {/* STEP 2B: HOTEL SELECTION */}
           {step === "hotels" && (
             <div className="hotel-selection-wrap">
+              {weatherInfo && (
+                <div className="weather-info-banner">
+                  <span>ℹ️</span> {weatherInfo}
+                </div>
+              )}
               {selectedTransitDistricts.length > 0 && (
                 <div className="transit-badge">
                   <span>Including nearby: {selectedTransitDistricts.join(", ")}</span>

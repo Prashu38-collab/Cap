@@ -812,10 +812,174 @@
 }
 .ir-tl-icon svg { display: block; }
 .ir-tl-label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: #1e293b;
   white-space: nowrap;
+}
+
+.ir-place-body h4 .ir-time {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+.ir-place-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ir-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.ir-meal-item {
+  margin-bottom: 12px;
+}
+
+.ir-meal-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.ir-meal-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ir-meal-body h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.ir-meal-body h4 .ir-time {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+/* Timeline Upgrades & Connectors */
+.itinerary-day-title-wrap {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.itinerary-day-title-wrap h2 {
+  font-family: 'DM Sans', sans-serif;
+  color: #0f172a;
+  font-size: 22px;
+  margin: 0 0 4px;
+  font-weight: 700;
+}
+
+.itinerary-day-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.itinerary-day-stats span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeline-travel-connector {
+  margin: 8px 0 8px 17px;
+  border-left: 2px dashed #cbd5e1;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+}
+
+.timeline-travel-connector i {
+  color: #3b82f6;
+}
+
+.congestion-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.highlighted-card .ir-timeline-card {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+  transform: scale(1.01) translateX(2px);
+  background: #f8fafc;
+}
+
+.highlighted-card .ir-meal-card {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+  transform: scale(1.01) translateX(2px);
+}
+
+.ir-timeline::before {
+  display: none !important;
+}
+
+/* Stats bottom row */
+.ir-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.ir-stat {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+  transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.ir-stat:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.08);
+}
+
+.ir-stat-icon {
+  font-size: 16px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.ir-stat-val {
+  display: block;
+  color: #1e3a8a;
+  font-size: 16px;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -861,6 +1025,22 @@
   margin-bottom: 12px;
 }
 .ir-empty p { color: #64748b; margin: 0; font-size: 12px; }
+
+/* Travel time tooltip on map polyline */
+.travel-time-tooltip {
+  background: rgba(0, 0, 0, 0.75) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 3px 8px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+  white-space: nowrap;
+}
+.travel-time-tooltip::before {
+  display: none !important;
+}
 
 /* =============================================
    TREK SELECTION SPLIT LAYOUT
@@ -1442,4 +1622,114 @@
 /* Disable old map button section in results */
 .itinerary-result-modern .ir-map-section {
   display: none !important;
+}
+
+/* Weather Warning Modal */
+.weather-warning-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.weather-warning-modal {
+  background: #1a1a2e;
+  border: 1px solid #e94560;
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+}
+
+.ww-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.ww-title {
+  color: #e94560;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.ww-message {
+  color: #e0e0e0;
+  font-size: 18px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.ww-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ww-options .generate-btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+}
+
+.ww-primary {
+  background: #e94560 !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+.ww-secondary {
+  background: transparent !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #555 !important;
+}
+
+.ww-secondary:hover {
+  border-color: #e94560 !important;
+  color: #fff !important;
+}
+
+.blocked-modal {
+  border-color: #f97316;
+  max-width: 560px;
+}
+
+.blocked-modal .ww-title {
+  color: #f97316;
+}
+
+.blocked-modal .ww-primary {
+  background: #f97316 !important;
+}
+
+.blocked-modal .ww-primary:hover {
+  background: #ea580c !important;
+}
+
+.blocked-modal .ww-message {
+  font-size: 15px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.weather-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
 }

@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
+import React, { useState, useEffect, useRef } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 
 const catColors = {
@@ -262,11 +262,30 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
   const sightseeingPlaces = (currentDay.places || []).filter((p) => p.type !== "meal");
   const totalDist = currentDay.total_travel_km || (currentDay.places || []).reduce((sum, p) => sum + (p.travel_dist_km || 0), 0) || 0;
 
-  const focusPlace = (place) => {
-    setHighlightedId(place.place_id);
-    setMapCenter([parseFloat(place.latitude), parseFloat(place.longitude)]);
-    setMapZoom(15);
-    setTimeout(() => { markerRefs.current[place.place_id]?.openPopup(); }, 100);
+  // Build per-segment data for the active day's route (hotel → place[0] → place[1] → ...)
+  const segments = [];
+  for (let i = 0; i < activeDayPoints.length - 1; i++) {
+    const destPlace = currentDay.places[i];
+    segments.push({
+      from: activeDayPoints[i],
+      to: activeDayPoints[i + 1],
+      travelTime: destPlace?.travel_from_prev_min,
+    });
+  }
+
+  // Click card zooms to marker and opens popup
+  const handlePlaceCardClick = (place) => {
+    setHighlightedPlaceId(place.place_id);
+    if (place.latitude && place.longitude) {
+      setMapCenter([parseFloat(place.latitude), parseFloat(place.longitude)]);
+      setMapZoom(15);
+      setTimeout(() => {
+        const marker = markerRefs.current[place.place_id];
+        if (marker) {
+          marker.openPopup();
+        }
+      }, 100);
+    }
   };
 
   const focusHotel = (hotel, day) => {

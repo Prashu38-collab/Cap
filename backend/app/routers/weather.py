@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import get_db
 from datetime import datetime
+from app.logic.weather_logic import refresh_all_weather
 
 router = APIRouter(prefix="/weather", tags=["Weather Module"])
 
@@ -26,6 +27,12 @@ class WeatherCronInput(BaseModel):
     current_wind_direction_10m: float
 
 # --- ENDPOINTS ---
+
+@router.post("/refresh-all")
+def refresh_all_weather_endpoint(db: Session = Depends(get_db)):
+    refresh_all_weather(db)
+    return {"status": "success", "message": "All district weather data refreshed"}
+
 
 @router.post("/update")
 def update_district_weather(data: WeatherCronInput, db: Session = Depends(get_db)):
