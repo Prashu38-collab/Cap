@@ -221,31 +221,10 @@ def _needs_new_hotel(
     if norm in VALLEY_CLUSTER and prev_hotel_district in VALLEY_CLUSTER:
         return False
 
-    # 4. If one is in valley cluster and the other is not, force switch
-    if (norm in VALLEY_CLUSTER) != (prev_hotel_district in VALLEY_CLUSTER):
-        return True
+    # 4. Outside Kathmandu Valley or crossing valley boundary:
+    # Hotel MUST change automatically to a hotel in the new district where overnight stay occurs.
+    return True
 
-    # 5. Get destination coordinates for travel time check
-    dest_coords = _get_district_coords(curr_district, db)
-    if not dest_coords:
-        return True
-
-    dest_lat, dest_lon = dest_coords
-
-    try:
-        from app.services.osrm_service import get_road_distance
-        result = get_road_distance(prev_lat, prev_lon, dest_lat, dest_lon)
-        if result:
-            return result["duration_min"] > 90
-    except Exception:
-        pass
-
-    # Fallback: Haversine distance → estimate time at 20 km/h (Nepal winding mountain roads are 2-3x straight-line)
-    # Threshold 75 min means any district > 25 km straight-line gets a new hotel
-    from app.logic.route_optimiser import distance_km
-    d = distance_km(prev_lat, prev_lon, dest_lat, dest_lon)
-    estimated_min = (d / 20.0) * 60
-    return estimated_min > 75
 
 
 def get_hotel_plan(db: Session, preference_id: int, days: int, district_or_districts, budget: float):
@@ -1265,6 +1244,16 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
                 "similarity_score": 0.0,
             }
             slot['places'] = [coffee_place]
+
+    # 🔥 5.5 REBALANCE ATTRACTIONS ACROSS DAYS
+    if len(day_slots) > 1:
+        for i in range(len(day_slots) - 1, 0, -1):
+            curr_slot = day_slots[i]
+            prev_slot = day_slots[i - 1]
+            if not curr_slot.get('is_blocked') and not prev_slot.get('is_blocked'):
+                if len(curr_slot.get('places', [])) < 2 and len(prev_slot.get('places', [])) >= 3:
+                    shifted_place = prev_slot['places'].pop()
+                    curr_slot['places'].insert(0, shifted_place)
 
     # 🔥 6. ROUTE OPTIMIZE & FORMAT JSON (with Transport Mode)
     final_itinerary = []
