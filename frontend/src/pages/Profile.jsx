@@ -244,29 +244,6 @@ export default function MyProfile() {
               </div>
             </div>
 
-            <div className="profile-button-row">
-              <button className="profile-action-btn edit-btn" type="button" onClick={handleEditProfile}>
-                <FaEdit />
-                {isEditing ? ' Save Profile' : ' Edit Profile'}
-              </button>
-              {isEditing && (
-                <button
-                  className="profile-action-btn cancel-btn"
-                  type="button"
-                  onClick={() => {
-                    setIsEditing(false)
-                    setShowPasswordChange(false)
-                    setPasswordForm({ newPassword: '', confirmPassword: '' })
-                  }}
-                >
-                  Cancel
-                </button>
-              )}
-              <button className="profile-action-btn delete-btn" type="button" onClick={handleDeleteAccount}>
-                <FaTrash /> Delete Account
-              </button>
-            </div>
-
             {showPasswordChange && (
               <div className="password-change-panel">
                 <h3 className="password-panel-title">Change Password</h3>
@@ -297,6 +274,36 @@ export default function MyProfile() {
                 </div>
               </div>
             )}
+
+            <div className="profile-button-row compact-actions">
+              {isEditing ? (
+                <>
+                  <button className="profile-action-btn edit-btn" type="button" onClick={handleEditProfile}>
+                    <FaSave /> Save Profile
+                  </button>
+                  <button
+                    className="profile-action-btn cancel-btn"
+                    type="button"
+                    onClick={() => {
+                      setIsEditing(false)
+                      setShowPasswordChange(false)
+                      setPasswordForm({ newPassword: '', confirmPassword: '' })
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="profile-action-btn edit-btn" type="button" onClick={handleEditProfile}>
+                    <FaEdit /> Edit Profile
+                  </button>
+                  <button className="profile-action-btn delete-btn" type="button" onClick={handleDeleteAccount}>
+                    <FaTrash /> Delete Account
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </section>
 

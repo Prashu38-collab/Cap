@@ -149,6 +149,18 @@
   color: #111;
 }
 
+.profile-button-row.compact-actions .cancel-btn {
+  border-radius: 999px;
+  min-width: 160px;
+  max-width: 180px;
+  padding: 12px 18px;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+}
+
 .password-change-panel {
   margin-top: 16px;
   padding: 16px;
@@ -190,11 +202,21 @@
   justify-content: center;
   gap: 8px;
   border: 0;
-  padding: 10px 22px;
-  font-weight: bold;
-  border-radius: 30px;
+  padding: 12px 18px;
+  font-weight: 700;
+  border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  min-width: 160px;
+  flex: 1 1 160px;
+  max-width: 180px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.profile-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+  filter: brightness(1.02);
 }
 
 .photo-btn {
@@ -206,8 +228,15 @@
 
 .profile-button-row {
   display: flex;
-  gap: 16px;
-  margin-top: 28px;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.compact-actions {
+  margin-top: 12px;
+  justify-content: flex-start;
 }
 
 .edit-btn {
