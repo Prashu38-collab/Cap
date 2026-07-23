@@ -1,0 +1,1011 @@
+/*=====================================================
+RECOMMENDED ITINERARY PAGE
+=====================================================*/
+
+.recommended-hero{
+    position:relative;
+    width:100%;
+    height:85vh;
+    overflow:hidden;
+}
+
+.recommended-hero img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transition:.6s ease;
+}
+
+.recommended-hero:hover img{
+    transform:scale(1.08);
+}
+
+.hero-overlay{
+    position:absolute;
+    inset:0;
+    background:linear-gradient(
+        rgba(0,0,0,.15),
+        rgba(0,0,0,.65)
+    );
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+}
+
+.hero-content{
+    color:white;
+    width:1000px;
+    max-width:90%;
+}
+
+.hero-content span{
+    display:inline-block;
+    padding:10px 24px;
+    border-radius:999px;
+    background:rgba(255,255,255,.18);
+    backdrop-filter:blur(10px);
+    margin-bottom:22px;
+    font-size:17px;
+    font-weight:600;
+}
+
+.hero-content h1{
+    font-size:72px;
+    font-weight:700;
+    margin-bottom:18px;
+    line-height:1.15;
+    text-shadow:0 15px 30px rgba(0,0,0,.45);
+}
+
+.hero-content p{
+    font-size:22px;
+    font-weight:500;
+    letter-spacing:.5px;
+}
+
+/*=====================================================
+OVERVIEW
+=====================================================*/
+
+.recommended-overview{
+    width:1400px;
+    max-width:90%;
+    margin:auto;
+    padding:70px 0;
+}
+
+.recommended-overview h2{
+    font-size:38px;
+    color:var(--primary-color);
+    margin-bottom:25px;
+    position:relative;
+}
+
+.recommended-overview h2::after{
+    content:"";
+    width:70px;
+    height:4px;
+    background:var(--primary-color);
+    display:block;
+    margin-top:12px;
+    border-radius:20px;
+}
+
+.recommended-overview p{
+    font-size:18px;
+    line-height:2;
+    color:#555;
+}
+
+/*=====================================================
+QUICK FACTS
+=====================================================*/
+
+.quick-facts{
+    width:1400px;
+    max-width:90%;
+    margin:auto;
+    padding-bottom:90px;
+}
+
+.quick-facts h2{
+    text-align:center;
+    font-size:38px;
+    color:var(--primary-color);
+    margin-bottom:50px;
+}
+
+.facts-grid{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:22px;
+}
+
+.fact-card{
+    background:#fff;
+    border-radius:18px;
+    padding:35px 20px;
+    text-align:center;
+    box-shadow:0 15px 35px rgba(0,0,0,.08);
+    transition:.35s ease;
+    border-top:5px solid var(--primary-color);
+}
+
+.fact-card:hover{
+    transform:translateY(-8px);
+    box-shadow:0 25px 45px rgba(0,0,0,.12);
+}
+
+.fact-card h4{
+    color:var(--primary-color);
+    margin-bottom:15px;
+    font-size:18px;
+    font-weight:700;
+}
+
+.fact-card p{
+    color:#555;
+    font-size:16px;
+    line-height:1.6;
+}
+
+/*=====================================================
+DESTINATION HIGHLIGHTS
+=====================================================*/
+
+.highlights{
+
+    width:1400px;
+    max-width:90%;
+    margin:auto;
+    padding-bottom:90px;
+
+}
+
+
+.highlights h2{
+
+    text-align:center;
+    font-size:38px;
+    color:var(--primary-color);
+    margin-bottom:50px;
+
+}
+
+
+
+.highlight-grid{
+
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:25px;
+
+}
+
+
+
+.highlight-card{
+
+    background:white;
+    padding:25px;
+
+    border-radius:18px;
+
+    box-shadow:
+    0 15px 35px rgba(0,0,0,.08);
+
+    font-size:17px;
+    font-weight:600;
+
+    color:#444;
+
+    text-align:center;
+
+    transition:.35s ease;
+
+    border:1px solid rgba(0,0,0,.05);
+
+}
+
+
+
+.highlight-card:hover{
+
+    transform:translateY(-8px);
+
+    background:var(--primary-color);
+
+    color:white;
+
+}
+
+
+
+/*=====================================================
+DETAILED ITINERARY TIMELINE
+=====================================================*/
+
+
+.timeline-section{
+
+    width:1400px;
+    max-width:90%;
+    margin:auto;
+    padding-bottom:100px;
+
+}
+
+
+
+.timeline-section h2{
+
+    text-align:center;
+    font-size:40px;
+    color:var(--primary-color);
+    margin-bottom:60px;
+
+}
+
+
+
+
+.day-card{
+
+    background:white;
+
+    border-radius:25px;
+
+    padding:45px;
+
+    margin-bottom:45px;
+
+    box-shadow:
+    0 20px 45px rgba(0,0,0,.08);
+
+    transition:.35s ease;
+
+}
+
+
+
+.day-card:hover{
+
+    transform:translateY(-8px);
+
+    box-shadow:
+    0 30px 60px rgba(0,0,0,.12);
+
+}
+
+
+
+
+.day-header{
+
+    border-left:7px solid var(--primary-color);
+
+    padding-left:25px;
+
+    margin-bottom:40px;
+
+}
+
+
+
+.day-header h3{
+
+    font-size:35px;
+
+    color:var(--primary-color);
+
+    margin-bottom:10px;
+
+}
+
+
+
+.day-header h4{
+
+    font-size:22px;
+
+    color:#333;
+
+}
+
+
+
+
+/*=====================================================
+MORNING AFTERNOON EVENING
+=====================================================*/
+
+
+.timeline-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:25px;
+
+}
+
+
+
+.timeline-box{
+
+    background:#fafafa;
+
+    padding:30px;
+
+    border-radius:20px;
+
+    border-top:5px solid var(--primary-color);
+
+    transition:.35s ease;
+
+}
+
+
+
+.timeline-box:hover{
+
+    transform:translateY(-6px);
+
+    background:white;
+
+    box-shadow:
+    0 15px 35px rgba(0,0,0,.1);
+
+}
+
+
+
+.timeline-box h4{
+
+    font-size:22px;
+
+    color:var(--primary-color);
+
+    margin-bottom:15px;
+
+}
+
+
+
+.timeline-box span{
+
+    display:block;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    color:#777;
+
+    margin-bottom:20px;
+
+}
+
+
+
+.timeline-box ul{
+
+    padding-left:20px;
+
+}
+
+
+
+.timeline-box li{
+
+    margin-bottom:12px;
+
+    line-height:1.7;
+
+    color:#555;
+
+}
+
+
+
+
+
+/*=====================================================
+HOTEL CARD
+=====================================================*/
+
+
+.hotel-card{
+
+    margin-top:35px;
+
+    padding:35px;
+
+    border-radius:20px;
+
+
+    background:
+
+    linear-gradient(
+    135deg,
+    #fff8eb,
+    #ffffff
+    );
+
+
+    border-left:
+
+    7px solid #f59e0b;
+
+
+    box-shadow:
+
+    0 15px 35px rgba(0,0,0,.08);
+
+}
+
+
+
+.hotel-card h3{
+
+    color:#d97706;
+
+    font-size:25px;
+
+    margin-bottom:18px;
+
+}
+
+
+
+.hotel-card h4{
+
+    font-size:22px;
+
+    margin-bottom:10px;
+
+    color:#333;
+
+}
+
+
+
+.hotel-card p{
+
+    color:#666;
+
+    font-size:16px;
+
+    line-height:1.8;
+
+}
+
+/*=====================================================
+INCLUDED / EXCLUDED
+=====================================================*/
+
+.include-exclude{
+
+    width:1400px;
+
+    max-width:90%;
+
+    margin:auto;
+
+    padding-bottom:100px;
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:40px;
+
+}
+
+
+
+.include-card,
+.exclude-card{
+
+    background:white;
+
+    padding:40px;
+
+    border-radius:25px;
+
+    box-shadow:
+
+    0 20px 45px rgba(0,0,0,.08);
+
+}
+
+
+
+.include-card{
+
+    border-top:6px solid #22c55e;
+
+}
+
+
+
+.exclude-card{
+
+    border-top:6px solid #ef4444;
+
+}
+
+
+
+.include-card h2,
+.exclude-card h2{
+
+    font-size:32px;
+
+    color:var(--primary-color);
+
+    margin-bottom:30px;
+
+}
+
+
+
+.include-card ul,
+.exclude-card ul{
+
+    padding-left:20px;
+
+}
+
+
+
+.include-card li,
+.exclude-card li{
+
+    font-size:17px;
+
+    margin-bottom:15px;
+
+    line-height:1.7;
+
+    color:#555;
+
+}
+
+
+
+/*=====================================================
+PACKING CHECKLIST
+=====================================================*/
+
+
+.packing-section{
+
+    width:1400px;
+
+    max-width:90%;
+
+    margin:auto;
+
+    padding-bottom:100px;
+
+}
+
+
+
+.packing-section h2{
+
+    text-align:center;
+
+    color:var(--primary-color);
+
+    font-size:38px;
+
+    margin-bottom:50px;
+
+}
+
+
+
+.packing-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(5,1fr);
+
+    gap:25px;
+
+}
+
+
+
+.packing-item{
+
+    background:white;
+
+    padding:25px;
+
+    border-radius:18px;
+
+    text-align:center;
+
+    font-size:16px;
+
+    font-weight:600;
+
+    color:#555;
+
+    box-shadow:
+
+    0 15px 35px rgba(0,0,0,.08);
+
+
+    transition:.35s ease;
+
+}
+
+
+
+.packing-item:hover{
+
+    transform:translateY(-8px);
+
+    background:var(--primary-color);
+
+    color:white;
+
+}
+
+
+
+
+/*=====================================================
+TRAVEL TIPS
+=====================================================*/
+
+
+.tips-section{
+
+
+    width:1400px;
+
+    max-width:90%;
+
+    margin:auto;
+
+    padding-bottom:100px;
+
+
+}
+
+
+
+.tips-section h2{
+
+    text-align:center;
+
+    font-size:38px;
+
+    color:var(--primary-color);
+
+    margin-bottom:50px;
+
+}
+
+
+
+.tips-grid{
+
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:30px;
+
+
+}
+
+
+
+.tip-card{
+
+
+    background:white;
+
+    padding:30px;
+
+
+    border-radius:20px;
+
+
+    border-left:6px solid var(--primary-color);
+
+
+    box-shadow:
+
+    0 15px 35px rgba(0,0,0,.08);
+
+
+    color:#555;
+
+    line-height:1.8;
+
+
+    transition:.35s ease;
+
+
+}
+
+
+
+.tip-card:hover{
+
+
+    transform:translateY(-8px);
+
+
+    box-shadow:
+
+    0 25px 50px rgba(0,0,0,.12);
+
+
+}
+
+
+
+
+
+/*=====================================================
+PHOTO GALLERY
+=====================================================*/
+
+
+.gallery-section{
+
+
+    width:1400px;
+
+    max-width:90%;
+
+    margin:auto;
+
+    padding-bottom:100px;
+
+
+}
+
+
+
+.gallery-section h2{
+
+
+    text-align:center;
+
+    font-size:38px;
+
+    color:var(--primary-color);
+
+    margin-bottom:50px;
+
+
+}
+
+
+
+.gallery-grid{
+
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:25px;
+
+
+}
+
+
+
+.gallery-grid img{
+
+
+    width:100%;
+
+    height:300px;
+
+    object-fit:cover;
+
+    border-radius:22px;
+
+
+    cursor:pointer;
+
+
+    transition:.45s ease;
+
+
+    box-shadow:
+
+    0 15px 35px rgba(0,0,0,.1);
+
+
+}
+
+
+
+.gallery-grid img:hover{
+
+
+    transform:scale(1.05);
+
+
+    box-shadow:
+
+    0 25px 55px rgba(0,0,0,.2);
+
+
+}
+
+
+
+
+/*=====================================================
+BACK BUTTON
+=====================================================*/
+
+
+.back-wrapper{
+
+
+    text-align:center;
+
+    padding-bottom:100px;
+
+
+}
+
+
+
+.back-btn{
+
+
+    display:inline-block;
+
+    padding:16px 45px;
+
+    border-radius:999px;
+
+    background:var(--primary-color);
+
+    color:white;
+
+    text-decoration:none;
+
+    font-size:17px;
+
+    font-weight:600;
+
+    transition:.35s ease;
+
+
+}
+
+
+
+.back-btn:hover{
+
+
+    transform:translateY(-5px);
+
+
+    box-shadow:
+
+    0 15px 35px rgba(0,0,0,.2);
+
+
+}
+
+
+
+
+/*=====================================================
+NOT FOUND PAGE
+=====================================================*/
+
+
+.itinerary-not-found{
+
+
+    min-height:70vh;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    text-align:center;
+
+
+}
+
+
+
+.itinerary-not-found h1{
+
+
+    font-size:45px;
+
+    color:var(--primary-color);
+
+    margin-bottom:20px;
+
+
+}
+
+
+
+.itinerary-not-found p{
+
+
+    font-size:18px;
+
+    color:#666;
+
+    margin-bottom:30px;
+
+
+}
+
+
+
+/*=====================================================
+GLOBAL ANIMATION
+=====================================================*/
+
+
+.fact-card,
+.highlight-card,
+.day-card,
+.timeline-box,
+.hotel-card,
+.include-card,
+.exclude-card,
+.packing-item,
+.tip-card,
+.gallery-grid img{
+
+
+    animation:fadeUp .6s ease;
+
+
+}
+
+
+
+@keyframes fadeUp{
+
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(30px);
+
+    }
+
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
