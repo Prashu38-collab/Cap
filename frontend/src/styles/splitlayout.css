@@ -1,0 +1,183 @@
+/* ================================================================
+   UNIFIED SPLIT LAYOUT — Single source of truth for all split pages
+   Used by: PlanTrip, HotelSelection, TrekSelection,
+            ItineraryResult, TrekItineraryResult
+
+   Layout rules:
+   - Navbar: fixed, height 80px
+   - Content starts 35px below navbar (margin-top on sl-wrap)
+   - Left: scrollable, contains all content cards
+   - Right: sticky map, always visible, never scrolls independently
+   - Both columns start and end at the same vertical position
+   ================================================================ */
+
+/* ── Container ── */
+.sl-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 24px;
+  width: 100%;
+  max-width: 1440px;
+  margin: 35px auto 40px auto;
+  padding: 0 24px;
+  align-items: start;
+  box-sizing: border-box;
+}
+
+/* ── Left Panel (scrollable) ── */
+.sl-left {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Right Panel ── */
+.sl-right {
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* ── Sticky Map ── */
+.sl-map-sticky {
+  position: sticky;
+  top: 100px;
+  height: calc(100vh - 130px);
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.sl-map-sticky .leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+}
+
+/* ── Shared Card Style (for left-panel cards) ── */
+.sl-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+/* ── Shared Button Style ── */
+.sl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 28px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sl-btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.sl-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.sl-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.sl-btn-secondary {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.sl-btn-secondary:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+/* ── Bottom Action Bar (for result pages) ── */
+.sl-bottom-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.sl-bottom-actions .sl-btn {
+  flex: 1;
+}
+
+/* ================================================================
+   RESPONSIVE — Tablet
+   ================================================================ */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .sl-wrap {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 16px;
+    margin: 28px auto 32px auto;
+    padding: 0 16px;
+  }
+
+  .sl-map-sticky {
+    height: calc(100vh - 120px);
+    border-radius: 14px;
+  }
+}
+
+/* ================================================================
+   RESPONSIVE — Mobile (stack vertically)
+   ================================================================ */
+@media (max-width: 768px) {
+  .sl-wrap {
+    grid-template-columns: 1fr;
+    row-gap: 16px;
+    margin: 20px auto 28px auto;
+    padding: 0 12px;
+  }
+
+  .sl-left {
+    padding-right: 0;
+  }
+
+  .sl-right {
+    order: -1;
+  }
+
+  .sl-map-sticky {
+    position: relative;
+    top: 0;
+    height: 280px;
+    min-height: 240px;
+    border-radius: 14px;
+  }
+
+  .sl-bottom-actions {
+    flex-direction: column;
+  }
+
+  .sl-bottom-actions .sl-btn {
+    width: 100%;
+  }
+}

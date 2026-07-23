@@ -1,21 +1,16 @@
-import { useRef, useEffect } from "react";
+import React from "react";
+import "../styles/splitlayout.css";
 
-export default function SplitLayout({ left, right, leftClassName = "" }) {
-  const leftRef = useRef(null);
-
-  useEffect(() => {
-    if (leftRef.current) {
-      leftRef.current.scrollTop = 0;
-    }
-  }, [left]);
-
+export default function SplitLayout({ leftContent, rightContent, className = "" }) {
   return (
-    <div className="split-layout">
-      <div className={`split-left ${leftClassName}`} ref={leftRef}>
-        {left}
+    <div className={`sl-wrap ${className}`}>
+      <div className="sl-left">
+        {leftContent}
       </div>
-      <div className="split-right">
-        {right}
+      <div className="sl-right">
+        <div className="sl-map-sticky">
+          {rightContent}
+        </div>
       </div>
     </div>
   );

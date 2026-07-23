@@ -1,0 +1,404 @@
+/* ================================================================
+   ITINERARY RESULT — Professional Travel App Styling
+   Uses shared classes from splitlayout.css for buttons and cards
+   ================================================================ */
+
+.ir-main-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+/* ── Header Card ── */
+.ir-header-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 22px;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ir-header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.ir-header-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.4px;
+}
+
+.ir-header-corridor {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2563eb;
+  margin: 0;
+}
+
+.ir-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.ir-save-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* ── Stats Bar ── */
+.ir-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.ir-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.ir-stat-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.ir-stat-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* ── Day Tabs ── */
+.ir-tabs-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.ir-day-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 70px;
+}
+
+.ir-day-tab:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.ir-day-tab.is-active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.ir-day-tab-num {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.ir-day-tab-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* ── Day Header Card ── */
+.ir-day-header-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.ir-day-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ir-day-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ir-day-number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.ir-day-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+}
+
+.ir-day-hotel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.ir-day-hotel svg {
+  flex-shrink: 0;
+  color: #2563eb;
+}
+
+.ir-weather-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+
+.ir-weather-icon {
+  font-size: 20px;
+}
+
+.ir-weather-temp {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.ir-weather-desc {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* ── Timeline ── */
+.ir-timeline-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: 24px;
+}
+
+.ir-timeline-container::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: #e2e8f0;
+  z-index: 1;
+}
+
+.ir-tl-item {
+  position: relative;
+  margin-bottom: 14px;
+  z-index: 2;
+}
+
+.ir-tl-item.is-focused {
+  animation: focusPulse 0.3s ease;
+}
+
+@keyframes focusPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.ir-tl-node {
+  position: absolute;
+  left: -24px;
+  top: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+
+.ir-tl-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.ir-tl-card.is-clickable {
+  cursor: pointer;
+}
+
+.ir-tl-card.is-clickable:hover,
+.ir-tl-card.is-highlighted {
+  border-color: #2563eb;
+  transform: translateX(4px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.12);
+}
+
+.ir-tl-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.ir-tl-time-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.ir-tl-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 4px 0;
+}
+
+.ir-tl-desc {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 2px 0 6px 0;
+  line-height: 1.4;
+}
+
+.ir-tl-meta-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.ir-meta-chip {
+  font-size: 10.5px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.ir-meta-chip.transit {
+  background: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #f3e8ff;
+}
+
+/* ── Bottom Actions ── */
+.ir-bottom-actions {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.ir-hotel-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 5px;
+}
+
+.ir-hotel-dot { width: 6px; height: 6px; border-radius: 50%; background: #3b82f6; flex-shrink: 0; }
+.ir-hotel-name { font-size: 12px; font-weight: 600; color: #1e293b; }
+.ir-hotel-hint { font-size: 10px; color: #94a3b8; margin-left: auto; }
+
+/* ── Empty State ── */
+.ir-empty {
+  text-align: center;
+  padding: 20px 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px dashed #cbd5e1;
+  margin-bottom: 12px;
+}
+.ir-empty p { color: #64748b; margin: 0; font-size: 12px; }
+
+/* ── Map Popups ── */
+.ir-map-popup {
+  font-family: system-ui, -apple-system, sans-serif;
+  min-width: 180px;
+  padding: 4px;
+}
+.ir-popup-cat {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+.ir-popup-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+.ir-popup-district {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.ir-popup-coords {
+  font-size: 10px;
+  color: #94a3b8;
+  font-family: monospace;
+}

@@ -69,11 +69,12 @@ export default function PlanTripMap({ startCoords, endCoords, startingDistrict, 
   const isEndValid = endCoords && Array.isArray(endCoords) && endCoords.length === 2 && !isNaN(endCoords[0]) && !isNaN(endCoords[1]);
 
   return (
-    <div className="plantrip-map-side">
+    <div className="plantrip-map-side" style={{ width: "100%", height: "100%" }}>
       <MapContainer
         center={[27.7, 85.3]}
         zoom={8}
         scrollWheelZoom={true}
+        style={{ width: "100%", height: "100%", borderRadius: "16px" }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

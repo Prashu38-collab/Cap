@@ -506,8 +506,6 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
 
         stops = stops[:travel_days]
 
-        stops = stops[:travel_days]
-
         all_hotels = db.execute(
             text("""
                 SELECT hotel_id, hotel_name, latitude, longitude,

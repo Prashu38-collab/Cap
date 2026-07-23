@@ -25,6 +25,47 @@ from app.logic.transit_corridors import (
     _normalize,
 )
 
+
+def _allocate_days_to_corridor(corridor: list, days: int) -> list:
+    """Allocate travel days to corridor districts with smart distribution.
+
+    Rules:
+      - 1 district  → all days there
+      - 2 districts → split roughly evenly, extra goes to destination
+      - 3+ districts → first district gets floor(days/3)+1, intermediates share, last gets remainder
+    Always returns a list of district names, length == days.
+    """
+    n = len(corridor)
+    if n == 0:
+        return []
+    if n == 1:
+        return [corridor[0]] * days
+    if days == 1:
+        return [corridor[0]]
+
+    # Two districts: first gets at least 1 day, destination gets rest
+    if n == 2:
+        first_days = max(1, days // 3)
+        last_days = days - first_days
+        return [corridor[0]] * first_days + [corridor[1]] * last_days
+
+    # Three+ districts: distribute proportionally, minimum 1 day each for start/end
+    first_days = max(1, min(days // 3, days - n + 1))
+    remaining_days = days - first_days
+    middle_districts = corridor[1:-1]
+    middle_count = len(middle_districts)
+    # Give intermediate districts 1 day each, remainder goes to destination
+    middle_days_each = 1 if remaining_days >= middle_count + 1 else 0
+    middle_total = middle_count * middle_days_each
+    dest_days = remaining_days - middle_total
+
+    allocation = [corridor[0]] * first_days
+    for md in middle_districts:
+        if middle_days_each > 0:
+            allocation.append(md)
+    allocation.extend([corridor[-1]] * dest_days)
+    return allocation
+
 # ==============================
 # PHASE 1: HELPER FUNCTIONS
 # ==============================
@@ -734,10 +775,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
         end = getattr(pref, "ending_district", "") or start
         corridor = compute_corridor(start, end)
 
-    # Intermediate corridor districts are transit-only (no overnight stay).
-    # All days are allocated to the ENDING district. Transit segments on Day 1
-    # show the journey from starting → through intermediates → to ending.
-    districts_per_day = [corridor[-1]] * days
+    districts_per_day = _allocate_days_to_corridor(corridor, days)
 
     # ──────────────────────────────────────────────
     # Fetch weather flags for place selection
@@ -934,40 +972,15 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
                 day_slots[current_idx + d]['places'].append(trek_copy)
             current_idx += req_days
 
-    # Day 1 transit logic: only block Day 1 when there's actual transit between different districts.
-    # When start == end (corridor length == 1), Day 1 gets normal activities.
-    if not day_slots[0]['is_blocked'] and len(corridor) > 1:
-        corridor_distance = 0
-        for i in range(len(corridor) - 1):
-            info = get_transit_info(corridor[i], corridor[i+1], db)
-            corridor_distance += info.get("distance_km", 0)
-        if len(corridor) > 2 and corridor_distance <= 180:
-            intermediate_districts = [d.lower() for d in corridor[1:-1]]
-            stopover_place = None
-            for p in standard_pool:
-                p_dist = (p.get("district") or "").lower()
-                if p_dist in intermediate_districts:
-                    # Calculate arrival at first intermediate district
-                    first_leg = get_transit_info(corridor[0], corridor[1], db)
-                    leg_h = first_leg["duration_hours"]
-                    dep_h = 5  # transit departs at 05:00
-                    arr_h = dep_h + int(leg_h)
-                    arr_m = int((leg_h - int(leg_h)) * 60)
-                    # +30 min buffer, cap at 09:00
-                    arr_m += 30
-                    if arr_m >= 60:
-                        arr_h += 1
-                        arr_m -= 60
-                    if arr_h < 8:
-                        arr_h = 8
-                    p['duration_hours'] = min(float(p.get("duration_hours", 2.0)), 2.0)
-                    p['_start_time'] = f"{arr_h:02d}:{arr_m:02d}"
-                    p['_time_of_day'] = "morning"
-                    stopover_place = p
-                    break
-            if stopover_place:
-                day_slots[0]['places'].append(stopover_place)
-                standard_pool.remove(stopover_place)
+    # Day 1 transit logic: only block Day 1 when the starting district has NO
+    # available places and the transit is long enough to consume the whole day.
+    # With the new allocation, Day 1 is usually in the starting district, so
+    # activities should be assigned there by default.
+    start_district_for_day1 = districts_per_day[0] if districts_per_day else corridor[0]
+    start_district_places = [p for p in standard_pool if (p.get("district") or "").lower() == start_district_for_day1.lower()]
+    # Only block Day 1 if there are literally zero places in the starting district
+    # AND the corridor has more than one district (meaning transit is needed)
+    if not day_slots[0]['is_blocked'] and len(corridor) > 1 and len(start_district_places) == 0:
         day_slots[0]['is_blocked'] = True
 
     # Category diversity: when user selects multiple categories, rotate through them
@@ -982,9 +995,6 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
         if slot['is_blocked'] or not full_day_pool:
             continue
         day_num = slot['day_num']
-        # Skip Day 1 only when it's a multi-district transit day
-        if day_num == 1 and len(corridor) > 1:
-            continue
         slot_district = districts_per_day[day_num - 1] if day_num - 1 < len(districts_per_day) else corridor[-1]
         matched_idx = None
         if preferred_categories:
@@ -1023,9 +1033,6 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
         if slot['is_blocked']:
             continue
         day_num = slot['day_num']
-        # Skip Day 1 only when it's a multi-district transit day
-        if day_num == 1 and len(corridor) > 1:
-            continue
 
         is_gap_day = last_adventure_day is not None and day_num == last_adventure_day + 1
         day_district = districts_per_day[day_num - 1] if day_num - 1 < len(districts_per_day) else corridor[-1]
@@ -1246,14 +1253,51 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
             slot['places'] = [coffee_place]
 
     # 🔥 5.5 REBALANCE ATTRACTIONS ACROSS DAYS
+    # First: inject fallback activities for days that ended up empty
+    for slot in day_slots:
+        if slot['is_blocked'] or slot.get('places'):
+            continue
+        day_num = slot['day_num']
+        fallback_district = districts_per_day[day_num - 1] if day_num - 1 < len(districts_per_day) else corridor[-1]
+        # Find any remaining place in the corridor that matches this day's district
+        fallback_place = None
+        for p in standard_pool:
+            p_dist = (p.get("district") or "").lower()
+            if p_dist == fallback_district.lower():
+                fallback_place = p
+                break
+        # Broaden search: any corridor district
+        if not fallback_place and standard_pool:
+            fallback_place = standard_pool[0]
+        if fallback_place:
+            fallback_place['_start_time'] = "09:00"
+            fallback_place['_time_of_day'] = "morning"
+            slot['places'].append(fallback_place)
+            standard_pool.remove(fallback_place)
+            day_standard_pool_fallback = [p for p in standard_pool if (p.get("district") or "").lower() == fallback_district.lower()]
+            # Try to add a second place if available
+            if len(slot['places']) < 2 and day_standard_pool_fallback:
+                second = day_standard_pool_fallback[0]
+                second['_start_time'] = "14:00"
+                second['_time_of_day'] = "afternoon"
+                slot['places'].append(second)
+                standard_pool.remove(second)
+
     if len(day_slots) > 1:
         for i in range(len(day_slots) - 1, 0, -1):
             curr_slot = day_slots[i]
             prev_slot = day_slots[i - 1]
             if not curr_slot.get('is_blocked') and not prev_slot.get('is_blocked'):
                 if len(curr_slot.get('places', [])) < 2 and len(prev_slot.get('places', [])) >= 3:
-                    shifted_place = prev_slot['places'].pop()
-                    curr_slot['places'].insert(0, shifted_place)
+                    # Only shift if the place's district matches the receiving day
+                    curr_district = districts_per_day[i] if i < len(districts_per_day) else corridor[-1]
+                    for j in range(len(prev_slot['places']) - 1, -1, -1):
+                        candidate = prev_slot['places'][j]
+                        cand_district = (candidate.get("district") or "").lower()
+                        if cand_district == curr_district.lower():
+                            prev_slot['places'].pop(j)
+                            curr_slot['places'].insert(0, candidate)
+                            break
 
     # 🔥 6. ROUTE OPTIMIZE & FORMAT JSON (with Transport Mode)
     final_itinerary = []
@@ -1350,6 +1394,9 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
             "places": formatted_places,
             "total_travel_km": round(travel_km, 2),
         })
+
+    # ── Inject meals and realistic timeline events ──
+    _inject_meals(final_itinerary, districts_per_day, city, db, corridor)
 
     return {
         "preference_id": preference_id, "days": days,

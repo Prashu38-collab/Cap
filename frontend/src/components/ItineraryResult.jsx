@@ -1,13 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
+import SplitLayout from "./SplitLayout";
+import { getOSRMRoute, saveItinerary } from "../utils/api";
+import "../styles/itineraryresult.css";
 
 const catColors = {
-  nature: "#16a34a",
+  nature: "#059669",
   religious: "#d97706",
   cultural: "#7c3aed",
   adventure: "#dc2626",
   hotel: "#2563eb",
+  transit: "#8b5cf6",
+  meal: "#f59e0b",
+  activity: "#3b82f6",
 };
 
 function getCatColor(cat) {
@@ -19,251 +25,91 @@ function getCatColor(cat) {
   return "#6b7280";
 }
 
-function getCategoryDescription(cat, indoorOutdoor) {
-  const c = (cat || "").toLowerCase();
-  const isOutdoor = (indoorOutdoor || "").toLowerCase() === "outdoor";
-  if (c.includes("nature")) return isOutdoor ? "Scenic natural site. Take in the views and surroundings." : "Natural attraction. Enjoy the environment and scenery.";
-  if (c.includes("religious")) return "Religious and spiritual site. Observe local customs and traditions.";
-  if (c.includes("cultural")) return "Cultural and heritage attraction. Learn about local history and traditions.";
-  if (c.includes("adventure")) return "Adventure activity. Prepare for an active experience.";
-  return "Point of interest. Take your time exploring the area.";
-}
-
-const markerIcon = (color, label, active = true) => {
-  const sz = active ? 28 : 20;
-  const fs = active ? 10 : 8;
+const createMarkerPin = (color, label, active = true) => {
+  const sz = active ? 32 : 24;
   return L.divIcon({
-    html: `<div style="background:${color};width:${sz}px;height:${sz}px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:${active?2:1}px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"><div style="transform:rotate(45deg);color:#fff;font-weight:700;font-size:${fs}px">${label}</div></div>`,
-    className: "place-pin",
-    iconSize: [sz, sz + 5],
-    iconAnchor: [sz / 2, sz + 5],
-    popupAnchor: [0, -(sz + 5)],
+    html: `
+      <div style="
+        background: ${color};
+        width: ${sz}px;
+        height: ${sz}px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: ${active ? '2.5px' : '1.5px'} solid #ffffff;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        transition: all 0.2s ease;
+      ">
+        <div style="
+          transform: rotate(45deg);
+          color: #ffffff;
+          font-weight: 800;
+          font-size: ${active ? '11px' : '9px'};
+          font-family: system-ui, -apple-system, sans-serif;
+        ">${label}</div>
+      </div>
+    `,
+    className: "custom-map-pin",
+    iconSize: [sz, sz + 6],
+    iconAnchor: [sz / 2, sz + 6],
+    popupAnchor: [0, -(sz + 6)],
   });
 };
 
-function buildPopupHTML({ type, name, district, category, duration, hotelName, order, lat, lon, travelTime, activityLabel }) {
-  if (type === "hotel") {
-    return `<div style="font-family:system-ui,sans-serif;min-width:200px">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#2563eb;font-weight:700;margin-bottom:3px">Hotel</div>
-      <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">${hotelName || name}</div>
-      <div style="font-size:11px;color:#475569;margin-bottom:2px">${district || ""}</div>
-      ${lat && lon ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px">${lat.toFixed(4)}, ${lon.toFixed(4)}</div>` : ""}
-    </div>`;
-  }
-  const actText = activityLabel || "Visit";
-  const durText = duration || "";
-  const travelText = travelTime ? `${travelTime} min` : "";
-  const catText = category || "";
-  const orderText = order ? `#${order}` : "";
-  return `<div style="font-family:system-ui,sans-serif;min-width:200px">
-    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:${getCatColor(category)};font-weight:700;margin-bottom:3px">${actText} ${orderText}</div>
-    <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">${name}</div>
-    <div style="font-size:11px;color:#475569;margin-bottom:4px">${district || ""}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-      ${catText ? `<span style="font-size:10px;background:#f1f5f9;padding:2px 6px;border-radius:3px;color:#475569">${catText}</span>` : ""}
-      ${durText ? `<span style="font-size:10px;background:#f1f5f9;padding:2px 6px;border-radius:3px;color:#475569">~${durText}</span>` : ""}
-      ${travelText ? `<span style="font-size:10px;background:#eff6ff;padding:2px 6px;border-radius:3px;color:#2563eb">~${travelText} drive</span>` : ""}
-    </div>
-    ${lat && lon ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px">${lat.toFixed(4)}, ${lon.toFixed(4)}</div>` : ""}
-  </div>`;
-}
-
-function MapCtrl({ center, zoom, bounds }) {
+function MapController({ center, zoom, bounds }) {
   const map = useMap();
   useEffect(() => {
-    if (center) map.setView(center, zoom || 15);
-    else if (bounds?.length) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    if (center) {
+      map.setView(center, zoom || 15);
+    } else if (bounds && bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
   }, [center, zoom, bounds, map]);
   return null;
 }
 
-function placeDurationLabel(place) {
-  const val = place.estimated_duration_value;
-  const unit = (place.estimated_duration_unit || "hours").toLowerCase();
-  if (val) return `${val} ${unit}`;
-  return null;
+function EventIcon({ type, category }) {
+  if (type === "meal") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+        <line x1="6" y1="1" x2="6" y2="4"/>
+        <line x1="10" y1="1" x2="10" y2="4"/>
+        <line x1="14" y1="1" x2="14" y2="4"/>
+      </svg>
+    );
+  }
+  if (type === "transit") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="14" rx="2"/>
+        <path d="M7 21l2-4"/><path d="M17 21l-2-4"/>
+        <circle cx="7" cy="13" r="1"/><circle cx="17" cy="13" r="1"/>
+      </svg>
+    );
+  }
+  if (type === "activity" || type === "hotel") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 21V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14"/>
+        <path d="M9 21V11h6v10"/>
+      </svg>
+    );
+  }
+  const color = getCatColor(category);
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  );
 }
 
-function placeDurationMinutes(place) {
-  if (place.estimated_duration_value) {
-    const val = parseFloat(place.estimated_duration_value);
-    const unit = (place.estimated_duration_unit || "hours").toLowerCase();
-    if (unit.includes("min")) return Math.round(val);
-    return Math.round(val * 60);
-  }
-  if (place.duration) return Math.round(place.duration * 60);
-  return 120;
-}
-
-function advanceTime(timeStr, minutes) {
-  const [h, m] = timeStr.split(":").map(Number);
-  const totalMin = h * 60 + m + minutes;
-  const hh = String(Math.floor(totalMin / 60) % 24).padStart(2, "0");
-  const mm = String(totalMin % 60).padStart(2, "0");
-  return `${hh}:${mm}`;
-}
-
-function buildSchedule(day, dayIndex, totalDays) {
-  const places = day.places || [];
-  const isFirst = dayIndex === 0 && totalDays > 1;
-  const isLast = dayIndex === totalDays - 1 && totalDays > 1;
-  const isSingle = totalDays === 1;
-  const isExploredAll = day.day_type === "explored_all";
-  const items = [];
-
-  const addPlaceVisit = (place, t, order) => {
-    const durMin = placeDurationMinutes(place);
-    const actLabel = place.activity_label || getCategoryDescription(place.category, place.indoor_outdoor).split(".")[0];
-    items.push({
-      time: t,
-      label: `${actLabel} ${place.name}`,
-      type: "place",
-      place,
-      icon: "place",
-      description: getCategoryDescription(place.category, place.indoor_outdoor),
-      estimatedDuration: `${durMin} minutes`,
-      order,
-    });
-  };
-
-  const addTransit = (fromName, toName, t, travelMin) => {
-    items.push({
-      time: t,
-      label: `Travel to ${toName}`,
-      type: "transit",
-      icon: "transit",
-      transitMinutes: travelMin,
-    });
-  };
-
-  if (isExploredAll) {
-    items.push({ time: "07:30", label: "Breakfast", type: "meal", icon: "meal" });
-    items.push({ time: "09:00", label: "Continue sightseeing", type: "activity", icon: "explore", description: "Your planned sightseeing has been completed. Enjoy a relaxed day at your own pace." });
-    items.push({ time: "12:30", label: "Lunch", type: "meal", icon: "meal" });
-    items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
-    return items;
-  }
-
-  if (isFirst) {
-    items.push({ time: "07:00", label: "Breakfast", type: "meal", icon: "meal" });
-    items.push({ time: "08:00", label: "Depart for destination", type: "activity", icon: "depart", description: "Begin your journey towards the destination." });
-    items.push({ time: "09:00", label: "Arrive and check in", type: "activity", icon: "hotel", description: "Arrive at your hotel and settle in." });
-    if (places.length > 0) {
-      let t = "10:00";
-      places.forEach((p, i) => {
-        if (i > 0) {
-          const travelMin = p.travel_time_to_next_min || 20;
-          addTransit(places[i - 1].name, p.name, t, travelMin);
-          t = advanceTime(t, travelMin);
-        }
-        addPlaceVisit(p, t, i + 1);
-        t = advanceTime(t, placeDurationMinutes(p) + 10);
-      });
-    } else {
-      items.push({ time: "11:00", label: "Explore nearby area", type: "activity", icon: "explore", description: "Look around the neighbourhood and get oriented." });
-    }
-    items.push({ time: "13:00", label: "Lunch", type: "meal", icon: "meal" });
-    items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
-    return items;
-  }
-
-  if (isLast) {
-    items.push({ time: "07:00", label: "Breakfast", type: "meal", icon: "meal" });
-    if (places.length > 0) {
-      let t = "08:30";
-      places.forEach((p, i) => {
-        if (i > 0) {
-          const travelMin = p.travel_time_to_next_min || 20;
-          addTransit(places[i - 1].name, p.name, t, travelMin);
-          t = advanceTime(t, travelMin);
-        }
-        addPlaceVisit(p, t, i + 1);
-        t = advanceTime(t, placeDurationMinutes(p) + 10);
-      });
-    }
-    items.push({ time: "12:00", label: "Lunch", type: "meal", icon: "meal" });
-    items.push({ time: "13:30", label: "Begin return journey", type: "activity", icon: "return", description: "Check out and head home." });
-    return items;
-  }
-
-  if (isSingle) {
-    items.push({ time: "07:00", label: "Breakfast", type: "meal", icon: "meal" });
-    if (places.length > 0) {
-      let t = "09:00";
-      places.forEach((p, i) => {
-        if (i > 0) {
-          const travelMin = p.travel_time_to_next_min || 20;
-          addTransit(places[i - 1].name, p.name, t, travelMin);
-          t = advanceTime(t, travelMin);
-        }
-        addPlaceVisit(p, t, i + 1);
-        t = advanceTime(t, placeDurationMinutes(p) + 10);
-      });
-    }
-    items.push({ time: "13:00", label: "Lunch", type: "meal", icon: "meal" });
-    items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
-    return items;
-  }
-
-  // ── Middle / Sightseeing day ──
-  items.push({ time: "07:00", label: "Breakfast", type: "meal", icon: "meal" });
-
-  if (places.length === 0) {
-    items.push({ time: "09:00", label: "Continue sightseeing", type: "activity", icon: "explore", description: "Free day — revisit favourites or relax." });
-    items.push({ time: "12:30", label: "Lunch", type: "meal", icon: "meal" });
-    items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
-    return items;
-  }
-
-  const half = Math.ceil(places.length / 2);
-  const morning = places.slice(0, half);
-  const afternoon = places.slice(half);
-
-  let t = "09:00";
-  morning.forEach((p, i) => {
-    if (i > 0) {
-      const travelMin = p.travel_time_to_next_min || 20;
-      addTransit(morning[i - 1].name, p.name, t, travelMin);
-      t = advanceTime(t, travelMin);
-    }
-    addPlaceVisit(p, t, i + 1);
-    t = advanceTime(t, placeDurationMinutes(p) + 10);
-  });
-
-  items.push({ time: "13:00", label: "Lunch", type: "meal", icon: "meal" });
-
-  let t2 = "14:00";
-  afternoon.forEach((p, i) => {
-    if (i > 0) {
-      const travelMin = p.travel_time_to_next_min || 20;
-      addTransit(afternoon[i - 1].name, p.name, t2, travelMin);
-      t2 = advanceTime(t2, travelMin);
-    }
-    addPlaceVisit(p, t2, morning.length + i + 1);
-    t2 = advanceTime(t2, placeDurationMinutes(p) + 10);
-  });
-
-  items.push({ time: "17:00", label: "Return to hotel", type: "activity", icon: "hotel", description: "Head back to your hotel and rest." });
-  items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
-  return items;
-}
-
-const tlIcon = (item) => {
-  const t = item.type;
-  const iconType = item.icon;
-  const cat = item.place ? getCatColor(item.place.category) : "#94a3b8";
-  if (t === "place") return `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="${cat}"/></svg>`;
-  if (t === "meal") return `<svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-  if (t === "transit") return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 7,5 5,2" fill="none" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  if (iconType === "hotel") return `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="3" width="8" height="5" rx="1" fill="none" stroke="#3b82f6" stroke-width="1.2"/><line x1="1" y1="6" x2="9" y2="6" stroke="#3b82f6" stroke-width="1.2"/></svg>`;
-  if (iconType === "depart") return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="3,3 7,3 7,7" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  if (iconType === "return") return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="7,3 3,3 3,7" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  if (iconType === "explore") return `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3" fill="none" stroke="#3b82f6" stroke-width="1.2"/><circle cx="5" cy="5" r="1" fill="#3b82f6"/></svg>`;
-  return `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="1.5" fill="#6b7280"/></svg>`;
-};
-
-function downloadItinerary(days, corridor, preferenceId) {
-  const data = { preferenceId, corridor, itinerary: days.map((d) => ({ day: d.day, district: d.district, hotel: d.hotel, places: d.places, total_places: d.total_places, day_type: d.day_type })) };
+function downloadItineraryJSON(days, corridor, preferenceId) {
+  const data = { preferenceId, corridor, itinerary: days };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -273,214 +119,364 @@ function downloadItinerary(days, corridor, preferenceId) {
   URL.revokeObjectURL(url);
 }
 
-function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor }) {
+/* ─────────────────────────────────────────────
+   MAIN COMPONENT — renders via SplitLayout
+   ───────────────────────────────────────────── */
+export default function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor, onReset }) {
   const [activeDay, setActiveDay] = useState(1);
-  const [animDir, setAnimDir] = useState("next");
   const [highlightedId, setHighlightedId] = useState(null);
-  const [mapCenter, setMapCenter] = useState(null);
-  const [mapZoom, setMapZoom] = useState(13);
-  const markerRefs = useRef({});
 
   if (!itinerary?.itinerary) return null;
-
   const days = itinerary.itinerary;
   const currentDay = days.find((d) => d.day === activeDay) || days[0];
   if (!currentDay) return null;
 
-  const changeDay = (day) => {
-    setMapCenter(null);
-    setHighlightedId(null);
-    setAnimDir(day > activeDay ? "next" : "prev");
-    setActiveDay(day);
-  };
-
-  const allMarkers = [];
-  days.forEach((d) => {
-    if (d.hotel?.latitude && d.hotel?.longitude) {
-      allMarkers.push({
-        id: `hotel-${d.day}`,
-        name: d.hotel.hotel_name,
-        lat: parseFloat(d.hotel.latitude),
-        lon: parseFloat(d.hotel.longitude),
-        day: d.day,
-        type: "hotel",
-        district: d.hotel.district || d.district || "",
-      });
-    }
-    (d.places || []).forEach((p, i) => {
-      if (p.latitude && p.longitude) {
-        allMarkers.push({
-          id: p.place_id || `p-${d.day}-${i}`,
-          name: p.name,
-          lat: parseFloat(p.latitude),
-          lon: parseFloat(p.longitude),
-          day: d.day,
-          type: "place",
-          category: p.category,
-          district: p.district || d.district || "",
-          duration: placeDurationLabel(p),
-          travelTime: p.travel_time_to_next_min,
-          activityLabel: p.activity_label || "Visit",
-          order: i + 1,
-        });
-      }
-    });
-  });
-
-  const activeBounds = allMarkers.filter((m) => m.day === activeDay).map((m) => [m.lat, m.lon]);
-  const activeDayPts = [];
-  if (currentDay.hotel?.latitude) activeDayPts.push([parseFloat(currentDay.hotel.latitude), parseFloat(currentDay.hotel.longitude)]);
-  (currentDay.places || []).forEach((p) => { if (p.latitude && p.longitude) activeDayPts.push([parseFloat(p.latitude), parseFloat(p.longitude)]); });
-
-  const schedule = buildSchedule(currentDay, activeDay - 1, days.length);
-  const sightseeingPlaces = (currentDay.places || []).filter((p) => p.type !== "meal");
+  const sightseeingPlaces = (currentDay.places || []).filter((p) => p.type === "place" || p.latitude);
   const totalDist = currentDay.total_travel_km || (currentDay.places || []).reduce((sum, p) => sum + (p.travel_dist_km || 0), 0) || 0;
+  const recommendedTransport = (currentDay.places || []).find((p) => p.transport_mode)?.transport_mode || "Private Car / Local Bus";
+  const totalTravelTimeMin = (currentDay.places || []).reduce((sum, p) => sum + (p.duration ? p.duration * 60 : 0), 0) + (totalDist > 0 ? (totalDist / 30) * 60 : 0);
+  const travelTimeHrs = (totalTravelTimeMin / 60).toFixed(1);
 
-  const focusPlace = (place) => {
-    setHighlightedId(place.place_id);
-    setMapCenter([parseFloat(place.latitude), parseFloat(place.longitude)]);
-    setMapZoom(15);
-    setTimeout(() => { markerRefs.current[place.place_id]?.openPopup(); }, 100);
-  };
-
-  const focusHotel = (hotel, day) => {
-    setHighlightedId(`hotel-${day}`);
-    setMapCenter([parseFloat(hotel.latitude), parseFloat(hotel.longitude)]);
-    setMapZoom(15);
-    setTimeout(() => { markerRefs.current[`hotel-${day}`]?.openPopup(); }, 100);
+  const focusPlace = (placeId, lat, lon) => {
+    if (!lat || !lon) return;
+    setHighlightedId(placeId);
   };
 
   const focusMarker = (id) => {
     setHighlightedId(id);
-    const el = document.getElementById(`tl-${id}`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    document.getElementById(`tl-item-${id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
-  return (
-    <div className="ir-layout">
-      <div className="ir-left">
-        <div className="ir-hdr">
-          <div className="ir-hdr-row">
-            <div>
-              <h1 className="ir-hdr-title">Journey Overview</h1>
-              {corridor?.length > 1 && <p className="ir-hdr-route">{corridor.join(" / ")}</p>}
-              <p className="ir-hdr-sub">{days.length} day{days.length > 1 ? "s" : ""}</p>
-            </div>
-            <button className="ir-save-btn" onClick={() => downloadItinerary(days, corridor, preferenceId)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              Save
-            </button>
-          </div>
-        </div>
+  const weather = weatherForecast?.[activeDay - 1] || null;
 
-        <div className="ir-tabs">
-          {days.map((d) => (
-            <button key={d.day} className={`ir-tab ${activeDay === d.day ? "on" : ""}`} onClick={() => changeDay(d.day)}>
-              <span className="ir-tab-n">{d.day}</span>
-              <span className="ir-tab-l">{`Day ${d.day}`}</span>
-            </button>
-          ))}
-        </div>
-
-        <div key={activeDay} className={`ir-dc slide-${animDir}`}>
-          <div className="ir-summary">
-            <div className="ir-sum-item"><span className="ir-sum-val">{sightseeingPlaces.length}</span><span className="ir-sum-lbl">Places</span></div>
-            <div className="ir-sum-item"><span className="ir-sum-val">{totalDist > 0 ? `${totalDist} km` : "\u2014"}</span><span className="ir-sum-lbl">Distance</span></div>
-            <div className="ir-sum-item"><span className="ir-sum-val">{currentDay.hotel?.hotel_name?.split(" ").slice(0, 2).join(" ") || "\u2014"}</span><span className="ir-sum-lbl">Hotel</span></div>
-          </div>
-
-          {weatherForecast?.find((w) => w.day === activeDay)?.is_bad_weather && (
-            <div className="ir-weather">Rain expected — pack an umbrella.</div>
-          )}
-
-          <div className="ir-tl">
-            {schedule.map((item, i) => {
-              const isPlace = item.type === "place";
-              const isMeal = item.type === "meal";
-              const isTransit = item.type === "transit";
-              const isActivity = item.type === "activity";
-              const place = item.place;
-              const hl = highlightedId === place?.place_id;
-              const icon = tlIcon(item);
-
-              const color = isPlace ? getCatColor(place?.category) : isMeal ? "#f59e0b" : isTransit ? "#8b5cf6" : "#3b82f6";
-
-              return (
-                <div key={i} id={`tl-${place?.place_id || item.type + i}`} className={`ir-tl-row ${hl ? "hl" : ""} ${isTransit ? "ir-tl-transit" : ""}`}>
-                  <div className="ir-tl-time">{item.time}</div>
-                  <div className="ir-tl-dot" style={{ background: color }} />
-                  <div className="ir-tl-line" />
-                  <div
-                    className={`ir-tl-card ${isPlace ? "clickable" : ""}`}
-                    onClick={isPlace ? () => focusPlace(place) : isActivity && item.icon === "hotel" ? () => focusHotel(currentDay.hotel, activeDay) : undefined}
-                  >
-                    <div className="ir-tl-card-top">
-                      <span className="ir-tl-icon" style={{ background: color + "15" }} dangerouslySetInnerHTML={{ __html: icon }} />
-                      <span className="ir-tl-label">{item.label}</span>
-                    </div>
-                    {item.description && (
-                      <p className="ir-tl-desc">{item.description}</p>
-                    )}
-                    {item.estimatedDuration && (
-                      <div className="ir-tl-duration">
-                        <span>Estimated visit: {item.estimatedDuration}</span>
-                      </div>
-                    )}
-                    {isTransit && item.transitMinutes && (
-                      <div className="ir-tl-meta"><span>~{item.transitMinutes} min travel</span></div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {currentDay.day_type === "explored_all" && (
-            <div className="ir-empty">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 4 }}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-              <p>Your planned sightseeing has been completed. Enjoy a relaxed day at your own pace.</p>
-            </div>
-          )}
-
-          <div className="ir-bottom-actions">
-            {currentDay.hotel && (
-              <div className="ir-hotel-line" onClick={() => focusHotel(currentDay.hotel, activeDay)}>
-                <span className="ir-hotel-dot" />
-                <span className="ir-hotel-name">{currentDay.hotel.hotel_name}</span>
-                <span className="ir-hotel-hint">view on map</span>
-              </div>
+  const leftPanel = (
+    <div className="ir-main-container">
+      {/* Header Card */}
+      <div className="ir-header-card">
+        <div className="ir-header-top-row">
+          <div>
+            <h2 className="ir-header-title">Your Journey Itinerary</h2>
+            {corridor?.length > 0 && (
+              <div className="ir-header-corridor">Route: {corridor.join(" → ")}</div>
             )}
           </div>
         </div>
+        <div className="ir-stats-bar">
+          <div className="ir-stat-item">
+            <span className="ir-stat-val">{totalDist > 0 ? `${totalDist.toFixed(1)} km` : "—"}</span>
+            <span className="ir-stat-lbl">Total Distance</span>
+          </div>
+          <div className="ir-stat-item">
+            <span className="ir-stat-val">~{travelTimeHrs} hrs</span>
+            <span className="ir-stat-lbl">Est. Duration</span>
+          </div>
+          <div className="ir-stat-item">
+            <span className="ir-stat-val">{sightseeingPlaces.length} Stops</span>
+            <span className="ir-stat-lbl">Visits</span>
+          </div>
+          <div className="ir-stat-item">
+            <span className="ir-stat-val" style={{ fontSize: "12px" }}>{recommendedTransport}</span>
+            <span className="ir-stat-lbl">Transport</span>
+          </div>
+        </div>
       </div>
 
-      <div className="ir-right">
-        <MapContainer center={activeBounds[0] || [27.7, 85.3]} zoom={12} scrollWheelZoom>
-          <TileLayer attribution='&copy; <a href="https://osm.org/copyright">OSM</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {allMarkers.map((m) => {
-            const isToday = m.day === activeDay;
-            const c = m.type === "hotel" ? (isToday ? "#2563eb" : "rgba(37,99,235,.35)") : (isToday ? getCatColor(m.category) : "rgba(107,114,128,.35)");
-            const label = m.type === "hotel" ? "H" : (m.order || ".");
-            const popup = buildPopupHTML({ type: m.type, name: m.name, district: m.district, category: m.category, duration: m.duration, hotelName: m.name, order: m.order, lat: m.lat, lon: m.lon, travelTime: m.travelTime, activityLabel: m.activityLabel });
-            return (
-              <Marker key={m.id} position={[m.lat, m.lon]} icon={markerIcon(c, label, isToday)} ref={(el) => { if (el) markerRefs.current[m.id] = el; }} eventHandlers={{ click: () => focusMarker(m.id) }}>
-                <Popup><div dangerouslySetInnerHTML={{ __html: popup }} /></Popup>
-              </Marker>
-            );
-          })}
-          {days.map((d) => {
-            if (d.day === activeDay) return null;
-            const pts = [];
-            if (d.hotel?.latitude && d.hotel?.longitude) pts.push([parseFloat(d.hotel.latitude), parseFloat(d.hotel.longitude)]);
-            (d.places || []).forEach((p) => { if (p.latitude && p.longitude) pts.push([parseFloat(p.latitude), parseFloat(p.longitude)]); });
-            return pts.length > 1 ? <Polyline key={`route-${d.day}`} positions={pts} color="#cbd5e1" weight={2} opacity={0.5} dashArray="6 4" /> : null;
-          })}
-          {activeDayPts.length > 1 && <Polyline positions={activeDayPts} color="#3b82f6" weight={3.5} opacity={0.85} />}
-          <MapCtrl center={mapCenter} zoom={mapZoom} bounds={activeBounds} />
-        </MapContainer>
+      {/* Day Selector Tabs */}
+      <div className="ir-tabs-row">
+        {days.map((d) => (
+          <button
+            key={d.day}
+            className={`ir-day-tab ${activeDay === d.day ? "is-active" : ""}`}
+            onClick={() => {
+              setActiveDay(d.day);
+              setHighlightedId(null);
+            }}
+          >
+            <span className="ir-day-tab-num">Day {d.day}</span>
+            <span className="ir-day-tab-lbl">{d.day_title || d.district}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Day Header */}
+      <div className="ir-day-header-card">
+        <div className="ir-day-header-row">
+          <div className="ir-day-header-left">
+            <span className="ir-day-number-badge">Day {currentDay.day}</span>
+            <div>
+              <h3 className="ir-day-title">{currentDay.day_title || currentDay.district}</h3>
+              {currentDay.hotel && (
+                <span className="ir-day-hotel">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 21V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14"/>
+                    <path d="M9 21V11h6v10"/>
+                  </svg>
+                  {currentDay.hotel.hotel_name}
+                </span>
+              )}
+            </div>
+          </div>
+          {weather && (
+            <div className="ir-weather-badge">
+              <span className="ir-weather-icon">{weather.icon || "☀️"}</span>
+              <span className="ir-weather-temp">{weather.temp || "24°C"}</span>
+              <span className="ir-weather-desc">{weather.description || "Clear"}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Timeline */}
+      <div className="ir-timeline-container">
+        {(currentDay.places || []).map((item, idx) => {
+          const isPlace = item.type === "place" || item.latitude;
+          const isMeal = item.type === "meal";
+          const isTransit = item.type === "transit";
+          const itemId = item.place_id || `item-${activeDay}-${idx}`;
+          const isHighlighted = highlightedId === itemId;
+
+          return (
+            <div key={idx} id={`tl-item-${itemId}`} className={`ir-tl-item ${isHighlighted ? "is-focused" : ""}`}>
+              <div className="ir-tl-node">
+                <EventIcon type={item.type} category={item.category} />
+              </div>
+              <div
+                className={`ir-tl-card ${isPlace ? "is-clickable" : ""} ${isHighlighted ? "is-highlighted" : ""}`}
+                onClick={() => isPlace && focusPlace(itemId, item.latitude, item.longitude)}
+              >
+                <div className="ir-tl-card-header">
+                  <span className="ir-tl-time-badge">{item.start_time || "09:00"}</span>
+                  {isPlace && item.category && (
+                    <span
+                      className="ir-meta-chip"
+                      style={{ background: getCatColor(item.category) + "15", color: getCatColor(item.category) }}
+                    >
+                      {item.category}
+                    </span>
+                  )}
+                  {isTransit && (
+                    <span className="ir-meta-chip transit">{item.transport_mode || "Drive"}</span>
+                  )}
+                </div>
+
+                <h4 className="ir-tl-title">{item.name || item.place_name}</h4>
+                {item.description && <p className="ir-tl-desc">{item.description}</p>}
+
+                <div className="ir-tl-meta-row">
+                  {item.duration && <span className="ir-meta-chip">{item.duration} hrs</span>}
+                  {item.travel_dist_km > 0 && (
+                    <span className="ir-meta-chip">{item.travel_dist_km} km</span>
+                  )}
+                  {item.district && <span className="ir-meta-chip">{item.district}</span>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Hotel / Reset Bar */}
+      <div className="ir-bottom-actions">
+        {currentDay.hotel && (
+          <div className="ir-hotel-line">
+            <div className="ir-hotel-dot" />
+            <span className="ir-hotel-name">{currentDay.hotel.hotel_name}</span>
+            <span className="ir-hotel-hint">Tonight's stay</span>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Action Buttons */}
+      <div className="sl-bottom-actions">
+        {onReset && (
+          <button className="sl-btn sl-btn-secondary" onClick={onReset}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            Plan Another Trip
+          </button>
+        )}
+        <button
+          className="sl-btn sl-btn-primary"
+          onClick={async () => {
+            try {
+              await saveItinerary(preferenceId, itinerary);
+              alert("Itinerary saved successfully!");
+            } catch (err) {
+              alert("Failed to save: " + (err.message || "Unknown error"));
+            }
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Save Itinerary
+        </button>
       </div>
     </div>
   );
+
+  return (
+    <SplitLayout
+      leftContent={leftPanel}
+      rightContent={
+        <ItineraryRightMap
+          itinerary={itinerary}
+          activeDay={activeDay}
+          highlightedId={highlightedId}
+          onSelectMarker={focusMarker}
+        />
+      }
+    />
+  );
 }
 
-export default ItineraryResult;
+/* ─────────────────────────────────────────────
+   Google Encoded Polyline decoder
+   ───────────────────────────────────────────── */
+function decodePolyline(encoded) {
+  const points = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    lat += ((result & 1) ? ~(result >> 1) : (result >> 1));
+    shift = 0; result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    lng += ((result & 1) ? ~(result >> 1) : (result >> 1));
+    points.push([lat / 1e5, lng / 1e5]);
+  }
+  return points;
+}
+
+/* ─────────────────────────────────────────────
+   RIGHT MAP — used by SplitLayout
+   Fetches OSRM road route and draws real polyline
+   ───────────────────────────────────────────── */
+function ItineraryMapInner({ itinerary, activeDay, highlightedId, onSelectMarker }) {
+  const [routeGeometry, setRouteGeometry] = useState(null);
+
+  if (!itinerary?.itinerary) return null;
+  const days = itinerary.itinerary;
+  const currentDay = days.find((d) => d.day === activeDay) || days[0];
+
+  const mapPoints = [];
+  if (currentDay?.hotel?.latitude && currentDay?.hotel?.longitude) {
+    mapPoints.push({
+      id: `hotel-${currentDay.day}`,
+      name: currentDay.hotel.hotel_name,
+      lat: parseFloat(currentDay.hotel.latitude),
+      lon: parseFloat(currentDay.hotel.longitude),
+      type: "hotel",
+      label: "H",
+      district: currentDay.district || "",
+    });
+  }
+
+  let orderCount = 1;
+  (currentDay?.places || []).forEach((p, idx) => {
+    if (p.latitude && p.longitude) {
+      mapPoints.push({
+        id: p.place_id || `place-${currentDay.day}-${idx}`,
+        name: p.name || p.place_name,
+        lat: parseFloat(p.latitude),
+        lon: parseFloat(p.longitude),
+        type: "place",
+        category: p.category,
+        label: `${orderCount++}`,
+        district: p.district || currentDay.district || "",
+        duration: p.duration ? `${p.duration} hrs` : "",
+        order: idx + 1,
+      });
+    }
+  });
+
+  const activeBounds = mapPoints.map((m) => [m.lat, m.lon]);
+
+  // Fetch OSRM route when day or points change
+  useEffect(() => {
+    if (mapPoints.length < 2) {
+      setRouteGeometry(null);
+      return;
+    }
+    const coords = mapPoints.map((m) => [m.lat, m.lon]);
+    let cancelled = false;
+    getOSRMRoute(coords)
+      .then((data) => {
+        if (!cancelled && data?.geometry) {
+          let decoded;
+          if (typeof data.geometry === "string") {
+            decoded = decodePolyline(data.geometry);
+          } else if (data.geometry?.coordinates) {
+            decoded = data.geometry.coordinates.map((c) => [c[1], c[0]]);
+          } else {
+            decoded = null;
+          }
+          setRouteGeometry(decoded);
+        } else if (!cancelled) {
+          setRouteGeometry(null);
+        }
+      })
+      .catch(() => { if (!cancelled) setRouteGeometry(null); });
+    return () => { cancelled = true; };
+  }, [activeDay, mapPoints.length, JSON.stringify(mapPoints.map((m) => m.id))]);
+
+  return (
+    <MapContainer
+      center={activeBounds.length > 0 ? activeBounds[0] : [27.7, 85.3]}
+      zoom={13}
+      scrollWheelZoom={true}
+      style={{ width: "100%", height: "100%" }}
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      {mapPoints.map((m) => {
+        const isHighlighted = highlightedId === m.id;
+        const color = m.type === "hotel" ? "#2563eb" : getCatColor(m.category);
+        return (
+          <Marker
+            key={m.id}
+            position={[m.lat, m.lon]}
+            icon={createMarkerPin(color, m.label, isHighlighted)}
+            eventHandlers={{ click: () => onSelectMarker && onSelectMarker(m.id) }}
+          >
+            <Popup>
+              <div className="ir-map-popup">
+                <div className="ir-popup-cat" style={{ color }}>
+                  {m.type === "hotel" ? "Hotel" : `Stop #${m.order}`}
+                </div>
+                <div className="ir-popup-title">{m.name}</div>
+                <div className="ir-popup-district">{m.district}</div>
+                <div className="ir-popup-coords">{m.lat.toFixed(4)}, {m.lon.toFixed(4)}</div>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+      {routeGeometry && routeGeometry.length > 1 ? (
+        <Polyline positions={routeGeometry} color="#2563eb" weight={4} opacity={0.9} />
+      ) : (
+        activeBounds.length > 1 && (
+          <Polyline positions={activeBounds} color="#2563eb" weight={3.5} opacity={0.85} dashArray="6, 6" />
+        )
+      )}
+      <MapController bounds={activeBounds} />
+    </MapContainer>
+  );
+}
+
+export function ItineraryRightMap(props) {
+  return <ItineraryMapInner {...props} />;
+}

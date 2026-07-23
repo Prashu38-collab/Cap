@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import SplitLayout from "../components/SplitLayout";
 import ItineraryResult from "../components/ItineraryResult";
-import HotelSelection from "../components/HotelSelection";
+import HotelSelection, { HotelSelectionMap } from "../components/HotelSelection";
 import TrekSelection from "../components/TrekSelection";
 import TrekItineraryResult from "../components/TrekItineraryResult";
 import PlanTripMap from "../components/PlanTripMap";
@@ -40,6 +41,18 @@ function PlanTrip() {
 
   const [startCoords, setStartCoords] = useState(null);
   const [endCoords, setEndCoords] = useState(null);
+
+  const [trekItinerary, setTrekItinerary] = useState(null);
+  const [trekHotelSelections, setTrekHotelSelections] = useState({});
+
+  const [insufficientInfo, setInsufficientInfo] = useState(null);
+  const [selectedTransitDistricts, setSelectedTransitDistricts] = useState([]);
+  const [noTrekFallback, setNoTrekFallback] = useState(null);
+  const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+
+  const [trekRecommendation, setTrekRecommendation] = useState(null);
+  const [trekDurationMessage, setTrekDurationMessage] = useState(null);
+  const [recommendedTrekId, setRecommendedTrekId] = useState(null);
 
   useEffect(() => {
     if (form.starting_district) {
@@ -84,18 +97,6 @@ function PlanTrip() {
   const mm = String(today.getMonth() + 1).padStart(2, "0");
   const dd = String(today.getDate()).padStart(2, "0");
   const todayStr = `${yyyy}-${mm}-${dd}`;
-
-  const [trekItinerary, setTrekItinerary] = useState(null);
-  const [trekHotelSelections, setTrekHotelSelections] = useState({});
-
-  const [insufficientInfo, setInsufficientInfo] = useState(null);
-  const [selectedTransitDistricts, setSelectedTransitDistricts] = useState([]);
-  const [noTrekFallback, setNoTrekFallback] = useState(null);
-  const [showInsufficientModal, setShowInsufficientModal] = useState(false);
-
-  const [trekRecommendation, setTrekRecommendation] = useState(null);
-  const [trekDurationMessage, setTrekDurationMessage] = useState(null);
-  const [recommendedTrekId, setRecommendedTrekId] = useState(null);
 
   const update = (e) => {
     const { name, value, type, checked } = e.target;
@@ -330,34 +331,261 @@ function PlanTrip() {
     });
   };
 
+  // Helper to render Left Panel Content based on current step
+  const renderLeftPanelContent = () => {
+    return (
+      <div className="plan-left-scroll-wrap">
+        <div className="plan-title" id="plan">
+          <h1>
+            {step === "form" && "Plan My Trip"}
+            {step === "treks" && "Choose Your Adventure"}
+            {step === "hotels" && "Choose Your Hotel"}
+            {step === "trek_result" && "Your Trek Itinerary"}
+            {step === "result" && "Your Journey"}
+            {step === "insufficient_nearby" && "Include Nearby Districts"}
+            {step === "no_trek_fallback" && "Explore Instead"}
+          </h1>
+          <p>
+            {step === "form" && "Enter your travel preferences to generate personalized itineraries."}
+            {step === "treks" && "Select a trek or adventure activity in your destination district."}
+            {step === "hotels" && "Pick a starting hotel in your destination district."}
+            {step === "trek_result" && "Your day-by-day trek plan with hotel suggestions at each stop."}
+            {step === "result" && "Day-by-day itinerary with travel time, routes, and attractions."}
+            {step === "insufficient_nearby" && "Include nearby districts to enrich your itinerary."}
+            {step === "no_trek_fallback" && noTrekFallback?.message}
+          </p>
+        </div>
+
+        {error && <div className="error-banner">{error}</div>}
+
+        {/* STEP 1: FORM */}
+        {step === "form" && (
+          <div className="form-card">
+            <form onSubmit={handleSubmit}>
+              <div className="input-group">
+                <label>Starting District <span className="required">*</span></label>
+                <select name="starting_district" value={form.starting_district} onChange={update} required>
+                  <option value="" disabled>Select starting district...</option>
+                  {DISTRICTS.map((d) => (<option key={d} value={d}>{d}</option>))}
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Ending District <span className="required">*</span></label>
+                <select name="ending_district" value={form.ending_district} onChange={update} required>
+                  <option value="" disabled>Select ending district...</option>
+                  {DISTRICTS.map((d) => (<option key={d} value={d}>{d}</option>))}
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Interests <span className="required">*</span></label>
+                <div className="checkbox-group">
+                  {["Adventure", "Nature", "Culture", "Religious"].map((cat) => (
+                    <div className="checkbox" key={cat}>
+                      <input type="checkbox" id={`cat-${cat}`} value={cat} checked={form.categories.includes(cat)} onChange={update} />
+                      <label htmlFor={`cat-${cat}`}>{cat}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="input-group">
+                <label>Mobility <span className="required">*</span></label>
+                <div className="radio-group">
+                  {["Easy", "Moderate", "Difficult"].map((m) => {
+                    const isAdventure = form.categories.includes("Adventure");
+                    const isMobilityDisabled = isAdventure && m !== "Difficult";
+                    return (
+                      <div className="radio" key={m}>
+                        <input
+                          type="radio"
+                          id={`mob-${m}`}
+                          name="mobility"
+                          value={m}
+                          checked={form.mobility === m}
+                          onChange={update}
+                          disabled={isMobilityDisabled}
+                        />
+                        <label
+                          htmlFor={`mob-${m}`}
+                          style={{
+                            opacity: isMobilityDisabled ? 0.5 : 1,
+                            cursor: isMobilityDisabled ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          {m}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="input-row" style={{ display: "flex", gap: "16px" }}>
+                <div className="input-group" style={{ flex: 1 }}>
+                  <label>Total Budget (NPR) <span className="required">*</span></label>
+                  <input type="number" name="total_budget" placeholder="e.g. 50000" value={form.total_budget} onChange={update} min="1000" />
+                </div>
+                <div className="input-group" style={{ flex: 1 }}>
+                  <label>Hotel Budget (NPR) <span className="required">*</span></label>
+                  <input type="number" name="hotel_budget" placeholder="e.g. 5000" value={form.hotel_budget} onChange={update} min="500" />
+                </div>
+              </div>
+              <div className="input-row" style={{ display: "flex", gap: "16px" }}>
+                <div className="input-group" style={{ flex: 1 }}>
+                  <label>Travel Date <span className="required">*</span></label>
+                  <input type="date" name="travel_date" value={form.travel_date} onChange={update} min={todayStr} required />
+                </div>
+                <div className="input-group" style={{ flex: 1 }}>
+                  <label>Duration (days) <span className="required">*</span></label>
+                  <input type="number" name="travel_days" placeholder="e.g. 3" value={form.travel_days} onChange={update} min="1" max="30" />
+                </div>
+              </div>
+              <div className="btn-container">
+                <button type="submit" className="generate-btn" disabled={submitting}>
+                  {submitting
+                    ? "Loading..."
+                    : form.categories.includes("Adventure")
+                      ? "Find Adventures"
+                      : "Find Hotels"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* STEP 2: HOTEL SELECTION */}
+        {step === "hotels" && (
+          <div className="hotel-selection-wrap">
+            {trekRecommendation && (
+              <div className="trek-recommendation-card" style={{ padding: "16px 20px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 12, marginBottom: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#166534", marginBottom: 6 }}>
+                  {trekRecommendation.place_name}
+                </div>
+                <p style={{ fontSize: 13, color: "#166534", margin: "0 0 12px" }}>
+                  This destination offers trekking adventures. Would you like to explore the available trek instead?
+                </p>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button className="generate-btn" onClick={handleTrekRecommendation} style={{ fontSize: 13, padding: "8px 16px" }}>
+                    Continue with Trek
+                  </button>
+                  <button className="generate-btn" onClick={handleDismissTrekRecommendation} style={{ fontSize: 13, padding: "8px 16px", background: "#6b7280" }}>
+                    Continue with Normal Trip
+                  </button>
+                </div>
+              </div>
+            )}
+            <HotelSelection
+              hotels={hotels}
+              corridor={corridor}
+              onSelect={handleHotelSelect}
+              loading={submitting}
+            />
+          </div>
+        )}
+
+        {/* STEP: NO TREK FALLBACK */}
+        {step === "no_trek_fallback" && noTrekFallback && (
+          <div className="insufficient-wrap">
+            <div className="insufficient-card" style={{ padding: 24, background: "#ffffff", borderRadius: 14, border: "1px solid #e2e8f0" }}>
+              <h2>No Adventure Activities Found</h2>
+              <p className="insufficient-msg">{noTrekFallback.message}</p>
+              <div className="insufficient-actions" style={{ display: "flex", gap: 12, marginTop: 16 }}>
+                <button className="generate-btn" onClick={handleNoTrekContinue} disabled={submitting}>
+                  {submitting ? "Generating..." : "Continue with Dynamic Trip"}
+                </button>
+                <button className="generate-btn" onClick={() => setStep("form")} style={{ background: "#6b7280" }}>
+                  Choose Another District
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP: TREK SELECTION — rendered at top level below (has own SplitLayout) */}
+
+        {/* STEP: INSUFFICIENT NEARBY DISTRICTS */}
+        {step === "insufficient_nearby" && insufficientInfo && (
+          <div className="insufficient-wrap">
+            <div className="insufficient-card" style={{ padding: 24, background: "#ffffff", borderRadius: 14, border: "1px solid #e2e8f0" }}>
+              <h2>Select Nearby Districts</h2>
+              <p className="insufficient-msg">
+                Choose nearby districts to include. Max days with nearby: <strong>{insufficientInfo.maxDaysWithNearby}</strong>
+              </p>
+
+              {insufficientInfo.nearbyDistricts.length > 0 && (
+                <div className="insufficient-nearby" style={{ margin: "16px 0" }}>
+                  <div className="insufficient-district-list" style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {insufficientInfo.nearbyDistricts.map((nd) => (
+                      <label
+                        key={nd.district}
+                        className={`insufficient-district-chip ${selectedTransitDistricts.includes(nd.district) ? "selected" : ""}`}
+                        style={{
+                          padding: "8px 14px",
+                          borderRadius: 20,
+                          border: "1px solid #cbd5e1",
+                          cursor: "pointer",
+                          background: selectedTransitDistricts.includes(nd.district) ? "#eff6ff" : "#ffffff"
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedTransitDistricts.includes(nd.district)}
+                          onChange={() => toggleTransitDistrict(nd.district)}
+                          style={{ marginRight: 6 }}
+                        />
+                        <span>{nd.district}</span> ({nd.place_count} places)
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="insufficient-actions" style={{ display: "flex", gap: 12 }}>
+                <button
+                  className="generate-btn"
+                  onClick={() => handleIncludeNearby(selectedTransitDistricts)}
+                  disabled={selectedTransitDistricts.length === 0}
+                >
+                  {selectedTransitDistricts.length > 0
+                    ? `Include ${selectedTransitDistricts.length} Nearby District${selectedTransitDistricts.length > 1 ? "s" : ""}`
+                    : "Select districts above"}
+                </button>
+                <button className="generate-btn" onClick={() => setStep("form")} style={{ background: "#6b7280" }}>
+                  Back to Form
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Helper to render Right Panel Map based on current step
+  const renderRightPanelContent = () => {
+    if (step === "hotels") {
+      return (
+        <HotelSelectionMap
+          hotels={hotels}
+          selectedId={null}
+          hoveredId={null}
+        />
+      );
+    }
+
+    return (
+      <PlanTripMap
+        startCoords={startCoords}
+        endCoords={endCoords}
+        startingDistrict={form.starting_district}
+        endingDistrict={form.ending_district}
+      />
+    );
+  };
+
   return (
     <>
       <Navbar />
       <div className={`planImage step-${step}`}>
         <div className="formContainer">
-
-          <div className="plan-title" id="plan">
-            <h1>
-              {step === "form" && "Plan My Trip"}
-              {step === "treks" && "Choose Your Adventure"}
-              {step === "hotels" && "Choose Your Hotel"}
-              {step === "trek_result" && "Your Trek Itinerary"}
-              {step === "result" && "Your Journey"}
-              {step === "insufficient_nearby" && "Include Nearby Districts"}
-              {step === "no_trek_fallback" && "Explore Instead"}
-            </h1>
-            <p>
-              {step === "form" && "Enter your travel preferences to generate personalized itineraries."}
-              {step === "treks" && "Select a trek or adventure activity in your destination district."}
-              {step === "hotels" && "Pick a starting hotel in your first district."}
-              {step === "trek_result" && "Your day-by-day trek plan with hotel suggestions at each stop."}
-              {step === "result" && "Journey Overview"}
-              {step === "insufficient_nearby" && "Include nearby districts to enrich your itinerary."}
-              {step === "no_trek_fallback" && noTrekFallback?.message}
-            </p>
-          </div>
-
-          {error && <div className="error-banner">{error}</div>}
 
           {/* INSUFFICIENT PLACES MODAL */}
           {showInsufficientModal && insufficientInfo && (
@@ -400,282 +628,36 @@ function PlanTrip() {
             </div>
           )}
 
-          {/* STEP 1: FORM */}
-          {step === "form" && (
-            <div className="plantrip-layout">
-              <div className="plantrip-form-side">
-                <div className="form-card">
-                  <form onSubmit={handleSubmit}>
-                    <div className="input-group">
-                      <label>Starting District <span className="required">*</span></label>
-                      <select name="starting_district" value={form.starting_district} onChange={update} required>
-                        <option value="" disabled>Select starting district...</option>
-                        {DISTRICTS.map((d) => (<option key={d} value={d}>{d}</option>))}
-                      </select>
-                    </div>
-                    <div className="input-group">
-                      <label>Ending District <span className="required">*</span></label>
-                      <select name="ending_district" value={form.ending_district} onChange={update} required>
-                        <option value="" disabled>Select ending district...</option>
-                        {DISTRICTS.map((d) => (<option key={d} value={d}>{d}</option>))}
-                      </select>
-                    </div>
-                    <div className="input-group">
-                      <label>Interests <span className="required">*</span></label>
-                      <div className="checkbox-group">
-                        {["Adventure", "Nature", "Culture", "Religious"].map((cat) => (
-                          <div className="checkbox" key={cat}>
-                            <input type="checkbox" id={`cat-${cat}`} value={cat} checked={form.categories.includes(cat)} onChange={update} />
-                            <label htmlFor={`cat-${cat}`}>{cat}</label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="input-group">
-                      <label>Mobility <span className="required">*</span></label>
-                      <div className="radio-group">
-                        {["Easy", "Moderate", "Difficult"].map((m) => {
-                          const isAdventure = form.categories.includes("Adventure");
-                          const isMobilityDisabled = isAdventure && m !== "Difficult";
-                          return (
-                            <div className="radio" key={m}>
-                              <input
-                                type="radio"
-                                id={`mob-${m}`}
-                                name="mobility"
-                                value={m}
-                                checked={form.mobility === m}
-                                onChange={update}
-                                disabled={isMobilityDisabled}
-                              />
-                              <label
-                                htmlFor={`mob-${m}`}
-                                style={{
-                                  opacity: isMobilityDisabled ? 0.5 : 1,
-                                  cursor: isMobilityDisabled ? "not-allowed" : "pointer",
-                                }}
-                              >
-                                {m}
-                              </label>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="input-row">
-                      <div className="input-group">
-                        <label>Total Budget (NPR) <span className="required">*</span></label>
-                        <input type="number" name="total_budget" placeholder="e.g. 50000" value={form.total_budget} onChange={update} min="1000" />
-                      </div>
-                      <div className="input-group">
-                        <label>Hotel Budget (NPR) <span className="required">*</span></label>
-                        <input type="number" name="hotel_budget" placeholder="e.g. 5000" value={form.hotel_budget} onChange={update} min="500" />
-                      </div>
-                    </div>
-                    <div className="input-row">
-                      <div className="input-group">
-                        <label>Travel Date <span className="required">*</span></label>
-                        <input type="date" name="travel_date" value={form.travel_date} onChange={update} min={todayStr} required />
-                      </div>
-                      <div className="input-group">
-                        <label>Duration (days) <span className="required">*</span></label>
-                        <input type="number" name="travel_days" placeholder="e.g. 3" value={form.travel_days} onChange={update} min="1" max="30" />
-                      </div>
-                    </div>
-                    <div className="btn-container">
-                      <button type="submit" className="generate-btn" disabled={submitting}>
-                        {submitting
-                          ? "Loading..."
-                          : form.categories.includes("Adventure")
-                            ? "Find Adventures"
-                            : "Find Hotels"}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-              <PlanTripMap
-                startCoords={startCoords}
-                endCoords={endCoords}
-                startingDistrict={form.starting_district}
-                endingDistrict={form.ending_district}
-              />
-            </div>
-          )}
-
-          {/* INSUFFICIENT NEARBY DISTRICTS SELECTION */}
-          {step === "insufficient_nearby" && insufficientInfo && (
-            <div className="insufficient-wrap">
-              <div className="insufficient-card">
-                <h2>Select Nearby Districts</h2>
-                <p className="insufficient-msg">
-                  Choose nearby districts to include. Max days with nearby: <strong>{insufficientInfo.maxDaysWithNearby}</strong>
-                </p>
-
-                {insufficientInfo.nearbyDistricts.length > 0 && (
-                  <div className="insufficient-nearby">
-                    <div className="insufficient-district-list">
-                      {insufficientInfo.nearbyDistricts.map((nd) => (
-                        <label
-                          key={nd.district}
-                          className={`insufficient-district-chip ${selectedTransitDistricts.includes(nd.district) ? "selected" : ""}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedTransitDistricts.includes(nd.district)}
-                            onChange={() => toggleTransitDistrict(nd.district)}
-                          />
-                          <span className="insufficient-chip-name">{nd.district}</span>
-                          <span className="insufficient-chip-count">{nd.place_count} places</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="insufficient-actions">
-                  <button
-                    className="generate-btn"
-                    onClick={() => handleIncludeNearby(selectedTransitDistricts)}
-                    disabled={selectedTransitDistricts.length === 0}
-                  >
-                    {selectedTransitDistricts.length > 0
-                      ? `Include ${selectedTransitDistricts.length} Nearby District${selectedTransitDistricts.length > 1 ? "s" : ""}`
-                      : "Select districts above"}
-                  </button>
-                </div>
-                <button className="insufficient-back-btn" onClick={() => setStep("form")}>
-                  Back to Form
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* NO-TREK FALLBACK */}
-          {step === "no_trek_fallback" && noTrekFallback && (
-            <div className="insufficient-wrap">
-              <div className="insufficient-card">
-                <div className="insufficient-icon">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3l4 8 5-5 3 14H2z"/></svg>
-                </div>
-                <h2>No Adventure Activities Found</h2>
-                <p className="insufficient-msg">{noTrekFallback.message}</p>
-                <div className="insufficient-actions">
-                  <button className="generate-btn" onClick={handleNoTrekContinue} disabled={submitting} style={{ marginRight: 12 }}>
-                    {submitting ? "Generating..." : "Continue"}
-                  </button>
-                  <button className="generate-btn" onClick={() => setStep("form")} style={{ background: "#6b7280" }}>
-                    Choose Another District
-                  </button>
-                </div>
-                <button className="insufficient-back-btn" onClick={() => setStep("form")}>
-                  Back to Form
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2A: TREK SELECTION */}
-          {step === "treks" && (
-            <div className="trek-selection-wrap">
-              {trekDurationMessage && (
-                <div className="trek-duration-message" style={{ maxWidth: 700, margin: "0 auto 16px", padding: "12px 20px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, color: "#92400e", fontSize: 14, fontWeight: 600, textAlign: "center" }}>
-                  {trekDurationMessage}
-                </div>
-              )}
-              <TrekSelection
-                treks={treks}
-                onSelect={handleTrekSelect}
-                loading={submitting}
-                recommendedTrekId={recommendedTrekId}
-              />
-              <div className="btn-container">
-                <button className="generate-btn" onClick={() => setStep("form")} style={{ background: "#555" }}>
-                  Back
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2B: HOTEL SELECTION */}
-          {step === "hotels" && (
-            <div className="hotel-selection-wrap">
-              {trekRecommendation && (
-                <div className="trek-recommendation-card" style={{ maxWidth: 700, margin: "0 auto 16px", padding: "20px 24px", background: "#f0fdf4", border: "2px solid #86efac", borderRadius: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#166534", marginBottom: 6 }}>
-                    {trekRecommendation.place_name}
-                  </div>
-                  <p style={{ fontSize: 14, color: "#166534", margin: "0 0 12px", lineHeight: 1.5 }}>
-                    This destination offers trekking adventures. Since you selected Hard difficulty, would you like to explore the available trek instead?
-                  </p>
-                  {trekDurationMessage && (
-                    <p style={{ fontSize: 12, color: "#92400e", margin: "0 0 12px", fontStyle: "italic" }}>
-                      {trekDurationMessage}
-                    </p>
-                  )}
-                  <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-                    <button className="generate-btn" onClick={handleTrekRecommendation} style={{ margin: 0 }}>
-                      Continue with Trek
-                    </button>
-                    <button className="generate-btn" onClick={handleDismissTrekRecommendation} style={{ margin: 0, background: "#6b7280" }}>
-                      Continue with Normal Trip
-                    </button>
-                  </div>
-                </div>
-              )}
-              {selectedTransitDistricts.length > 0 && (
-                <div className="transit-badge">
-                  <span>Including nearby: {selectedTransitDistricts.join(", ")}</span>
-                </div>
-              )}
-              {noTrekFallback && (
-                <div className="transit-badge" style={{ background: "#eff6ff", borderColor: "#bfdbfe", color: "#2563eb" }}>
-                  <span>{noTrekFallback.message}</span>
-                </div>
-              )}
-              <HotelSelection
-                hotels={hotels}
-                corridor={corridor}
-                onSelect={handleHotelSelect}
-                loading={submitting}
-              />
-            </div>
-          )}
-
-          {/* STEP 3A: TREK ITINERARY RESULT */}
-          {step === "trek_result" && trekItinerary && (
-            <div className="trek-result-wrap">
-              <TrekItineraryResult
-                trekItinerary={trekItinerary}
-                hotelSelections={trekHotelSelections}
-                onHotelSelect={handleTrekHotelSelect}
-              />
-              <div className="btn-container">
-                <button className="generate-btn" onClick={() => setStep("treks")} style={{ background: "#555", marginRight: 12 }}>
-                  Choose Different Trek
-                </button>
-                <button className="generate-btn" onClick={resetForm}>
-                  Plan Another Trip
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 3B: NORMAL ITINERARY RESULT */}
-          {step === "result" && result && (
-            <div className="result-wrapper">
-              <ItineraryResult
-                itinerary={result.data}
-                weatherForecast={weatherForecast}
-                preferenceId={result.preference_id}
-                corridor={result.data?.corridor}
-              />
-              <div className="btn-container">
-                <button className="generate-btn" onClick={resetForm}>
-                  Plan Another Trip
-                </button>
-              </div>
-            </div>
+          {/* UNIFIED SPLIT LAYOUT WITH STICKY MAP */}
+          {step === "result" && result ? (
+            <ItineraryResult
+              itinerary={result.data}
+              weatherForecast={weatherForecast}
+              preferenceId={result.preference_id}
+              corridor={result.data?.corridor}
+              onReset={resetForm}
+            />
+          ) : step === "treks" ? (
+            <TrekSelection
+              treks={treks}
+              onSelect={handleTrekSelect}
+              loading={submitting}
+              recommendedTrekId={recommendedTrekId}
+              onBack={() => setStep("form")}
+            />
+          ) : step === "trek_result" && trekItinerary ? (
+            <TrekItineraryResult
+              trekItinerary={trekItinerary}
+              hotelSelections={trekHotelSelections}
+              onHotelSelect={handleTrekHotelSelect}
+              onBack={() => setStep("treks")}
+              onReset={resetForm}
+            />
+          ) : (
+            <SplitLayout
+              leftContent={renderLeftPanelContent()}
+              rightContent={renderRightPanelContent()}
+            />
           )}
 
         </div>

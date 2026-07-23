@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import get_db
-from datetime import datetime
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/weather", tags=["Weather Module"])
 
@@ -73,7 +73,7 @@ def update_district_weather(data: WeatherCronInput, db: Session = Depends(get_db
             "is_day": data.current_is_day, "precip": data.current_precipitation, "rain": data.current_rain,
             "showers": data.current_showers, "snow": data.current_snowfall, "clouds": data.current_cloud_cover,
             "wind_sp": data.current_wind_speed_10m, "wind_dir": data.current_wind_direction_10m,
-            "ts": datetime.utcnow()
+            "ts": datetime.now(timezone.utc)
         })
         db.commit()
         return {"status": "Success", "message": f"PostgreSQL weather metrics updated via cron for {data.district_name}."}

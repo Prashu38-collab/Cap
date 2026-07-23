@@ -86,3 +86,34 @@ export function selectTrekHotel(preferenceId, dayNumber, hotelId) {
     body: JSON.stringify({ preference_id: preferenceId, day_number: dayNumber, hotel_id: hotelId }),
   });
 }
+
+export function getOSRMRoute(coordinates) {
+  return request("/map/route", {
+    method: "POST",
+    body: JSON.stringify({ coordinates }),
+  });
+}
+
+export function getOSRMSegment(originLat, originLon, destLat, destLon) {
+  return request("/map/segment", {
+    method: "POST",
+    body: JSON.stringify({ origin_lat: originLat, origin_lon: originLon, dest_lat: destLat, dest_lon: destLon }),
+  });
+}
+
+export function saveItinerary(preferenceId, itineraryData, totalEstimatedCost = null) {
+  return request("/saved-itineraries/", {
+    method: "POST",
+    body: JSON.stringify({
+      preference_id: preferenceId,
+      itinerary_data: itineraryData,
+      total_estimated_cost: totalEstimatedCost,
+      status: "generated",
+    }),
+  });
+}
+
+export function getSavedItineraries(preferenceId = null) {
+  const params = preferenceId ? `?preference_id=${preferenceId}` : "";
+  return request(`/saved-itineraries/${params}`);
+}
