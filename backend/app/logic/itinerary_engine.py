@@ -589,6 +589,26 @@ def _inject_meals(itinerary_days: list, districts_per_day: Optional[list] = None
         # 4. Integrate attractions, lunch, and intermediate travel
         lunch_added = False
         
+        # On transit days, shift attraction start_times that fall before
+        # the check-in time so the timeline is chronologically correct:
+        # breakfast → depart → arrive → check-in → explore → lunch → ...
+        if is_transit_day:
+            ct_minutes = current_time.hour * 60 + current_time.minute if hasattr(current_time, 'hour') else 8 * 60 + 30
+            for p in attractions:
+                p_start_str = p.get("start_time", "09:00")
+                try:
+                    ph, pm = p_start_str.split(":")
+                    p_minutes = int(ph) * 60 + int(pm)
+                except (ValueError, AttributeError):
+                    p_minutes = 9 * 60
+                if p_minutes < ct_minutes:
+                    # Push this attraction to current_time + 10 min buffer
+                    new_minutes = ct_minutes + 10
+                    new_h = new_minutes // 60
+                    new_m = new_minutes % 60
+                    p["start_time"] = f"{new_h:02d}:{new_m:02d}"
+                    ct_minutes = new_minutes + int(p.get("duration_hours", 2.0) * 60) + 10
+
         for idx, p in enumerate(attractions):
             p_start = p.get("start_time", "09:00")
             
@@ -775,7 +795,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
         end = getattr(pref, "ending_district", "") or start
         corridor = compute_corridor(start, end)
 
-    districts_per_day = _allocate_days_to_corridor(corridor, days)
+    districts_per_day = [corridor[-1]] * days
 
     # ──────────────────────────────────────────────
     # Fetch weather flags for place selection
@@ -908,7 +928,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
         p_is_trek = p.get("is_trek", False)
 
         if "day" in p_raw_unit or p_is_trek:
-            p_days_req = max(1, int(p_raw_val))
+            p_days_req = max(1, math.ceil(p_raw_val))
             if p_days_req > days:
                 continue
         valid_places.append(p)
@@ -972,15 +992,38 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
                 day_slots[current_idx + d]['places'].append(trek_copy)
             current_idx += req_days
 
-    # Day 1 transit logic: only block Day 1 when the starting district has NO
-    # available places and the transit is long enough to consume the whole day.
-    # With the new allocation, Day 1 is usually in the starting district, so
-    # activities should be assigned there by default.
-    start_district_for_day1 = districts_per_day[0] if districts_per_day else corridor[0]
-    start_district_places = [p for p in standard_pool if (p.get("district") or "").lower() == start_district_for_day1.lower()]
-    # Only block Day 1 if there are literally zero places in the starting district
-    # AND the corridor has more than one district (meaning transit is needed)
-    if not day_slots[0]['is_blocked'] and len(corridor) > 1 and len(start_district_places) == 0:
+    # Day 1 transit logic: block Day 1 when there's actual transit between different districts.
+    # When start == end (corridor length == 1), Day 1 gets normal activities.
+    if not day_slots[0]['is_blocked'] and len(corridor) > 1:
+        corridor_distance = 0
+        for i in range(len(corridor) - 1):
+            info = get_transit_info(corridor[i], corridor[i+1], db)
+            corridor_distance += info.get("distance_km", 0)
+        if len(corridor) > 2 and corridor_distance <= 180:
+            intermediate_districts = [d.lower() for d in corridor[1:-1]]
+            stopover_place = None
+            for p in standard_pool:
+                p_dist = (p.get("district") or "").lower()
+                if p_dist in intermediate_districts:
+                    first_leg = get_transit_info(corridor[0], corridor[1], db)
+                    leg_h = first_leg["duration_hours"]
+                    dep_h = 5
+                    arr_h = dep_h + int(leg_h)
+                    arr_m = int((leg_h - int(leg_h)) * 60)
+                    arr_m += 30
+                    if arr_m >= 60:
+                        arr_h += 1
+                        arr_m -= 60
+                    if arr_h < 8:
+                        arr_h = 8
+                    p['duration_hours'] = min(float(p.get("duration_hours", 2.0)), 2.0)
+                    p['_start_time'] = f"{arr_h:02d}:{arr_m:02d}"
+                    p['_time_of_day'] = "morning"
+                    stopover_place = p
+                    break
+            if stopover_place:
+                day_slots[0]['places'].append(stopover_place)
+                standard_pool.remove(stopover_place)
         day_slots[0]['is_blocked'] = True
 
     # Category diversity: when user selects multiple categories, rotate through them
@@ -1282,6 +1325,33 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
                 second['_time_of_day'] = "afternoon"
                 slot['places'].append(second)
                 standard_pool.remove(second)
+
+    # If standard_pool is exhausted but days are still empty, move one place
+    # from the busiest day to the empty day (only if district matches)
+    for slot in day_slots:
+        if slot['is_blocked'] or slot.get('places'):
+            continue
+        day_num = slot['day_num']
+        empty_district = districts_per_day[day_num - 1] if day_num - 1 < len(districts_per_day) else corridor[-1]
+        # Find the busiest unblocked day with 3+ places
+        busiest = None
+        for s in day_slots:
+            if s['is_blocked'] or s['day_num'] == day_num:
+                continue
+            if len(s.get('places', [])) >= 3:
+                if busiest is None or len(s['places']) > len(busiest['places']):
+                    busiest = s
+        if busiest:
+            # Move the last place from busiest to empty if district matches
+            for j in range(len(busiest['places']) - 1, -1, -1):
+                candidate = busiest['places'][j]
+                cand_district = (candidate.get("district") or "").lower()
+                if cand_district == empty_district.lower():
+                    busiest['places'].pop(j)
+                    candidate['_start_time'] = "09:00"
+                    candidate['_time_of_day'] = "morning"
+                    slot['places'].append(candidate)
+                    break
 
     if len(day_slots) > 1:
         for i in range(len(day_slots) - 1, 0, -1):
