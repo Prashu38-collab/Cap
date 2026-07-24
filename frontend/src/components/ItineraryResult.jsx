@@ -144,12 +144,13 @@ function advanceTime(timeStr, minutes) {
   return `${hh}:${mm}`;
 }
 
-function buildSchedule(day, dayIndex, totalDays) {
-  const places = day.places || [];
+function buildSchedule(day, dayIndex, totalDays, corridor) {
+  const places = (day.places || []).filter(p => p.latitude && p.longitude);
   const isFirst = dayIndex === 0 && totalDays > 1;
   const isLast = dayIndex === totalDays - 1 && totalDays > 1;
   const isSingle = totalDays === 1;
   const isExploredAll = day.day_type === "explored_all";
+  const hasTransit = corridor && corridor.length > 1;
   const items = [];
 
   const addPlaceVisit = (place, t, order) => {
@@ -187,10 +188,12 @@ function buildSchedule(day, dayIndex, totalDays) {
 
   if (isFirst) {
     items.push({ time: "07:00", label: "Breakfast", type: "meal", icon: "meal" });
-    items.push({ time: "08:00", label: "Depart for destination", type: "activity", icon: "depart", description: "Begin your journey towards the destination." });
-    items.push({ time: "09:00", label: "Arrive and check in", type: "activity", icon: "hotel", description: "Arrive at your hotel and settle in." });
+    if (hasTransit) {
+      items.push({ time: "08:00", label: "Depart for destination", type: "activity", icon: "depart", description: "Begin your journey towards the destination." });
+      items.push({ time: "09:00", label: "Arrive and check in", type: "activity", icon: "hotel", description: "Arrive at your hotel and settle in." });
+    }
     if (places.length > 0) {
-      let t = "10:00";
+      let t = hasTransit ? "10:00" : "09:00";
       places.forEach((p, i) => {
         if (i > 0) {
           const travelMin = p.travel_time_to_next_min || 20;
@@ -396,8 +399,8 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
   if (currentDay.hotel?.latitude) activeDayPts.push([parseFloat(currentDay.hotel.latitude), parseFloat(currentDay.hotel.longitude)]);
   (currentDay.places || []).forEach((p) => { if (p.latitude && p.longitude) activeDayPts.push([parseFloat(p.latitude), parseFloat(p.longitude)]); });
 
-  const schedule = buildSchedule(currentDay, activeDay - 1, days.length);
-  const sightseeingPlaces = (currentDay.places || []).filter((p) => p.type !== "meal");
+  const schedule = buildSchedule(currentDay, activeDay - 1, days.length, corridor);
+  const sightseeingPlaces = (currentDay.places || []).filter((p) => p.latitude && p.longitude);
   const totalDist = currentDay.total_travel_km || (currentDay.places || []).reduce((sum, p) => sum + (p.travel_dist_km || 0), 0) || 0;
   const recommendedTransport = (currentDay.places || []).find((p) => p.transport_mode)?.transport_mode || "Private Car / Local Bus";
   const totalTravelTimeMin = (currentDay.places || []).reduce((sum, p) => sum + (p.duration ? p.duration * 60 : 0), 0) + (totalDist > 0 ? (totalDist / 30) * 60 : 0);
