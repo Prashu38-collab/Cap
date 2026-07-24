@@ -53,24 +53,34 @@ const COLORS = {
   dinner: "#f59e0b", rest: "#64748b", overnight: "#475569",
 };
 
-function tlIconSVG(type) {
+function EventIconSVG({ type }) {
   const c = COLORS[type] || "#64748b";
-  switch (type) {
-    case "breakfast": case "lunch": case "dinner":
-      return `<svg width="10" height="10" viewBox="0 0 10 10"><line x1="2" y1="5" x2="8" y2="5" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-    case "departure":
-      return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="3,3 7,3 7,7" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    case "travel":
-      return `<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 7,5 5,2" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    case "arrival":
-      return `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3" fill="none" stroke="${c}" stroke-width="1.2"/><path d="M5 3v4M3 5h4" stroke="${c}" stroke-width="1" stroke-linecap="round"/></svg>`;
-    case "explore":
-      return `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3" fill="none" stroke="${c}" stroke-width="1.2"/><circle cx="5" cy="5" r="1" fill="${c}"/></svg>`;
-    case "check_in":
-      return `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="3" width="8" height="5" rx="1" fill="none" stroke="${c}" stroke-width="1.2"/><line x1="1" y1="6" x2="9" y2="6" stroke="${c}" stroke-width="1.2"/></svg>`;
-    default:
-      return `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="1.5" fill="${c}"/></svg>`;
+  if (type === "breakfast" || type === "lunch" || type === "dinner") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+      </svg>
+    );
   }
+  if (type === "travel") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="14" rx="2"/><path d="M7 21l2-4"/><path d="M17 21l-2-4"/>
+      </svg>
+    );
+  }
+  if (type === "departure" || type === "arrival") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+      </svg>
+    );
+  }
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+    </svg>
+  );
 }
 
 function getTabLabel(day) {
@@ -80,75 +90,12 @@ function getTabLabel(day) {
   return (day.stop_name || "").substring(0, 8) || `Day ${day.day_number}`;
 }
 
-/* ─── Trek Map (right panel) ─── */
-function TrekItineraryMap({ days, activeDay, selectedHotel }) {
-  const allMarkers = days.map((d) => ({
-    id: `day-${d.day_number}`, name: d.stop_name, lat: parseFloat(d.latitude),
-    lon: parseFloat(d.longitude), day: d.day_number, activity: d.activity,
-    travelTime: d.travel_time, district: d.district || "",
-    isTravelDay: d.is_travel_day, isReturnDay: d.is_return_day,
-  }));
-
-  const activeBounds = allMarkers.filter((m) => m.day === activeDay).map((m) => [m.lat, m.lon]);
-  const polylinePoints = allMarkers.map((m) => [m.lat, m.lon]);
-  const currentDay = days.find((d) => d.day_number === activeDay) || days[0];
-  const hotelLinePoints = [];
-  const activeMarker = allMarkers.find((m) => m.day === activeDay);
-  if (activeMarker && selectedHotel && selectedHotel.latitude && selectedHotel.longitude) {
-    hotelLinePoints.push([activeMarker.lat, activeMarker.lon]);
-    hotelLinePoints.push([parseFloat(selectedHotel.latitude), parseFloat(selectedHotel.longitude)]);
-  }
-
-  return (
-    <MapContainer center={activeBounds[0] || [27.7, 85.3]} zoom={12} scrollWheelZoom style={{ width: "100%", height: "100%" }}>
-      <TileLayer attribution='&copy; <a href="https://osm.org/copyright">OSM</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      {allMarkers.map((m) => {
-        const isToday = m.day === activeDay;
-        return (
-          <Marker key={m.id} position={[m.lat, m.lon]} icon={getTrekIcon(
-            isToday ? (m.isTravelDay ? "#3b82f6" : m.isReturnDay ? "#f97316" : "#ef4444") : (m.isTravelDay ? "rgba(59,130,246,.35)" : m.isReturnDay ? "rgba(249,115,22,.35)" : "rgba(239,68,68,.35)"),
-            m.isTravelDay ? "T" : m.isReturnDay ? "R" : m.day, isToday
-          )}>
-            <Popup>
-              <div style={{ fontFamily: "system-ui, sans-serif", minWidth: 180 }}>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5, color: m.isTravelDay ? "#3b82f6" : m.isReturnDay ? "#f97316" : "#ef4444", fontWeight: 700, marginBottom: 3 }}>
-                  {m.isTravelDay ? "Travel Day" : m.isReturnDay ? "Return Day" : "Trek Stop"}
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Day {m.day}: {m.name}</div>
-                <div style={{ fontSize: 11, color: "#475569" }}>{m.district}</div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 3 }}>
-                  <span style={{ fontSize: 10, background: "#f1f5f9", padding: "1px 5px", borderRadius: 3, color: "#475569" }}>{m.activity}</span>
-                  {m.travelTime && <span style={{ fontSize: 10, background: "#f1f5f9", padding: "1px 5px", borderRadius: 3, color: "#475569" }}>{m.travelTime}</span>}
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        );
-      })}
-      {selectedHotel && selectedHotel.latitude && selectedHotel.longitude && (
-        <Marker position={[parseFloat(selectedHotel.latitude), parseFloat(selectedHotel.longitude)]} icon={hotelIcon}>
-          <Popup>
-            <div style={{ fontFamily: "system-ui, sans-serif", minWidth: 180 }}>
-              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5, color: "#2563eb", fontWeight: 700, marginBottom: 3 }}>Hotel</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>{selectedHotel.hotel_name}</div>
-              <div style={{ fontSize: 11, color: "#475569" }}>{selectedHotel.district}</div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#2563eb", marginTop: 2 }}>{selectedHotel.distance_km} km from stop</div>
-            </div>
-          </Popup>
-        </Marker>
-      )}
-      {polylinePoints.length > 1 && <Polyline positions={polylinePoints} color="#cbd5e1" weight={2} opacity={0.5} dashArray="6 4" />}
-      {activeBounds.length > 1 && <Polyline positions={activeBounds} color="#ef4444" weight={3.5} opacity={0.85} />}
-      {hotelLinePoints.length > 1 && <Polyline positions={hotelLinePoints} color="#2563eb" weight={3} opacity={0.85} dashArray="8 4" />}
-      <MapController activeBounds={selectedHotel && hotelLinePoints.length > 1 ? [...activeBounds, [parseFloat(selectedHotel.latitude), parseFloat(selectedHotel.longitude)]] : activeBounds} />
-    </MapContainer>
-  );
-}
-
 /* ─── Main Component ─── */
 export default function TrekItineraryResult({ trekItinerary, hotelSelections, onHotelSelect, onBack, onReset }) {
   const [activeDay, setActiveDay] = useState(1);
   const [animDir, setAnimDir] = useState("next");
+  const [mapCenter, setMapCenter] = useState(null);
+  const markerRefs = useRef({});
 
   if (!trekItinerary?.days) return null;
   const { trek_name, district, total_days, days } = trekItinerary;
@@ -156,8 +103,13 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
   if (!currentDay) return null;
 
   const changeDay = (day) => {
+    setMapCenter(null);
     setAnimDir(day > activeDay ? "next" : "prev");
     setActiveDay(day);
+  };
+
+  const handleMarkerClick = (markerId) => {
+    document.getElementById(`tl-trek-${markerId.replace("day-", "")}-0`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
   const selectedHotel = currentDay.overnight
@@ -169,7 +121,7 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
   const leftPanel = (
     <div className="ir-main-container">
       {/* Header */}
-      <div className="ir-header-card">
+      <div className="ir-header-card sl-card">
         <div className="ir-header-top-row">
           <div>
             <h2 className="ir-header-title">{trek_name}</h2>
@@ -184,7 +136,7 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
       </div>
 
       {/* Day Tabs */}
-      <div className="ir-tabs-row">
+      <div className="ir-tabs-row sl-card" style={{ padding: "12px 16px" }}>
         {days.map((d) => (
           <button key={d.day_number} className={`ir-day-tab ${activeDay === d.day_number ? "is-active" : ""}`} onClick={() => changeDay(d.day_number)}>
             <span className="ir-day-tab-num">{d.day_number}</span>
@@ -193,90 +145,94 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
         ))}
       </div>
 
-      {/* Day Header */}
-      <div className="ir-day-header-card">
-        <div className="ir-day-header-row">
-          <div className="ir-day-header-left">
-            <span className="ir-day-number-badge">{currentDay.day_number}</span>
-            <div>
-              <h3 className="ir-day-title">{currentDay.stop_name}</h3>
-              <span className="ir-day-hotel">{currentDay.travel_time || ""}</span>
+      {/* Day Content with Animation */}
+      <div key={activeDay} className={`ir-day-content slide-${animDir}`}>
+        {/* Day Header */}
+        <div className="ir-day-header-card">
+          <div className="ir-day-header-row">
+            <div className="ir-day-header-left">
+              <span className="ir-day-number-badge">{currentDay.day_number}</span>
+              <div>
+                <h3 className="ir-day-title">{currentDay.stop_name}</h3>
+                <span className="ir-day-hotel">{currentDay.travel_time || ""}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Summary Stats */}
-      <div className="ir-stats-bar">
-        <div className="ir-stat-item">
-          <span className="ir-stat-val">{currentDay.stop_name}</span>
-          <span className="ir-stat-lbl">Destination</span>
+        {/* Summary Stats */}
+        <div className="ir-stats-bar" style={{ marginTop: 12 }}>
+          <div className="ir-stat-item">
+            <span className="ir-stat-val">{currentDay.stop_name}</span>
+            <span className="ir-stat-lbl">{currentDay.is_travel_day ? "Destination" : "Stop"}</span>
+          </div>
+          <div className="ir-stat-item">
+            <span className="ir-stat-val">{currentDay.travel_time || "—"}</span>
+            <span className="ir-stat-lbl">Travel</span>
+          </div>
+          <div className="ir-stat-item">
+            <span className="ir-stat-val" style={{ fontSize: 11 }}>
+              {selectedHotel ? selectedHotel.hotel_name?.split(" ").slice(0, 2).join(" ") : currentDay.overnight ? "Pick below" : currentDay.is_travel_day ? "At destination" : "Day hike"}
+            </span>
+            <span className="ir-stat-lbl">Overnight</span>
+          </div>
+          <div className="ir-stat-item">
+            <span className="ir-stat-val">{currentDay.overnight ? "Yes" : "No"}</span>
+            <span className="ir-stat-lbl">Stay</span>
+          </div>
         </div>
-        <div className="ir-stat-item">
-          <span className="ir-stat-val">{currentDay.travel_time || "—"}</span>
-          <span className="ir-stat-lbl">Travel</span>
-        </div>
-        <div className="ir-stat-item">
-          <span className="ir-stat-val" style={{ fontSize: 11 }}>
-            {selectedHotel ? selectedHotel.hotel_name?.split(" ").slice(0, 2).join(" ") : currentDay.overnight ? "Pick below" : "Day hike"}
-          </span>
-          <span className="ir-stat-lbl">Overnight</span>
-        </div>
-        <div className="ir-stat-item">
-          <span className="ir-stat-val">{currentDay.overnight ? "Yes" : "No"}</span>
-          <span className="ir-stat-lbl">Stay</span>
-        </div>
-      </div>
 
-      {/* Timeline */}
-      <div className="ir-timeline-container">
-        {schedule.map((item, i) => {
-          const color = COLORS[item.type] || "#64748b";
-          const icon = tlIconSVG(item.type);
-          return (
-            <div key={i} id={`tl-trek-${currentDay.day_number}-${i}`} className="ir-tl-item">
-              <div className="ir-tl-node">
-                <EventIconSVG type={item.type} />
-              </div>
-              <div className="ir-tl-card">
-                <div className="ir-tl-card-header">
-                  <span className="ir-tl-time-badge">{item.time}</span>
-                  <span className="ir-meta-chip" style={{ background: color + "15", color }}>{item.type}</span>
-                </div>
-                <h4 className="ir-tl-title">{item.label}</h4>
-                {item.type === "travel" && item.travel_hours && (
-                  <div className="ir-tl-meta-row">
-                    <span className="ir-meta-chip">{item.travel_mode} · ~{item.travel_hours}h</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Hotel Selection */}
-      {currentDay.overnight && currentDay.nearby_hotels?.length > 0 && (
-        <div style={{ marginTop: 12 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", margin: "0 0 8px" }}>Select Hotel for Tonight</h4>
-          {currentDay.nearby_hotels.map((hotel) => {
-            const isSel = hotelSelections[currentDay.day_number] === hotel.hotel_id;
+        {/* Timeline */}
+        <div className="ir-timeline-container">
+          {schedule.map((item, i) => {
+            const color = COLORS[item.type] || "#64748b";
             return (
-              <div key={hotel.hotel_id} className={`trek-hotel-recommendation-card ${isSel ? "selected" : ""}`} onClick={() => onHotelSelect(currentDay.day_number, hotel.hotel_id)} style={{ cursor: "pointer" }}>
-                <div className="trek-hotel-recommendation-info">
-                  <h4>{hotel.hotel_name}</h4>
-                  <p>NPR {hotel.budget?.toLocaleString()} / night · {hotel.distance_km} km away</p>
+              <div key={i} id={`tl-trek-${currentDay.day_number}-${i}`} className="ir-tl-item">
+                <div className="ir-tl-node">
+                  <EventIconSVG type={item.type} />
                 </div>
-                {isSel && <span className="trek-hotel-select-check">Selected</span>}
+                <div className="ir-tl-card">
+                  <div className="ir-tl-card-header">
+                    <span className="ir-tl-time-badge">{item.time}</span>
+                    <span className="ir-meta-chip" style={{ background: color + "15", color }}>{item.type}</span>
+                  </div>
+                  <h4 className="ir-tl-title">{item.label}</h4>
+                  {item.type === "travel" && item.travel_hours && (
+                    <div className="ir-tl-meta-row">
+                      <span className="ir-meta-chip">{item.travel_mode} · ~{item.travel_hours}h</span>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
-      )}
 
-      {currentDay.overnight && currentDay.nearby_hotels?.length === 0 && (
-        <div className="ir-empty"><p>No hotels found within 5km. Tea houses or camping available.</p></div>
-      )}
+        {/* Hotel Selection */}
+        {currentDay.overnight && currentDay.nearby_hotels?.length > 0 && (
+          <div className="trek-hotel-section">
+            <h3 className="trek-hotel-selection-title">Select Hotel for Tonight</h3>
+            <div className="trek-hotel-recommendation-list">
+              {currentDay.nearby_hotels.map((hotel) => {
+                const isSel = hotelSelections[currentDay.day_number] === hotel.hotel_id;
+                return (
+                  <div key={hotel.hotel_id} className={`trek-hotel-recommendation-card ${isSel ? "selected" : ""}`} onClick={() => onHotelSelect(currentDay.day_number, hotel.hotel_id)}>
+                    <div className="trek-hotel-recommendation-info">
+                      <h4>{hotel.hotel_name}</h4>
+                      <p>NPR {hotel.budget?.toLocaleString()} / night · {hotel.distance_km} km away</p>
+                    </div>
+                    {isSel && <span className="trek-hotel-select-check">Selected</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {currentDay.overnight && currentDay.nearby_hotels?.length === 0 && (
+          <div className="ir-empty"><p>No hotels found within 5km. Tea houses or camping available.</p></div>
+        )}
+      </div>
 
       {/* Bottom Action Buttons */}
       <div className="sl-bottom-actions">
@@ -305,38 +261,85 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
     <SplitLayout
       leftContent={leftPanel}
       rightContent={
-        <TrekItineraryMap days={days} activeDay={activeDay} selectedHotel={selectedHotel} />
+        <TrekItineraryMap
+          days={days}
+          activeDay={activeDay}
+          selectedHotel={selectedHotel}
+          mapCenter={mapCenter}
+          markerRefs={markerRefs}
+          onMarkerClick={handleMarkerClick}
+        />
       }
     />
   );
 }
 
-function EventIconSVG({ type }) {
-  const c = COLORS[type] || "#64748b";
-  if (type === "breakfast" || type === "lunch" || type === "dinner") {
-    return (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-      </svg>
-    );
+/* ─── Trek Map (right panel) ─── */
+function TrekItineraryMap({ days, activeDay, selectedHotel, mapCenter, markerRefs, onMarkerClick }) {
+  const allMarkers = days.map((d) => ({
+    id: `day-${d.day_number}`, name: d.stop_name, lat: parseFloat(d.latitude),
+    lon: parseFloat(d.longitude), day: d.day_number, activity: d.activity,
+    travelTime: d.travel_time, district: d.district || "",
+    isTravelDay: d.is_travel_day, isReturnDay: d.is_return_day,
+  }));
+
+  const activeBounds = allMarkers.filter((m) => m.day === activeDay).map((m) => [m.lat, m.lon]);
+  const polylinePoints = allMarkers.map((m) => [m.lat, m.lon]);
+  const currentDay = days.find((d) => d.day_number === activeDay) || days[0];
+  const hotelLinePoints = [];
+  const activeMarker = allMarkers.find((m) => m.day === activeDay);
+  if (activeMarker && selectedHotel && selectedHotel.latitude && selectedHotel.longitude) {
+    hotelLinePoints.push([activeMarker.lat, activeMarker.lon]);
+    hotelLinePoints.push([parseFloat(selectedHotel.latitude), parseFloat(selectedHotel.longitude)]);
   }
-  if (type === "travel") {
-    return (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="14" rx="2"/><path d="M7 21l2-4"/><path d="M17 21l-2-4"/>
-      </svg>
-    );
-  }
-  if (type === "departure" || type === "arrival") {
-    return (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-      </svg>
-    );
-  }
+
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-    </svg>
+    <MapContainer center={mapCenter || (activeBounds[0] || [27.7, 85.3])} zoom={12} scrollWheelZoom style={{ width: "100%", height: "100%" }}>
+      <TileLayer attribution='&copy; <a href="https://osm.org/copyright">OSM</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      {allMarkers.map((m) => {
+        const isToday = m.day === activeDay;
+        return (
+          <Marker key={m.id} position={[m.lat, m.lon]} icon={getTrekIcon(
+            isToday ? (m.isTravelDay ? "#3b82f6" : m.isReturnDay ? "#f97316" : "#ef4444") : (m.isTravelDay ? "rgba(59,130,246,.35)" : m.isReturnDay ? "rgba(249,115,22,.35)" : "rgba(239,68,68,.35)"),
+            m.isTravelDay ? "T" : m.isReturnDay ? "R" : m.day, isToday
+          )}
+            ref={(el) => { if (el) markerRefs.current[m.id] = el; }}
+            eventHandlers={{ click: () => onMarkerClick && onMarkerClick(m.id) }}
+          >
+            <Popup>
+              <div className="ir-map-popup">
+                <div className="ir-popup-cat" style={{ color: m.isTravelDay ? "#3b82f6" : m.isReturnDay ? "#f97316" : "#ef4444" }}>
+                  {m.isTravelDay ? "Travel Day" : m.isReturnDay ? "Return Day" : "Trek Stop"}
+                </div>
+                <div className="ir-popup-title">Day {m.day}: {m.name}</div>
+                <div className="ir-popup-district">{m.district}</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 3 }}>
+                  <span className="ir-meta-chip">{m.activity}</span>
+                  {m.travelTime && <span className="ir-meta-chip">{m.travelTime}</span>}
+                </div>
+                <div className="ir-popup-coords">{m.lat.toFixed(4)}, {m.lon.toFixed(4)}</div>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+      {selectedHotel && selectedHotel.latitude && selectedHotel.longitude && (
+        <Marker position={[parseFloat(selectedHotel.latitude), parseFloat(selectedHotel.longitude)]} icon={hotelIcon}>
+          <Popup>
+            <div className="ir-map-popup">
+              <div className="ir-popup-cat" style={{ color: "#2563eb" }}>Hotel</div>
+              <div className="ir-popup-title">{selectedHotel.hotel_name}</div>
+              <div className="ir-popup-district">{selectedHotel.district}</div>
+              <div className="ir-popup-duration" style={{ color: "#2563eb", fontWeight: 600 }}>{selectedHotel.distance_km} km from stop</div>
+              <div className="ir-popup-coords">{parseFloat(selectedHotel.latitude).toFixed(4)}, {parseFloat(selectedHotel.longitude).toFixed(4)}</div>
+            </div>
+          </Popup>
+        </Marker>
+      )}
+      {polylinePoints.length > 1 && <Polyline positions={polylinePoints} color="#cbd5e1" weight={2} opacity={0.5} dashArray="6 4" />}
+      {activeBounds.length > 1 && <Polyline positions={activeBounds} color="#ef4444" weight={3.5} opacity={0.85} />}
+      {hotelLinePoints.length > 1 && <Polyline positions={hotelLinePoints} color="#2563eb" weight={3} opacity={0.85} dashArray="8 4" />}
+      <MapController activeBounds={selectedHotel && hotelLinePoints.length > 1 ? [...activeBounds, [parseFloat(selectedHotel.latitude), parseFloat(selectedHotel.longitude)]] : activeBounds} />
+    </MapContainer>
   );
 }

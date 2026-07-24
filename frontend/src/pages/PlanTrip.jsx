@@ -53,6 +53,7 @@ function PlanTrip() {
   const [trekRecommendation, setTrekRecommendation] = useState(null);
   const [trekDurationMessage, setTrekDurationMessage] = useState(null);
   const [recommendedTrekId, setRecommendedTrekId] = useState(null);
+  const [hoveredHotelId, setHoveredHotelId] = useState(null);
 
   useEffect(() => {
     if (form.starting_district) {
@@ -360,7 +361,7 @@ function PlanTrip() {
 
         {/* STEP 1: FORM */}
         {step === "form" && (
-          <div className="form-card">
+          <div className="form-card mbg-card">
             <form onSubmit={handleSubmit}>
               <div className="input-group">
                 <label>Starting District <span className="required">*</span></label>
@@ -418,22 +419,22 @@ function PlanTrip() {
                   })}
                 </div>
               </div>
-              <div className="input-row" style={{ display: "flex", gap: "16px" }}>
-                <div className="input-group" style={{ flex: 1 }}>
+              <div className="input-row">
+                <div className="input-group">
                   <label>Total Budget (NPR) <span className="required">*</span></label>
                   <input type="number" name="total_budget" placeholder="e.g. 50000" value={form.total_budget} onChange={update} min="1000" />
                 </div>
-                <div className="input-group" style={{ flex: 1 }}>
+                <div className="input-group">
                   <label>Hotel Budget (NPR) <span className="required">*</span></label>
                   <input type="number" name="hotel_budget" placeholder="e.g. 5000" value={form.hotel_budget} onChange={update} min="500" />
                 </div>
               </div>
-              <div className="input-row" style={{ display: "flex", gap: "16px" }}>
-                <div className="input-group" style={{ flex: 1 }}>
+              <div className="input-row">
+                <div className="input-group">
                   <label>Travel Date <span className="required">*</span></label>
                   <input type="date" name="travel_date" value={form.travel_date} onChange={update} min={todayStr} required />
                 </div>
-                <div className="input-group" style={{ flex: 1 }}>
+                <div className="input-group">
                   <label>Duration (days) <span className="required">*</span></label>
                   <input type="number" name="travel_days" placeholder="e.g. 3" value={form.travel_days} onChange={update} min="1" max="30" />
                 </div>
@@ -455,27 +456,53 @@ function PlanTrip() {
         {step === "hotels" && (
           <div className="hotel-selection-wrap">
             {trekRecommendation && (
-              <div className="trek-recommendation-card" style={{ padding: "16px 20px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 12, marginBottom: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#166534", marginBottom: 6 }}>
-                  {trekRecommendation.place_name}
+              <div className="trek-recommendation-card">
+                <div className="trek-rec-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/>
+                    <path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                    <path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/>
+                    <path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/>
+                    <path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/>
+                    <path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/>
+                    <path d="M10 9.5C10 10.33 9.33 11 8.5 11h-5C2.67 11 2 10.33 2 9.5S2.67 8 3.5 8h5c.83 0 1.5.67 1.5 1.5z"/>
+                    <path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"/>
+                  </svg>
                 </div>
-                <p style={{ fontSize: 13, color: "#166534", margin: "0 0 12px" }}>
-                  This destination offers trekking adventures. Would you like to explore the available trek instead?
-                </p>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button className="generate-btn" onClick={handleTrekRecommendation} style={{ fontSize: 13, padding: "8px 16px" }}>
+                <div className="trek-rec-content">
+                  <h4>{trekRecommendation.place_name}</h4>
+                  <p>
+                    This destination offers trekking adventures. Since you selected Hard difficulty, would you like to explore the available trek instead?
+                  </p>
+                  {trekDurationMessage && (
+                    <p className="trek-rec-duration">{trekDurationMessage}</p>
+                  )}
+                </div>
+                <div className="trek-rec-actions">
+                  <button className="generate-btn" onClick={handleTrekRecommendation}>
                     Continue with Trek
                   </button>
-                  <button className="generate-btn" onClick={handleDismissTrekRecommendation} style={{ fontSize: 13, padding: "8px 16px", background: "#6b7280" }}>
+                  <button className="generate-btn" onClick={handleDismissTrekRecommendation} style={{ background: "#6b7280" }}>
                     Continue with Normal Trip
                   </button>
                 </div>
+              </div>
+            )}
+            {selectedTransitDistricts.length > 0 && (
+              <div className="transit-badge">
+                <span>Including nearby: {selectedTransitDistricts.join(", ")}</span>
+              </div>
+            )}
+            {noTrekFallback && (
+              <div className="transit-badge" style={{ background: "#eff6ff", borderColor: "#bfdbfe", color: "#2563eb" }}>
+                <span>{noTrekFallback.message}</span>
               </div>
             )}
             <HotelSelection
               hotels={hotels}
               corridor={corridor}
               onSelect={handleHotelSelect}
+              onHover={setHoveredHotelId}
               loading={submitting}
             />
           </div>
@@ -484,7 +511,7 @@ function PlanTrip() {
         {/* STEP: NO TREK FALLBACK */}
         {step === "no_trek_fallback" && noTrekFallback && (
           <div className="insufficient-wrap">
-            <div className="insufficient-card" style={{ padding: 24, background: "#ffffff", borderRadius: 14, border: "1px solid #e2e8f0" }}>
+            <div className="insufficient-card mbg-card">
               <h2>No Adventure Activities Found</h2>
               <p className="insufficient-msg">{noTrekFallback.message}</p>
               <div className="insufficient-actions" style={{ display: "flex", gap: 12, marginTop: 16 }}>
@@ -504,7 +531,7 @@ function PlanTrip() {
         {/* STEP: INSUFFICIENT NEARBY DISTRICTS */}
         {step === "insufficient_nearby" && insufficientInfo && (
           <div className="insufficient-wrap">
-            <div className="insufficient-card" style={{ padding: 24, background: "#ffffff", borderRadius: 14, border: "1px solid #e2e8f0" }}>
+            <div className="insufficient-card mbg-card">
               <h2>Select Nearby Districts</h2>
               <p className="insufficient-msg">
                 Choose nearby districts to include. Max days with nearby: <strong>{insufficientInfo.maxDaysWithNearby}</strong>
@@ -559,14 +586,14 @@ function PlanTrip() {
     );
   };
 
-  // Helper to render Right Panel Map based on current step
-  const renderRightPanelContent = () => {
+  // Helper to render Map content based on current step
+  const renderMapContent = () => {
     if (step === "hotels") {
       return (
         <HotelSelectionMap
           hotels={hotels}
           selectedId={null}
-          hoveredId={null}
+          hoveredId={hoveredHotelId}
         />
       );
     }
@@ -628,7 +655,7 @@ function PlanTrip() {
             </div>
           )}
 
-          {/* UNIFIED SPLIT LAYOUT WITH STICKY MAP */}
+          {/* UNIFIED MAP BACKGROUND LAYOUT */}
           {step === "result" && result ? (
             <ItineraryResult
               itinerary={result.data}
@@ -638,13 +665,20 @@ function PlanTrip() {
               onReset={resetForm}
             />
           ) : step === "treks" ? (
-            <TrekSelection
-              treks={treks}
-              onSelect={handleTrekSelect}
-              loading={submitting}
-              recommendedTrekId={recommendedTrekId}
-              onBack={() => setStep("form")}
-            />
+            <div className="trek-selection-wrap">
+              {trekDurationMessage && (
+                <div className="trek-duration-message">
+                  {trekDurationMessage}
+                </div>
+              )}
+              <TrekSelection
+                treks={treks}
+                onSelect={handleTrekSelect}
+                loading={submitting}
+                recommendedTrekId={recommendedTrekId}
+                onBack={() => setStep("form")}
+              />
+            </div>
           ) : step === "trek_result" && trekItinerary ? (
             <TrekItineraryResult
               trekItinerary={trekItinerary}
@@ -656,7 +690,7 @@ function PlanTrip() {
           ) : (
             <SplitLayout
               leftContent={renderLeftPanelContent()}
-              rightContent={renderRightPanelContent()}
+              rightContent={renderMapContent()}
             />
           )}
 

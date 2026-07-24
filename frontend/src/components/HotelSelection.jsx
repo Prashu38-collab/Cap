@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "../styles/hotelselection.css";
 
-// Customizable modern pin icon
 const getCustomIcon = (color, label, hovered = false, selected = false) => {
   const sz = hovered ? 38 : selected ? 34 : 28;
   return L.divIcon({
@@ -100,7 +99,7 @@ function CompactHotelCard({ hotel, selected, hovered, onSelect, onMouseEnter, on
   );
 }
 
-export default function HotelSelection({ hotels = [], corridor = [], onSelect, loading }) {
+export default function HotelSelection({ hotels = [], corridor = [], onSelect, onHover, loading }) {
   const [selectedId, setSelectedId] = useState(hotels[0]?.hotel_id || null);
   const [hoveredHotelId, setHoveredHotelId] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
@@ -133,20 +132,44 @@ export default function HotelSelection({ hotels = [], corridor = [], onSelect, l
   const bounds = validHotels.map((h) => [parseFloat(h.latitude), parseFloat(h.longitude)]);
 
   const districtLabel = corridor?.[0] || "destination";
+  const routeText = corridor?.length > 1 ? corridor.join(" → ") : districtLabel;
+
+  // Group hotels by district
+  const grouped = {};
+  for (const h of hotels) {
+    const d = h.district || "Other";
+    if (!grouped[d]) grouped[d] = [];
+    grouped[d].push(h);
+  }
 
   return (
     <div className="hs-main-wrapper">
+      {/* Header */}
+      <div className="hs-header-section">
+        <div className="hs-badge-pill">Hotel Selection</div>
+        <h2 className="hs-main-title">Choose Your Sanctuary</h2>
+        <p className="hs-main-subtitle">
+          Pick where you'll rest in <strong>{routeText}</strong> — select a
+          starting hotel and we'll assign others along your route.
+        </p>
+      </div>
+
       <div className="hs-hotel-list-container">
-        {hotels.map((hotel) => (
-          <CompactHotelCard
-            key={hotel.hotel_id}
-            hotel={hotel}
-            selected={selectedId === hotel.hotel_id}
-            hovered={hoveredHotelId === hotel.hotel_id}
-            onSelect={() => handleCardClick(hotel)}
-            onMouseEnter={() => setHoveredHotelId(hotel.hotel_id)}
-            onMouseLeave={() => setHoveredHotelId(null)}
-          />
+        {Object.entries(grouped).map(([district, districtHotels]) => (
+          <div key={district} className="hs-district-group">
+            <h3 className="hs-district-title">{district}</h3>
+            {districtHotels.map((hotel) => (
+              <CompactHotelCard
+                key={hotel.hotel_id}
+                hotel={hotel}
+                selected={selectedId === hotel.hotel_id}
+                hovered={hoveredHotelId === hotel.hotel_id}
+                onSelect={() => handleCardClick(hotel)}
+                onMouseEnter={() => { setHoveredHotelId(hotel.hotel_id); onHover?.(hotel.hotel_id); }}
+                onMouseLeave={() => { setHoveredHotelId(null); onHover?.(null); }}
+              />
+            ))}
+          </div>
         ))}
       </div>
 
@@ -171,10 +194,25 @@ export default function HotelSelection({ hotels = [], corridor = [], onSelect, l
   );
 }
 
-// Export Map separately if needed for SplitLayout
+// Export Map separately for SplitLayout
 export function HotelSelectionMap({ hotels = [], selectedId, hoveredId, onSelectMarker }) {
+  const [mapCenter, setMapCenter] = useState(null);
+  const [mapZoom, setMapZoom] = useState(13);
+  const markerRefs = useRef({});
+
   const validHotels = hotels.filter((h) => h.latitude && h.longitude);
   const bounds = validHotels.map((h) => [parseFloat(h.latitude), parseFloat(h.longitude)]);
+
+  useEffect(() => {
+    if (hoveredId) {
+      const hotel = validHotels.find((h) => h.hotel_id === hoveredId);
+      if (hotel) {
+        setMapCenter([parseFloat(hotel.latitude), parseFloat(hotel.longitude)]);
+        setMapZoom(15);
+        setTimeout(() => { markerRefs.current[hoveredId]?.openPopup(); }, 50);
+      }
+    }
+  }, [hoveredId]);
 
   return (
     <MapContainer
@@ -197,28 +235,33 @@ export function HotelSelectionMap({ hotels = [], selectedId, hoveredId, onSelect
             key={hotel.hotel_id}
             position={[parseFloat(hotel.latitude), parseFloat(hotel.longitude)]}
             icon={getCustomIcon(pinColor, "H", isHovered, isSelected)}
+            ref={(el) => { if (el) markerRefs.current[hotel.hotel_id] = el; }}
             eventHandlers={{
-              click: () => onSelectMarker && onSelectMarker(hotel),
+              click: () => {
+                if (onSelectMarker) onSelectMarker(hotel);
+                setMapCenter([parseFloat(hotel.latitude), parseFloat(hotel.longitude)]);
+                setMapZoom(15);
+                setTimeout(() => markerRefs.current[hotel.hotel_id]?.openPopup(), 100);
+              },
             }}
           >
             <Popup>
-              <div className="hs-map-popup-card">
-                <strong style={{ fontSize: "14px", color: "#0f172a" }}>{hotel.hotel_name}</strong>
-                <div style={{ fontSize: "12px", color: "#64748b", margin: "2px 0" }}>{hotel.district}</div>
-                <div style={{ fontSize: "13px", fontWeight: "700", color: "#0284c7", marginTop: "4px" }}>
+              <div className="ir-map-popup">
+                <div className="ir-popup-cat" style={{ color: "#059669" }}>Hotel</div>
+                <div className="ir-popup-title">{hotel.hotel_name}</div>
+                <div className="ir-popup-district">{hotel.district}</div>
+                <div className="ir-popup-duration" style={{ color: "#0284c7", fontWeight: 700 }}>
                   NPR {hotel.budget?.toLocaleString()} / night
                 </div>
                 {hotel.review_score > 0 && (
-                  <div style={{ fontSize: "11px", color: "#eab308", marginTop: "2px" }}>
-                    ★ {hotel.review_score.toFixed(1)} Rating
-                  </div>
+                  <div className="ir-popup-travel">★ {hotel.review_score.toFixed(1)} Rating</div>
                 )}
               </div>
             </Popup>
           </Marker>
         );
       })}
-      <MapController bounds={bounds} />
+      <MapController center={mapCenter} zoom={mapZoom} bounds={bounds} />
     </MapContainer>
   );
 }

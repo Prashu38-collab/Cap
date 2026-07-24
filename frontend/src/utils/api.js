@@ -2,10 +2,20 @@ const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  const method = (options.method || "GET").toUpperCase();
+  const hasBody = options.body !== undefined && method !== "GET" && method !== "HEAD";
+
+  const headers = {};
+  if (hasBody) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const config = {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    method,
+    headers: { ...headers, ...options.headers },
   };
+
   const res = await fetch(url, config);
   const data = await res.json();
   if (!res.ok) {

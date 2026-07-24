@@ -17,12 +17,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  background: #eff6ff;
+  background: rgba(239, 246, 255, 0.95);
+  backdrop-filter: blur(8px);
   color: #2563eb;
   padding: 4px 10px;
   border-radius: 20px;
   margin-bottom: 8px;
-  border: 1px solid #bfdbfe;
+  border: 1px solid rgba(191, 219, 254, 0.8);
 }
 
 .hs-main-title {
@@ -45,6 +46,23 @@
   flex-direction: column;
   gap: 12px;
   padding-right: 4px;
+  max-height: calc(100vh - 320px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.hs-hotel-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.hs-hotel-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hs-hotel-list-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 
 .hs-compact-card {
@@ -52,12 +70,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 14px 18px;
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(226, 232, 240, 0.7);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .hs-compact-card:hover,
@@ -69,7 +88,7 @@
 
 .hs-compact-card.is-selected {
   border-color: #2563eb;
-  background: #f0f9ff;
+  background: rgba(240, 249, 255, 0.95);
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
@@ -95,7 +114,7 @@
 .hs-card-district-chip {
   font-size: 10px;
   font-weight: 600;
-  background: #f1f5f9;
+  background: rgba(241, 245, 249, 0.9);
   color: #475569;
   padding: 2px 8px;
   border-radius: 12px;
@@ -126,12 +145,18 @@
   font-size: 12px;
   font-weight: 700;
   color: #1e293b;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 .hs-card-distance-badge {
   font-size: 11.5px;
   color: #64748b;
   font-weight: 500;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 .hs-card-right-action {
@@ -150,11 +175,17 @@
   font-size: 15px;
   font-weight: 800;
   color: #0f172a;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .hs-price-unit {
   font-size: 10.5px;
   color: #94a3b8;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
 .hs-select-pill {
@@ -162,8 +193,8 @@
   font-size: 12px;
   font-weight: 700;
   border-radius: 20px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   color: #475569;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -180,10 +211,10 @@
   position: sticky;
   bottom: 0;
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
   padding: 12px 0;
-  border-top: 1px solid #e2e8f0;
-  z-index: 5;
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  z-index: 10;
 }
 
 .hs-primary-confirm-btn {
@@ -198,6 +229,7 @@
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
   transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
 }
 
 .hs-primary-confirm-btn:hover:not(:disabled) {

@@ -74,7 +74,7 @@ function MapController({ center, zoom, bounds }) {
   return null;
 }
 
-function TrekMap({ treks, hoveredId, selectedId, onHover, onSelect, mapCenter, mapZoom }) {
+function TrekMap({ treks, hoveredId, selectedId, onHover, onSelect, mapCenter, mapZoom, markerRefs }) {
   const validTreks = treks.filter((t) => t.latitude && t.longitude);
   const bounds = validTreks.map((t) => [t.latitude, t.longitude]);
 
@@ -100,6 +100,7 @@ function TrekMap({ treks, hoveredId, selectedId, onHover, onSelect, mapCenter, m
             key={trek.place_id}
             position={[trek.latitude, trek.longitude]}
             icon={getTrekIcon(pinColor, cfg.icon, isHovered || isSelected)}
+            ref={(el) => { if (el) markerRefs.current[trek.place_id] = el; }}
             eventHandlers={{
               click: () => onSelect && onSelect(trek),
               mouseover: () => onHover && onHover(trek.place_id),
@@ -130,6 +131,7 @@ export default function TrekSelection({ treks, onSelect, loading, recommendedTre
   const [selectedId, setSelectedId] = useState(recommendedTrekId || null);
   const [mapCenter, setMapCenter] = useState(null);
   const [mapZoom, setMapZoom] = useState(11);
+  const markerRefs = useRef({});
 
   useEffect(() => {
     if (recommendedTrekId) {
@@ -144,11 +146,25 @@ export default function TrekSelection({ treks, onSelect, loading, recommendedTre
 
   const validTreks = treks.filter((t) => t.latitude && t.longitude);
 
+  useEffect(() => {
+    if (hoveredId) {
+      const trek = validTreks.find((t) => t.place_id === hoveredId);
+      if (trek?.latitude && trek?.longitude) {
+        setMapCenter([trek.latitude, trek.longitude]);
+        setMapZoom(14);
+        setTimeout(() => { markerRefs.current[hoveredId]?.openPopup(); }, 50);
+      }
+    }
+  }, [hoveredId]);
+
   const handleCardClick = (trek) => {
     setSelectedId(trek.place_id);
     if (trek.latitude && trek.longitude) {
       setMapCenter([trek.latitude, trek.longitude]);
       setMapZoom(14);
+      setTimeout(() => {
+        markerRefs.current[trek.place_id]?.openPopup();
+      }, 100);
     }
   };
 
@@ -163,56 +179,69 @@ export default function TrekSelection({ treks, onSelect, loading, recommendedTre
   };
 
   const leftPanel = (
-    <div>
-      {validTreks.length === 0 && (
-        <div className="ir-empty">
-          <p>No treks available in this district.</p>
+    <div className="ir-main-container">
+      {/* Header */}
+      <div className="ir-header-card sl-card">
+        <div className="ir-header-top-row">
+          <div>
+            <h2 className="ir-header-title">Choose Your Adventure</h2>
+            <div className="ir-header-corridor">Select a trek or adventure activity</div>
+          </div>
         </div>
-      )}
-      <div className="trek-selection-grid">
-        {validTreks.map((trek, idx) => {
-          const cfg = getCategoryCfg(trek.category);
-          const isSelected = selectedId === trek.place_id;
-          const imgUrl = `${trekImages[idx % trekImages.length]}`;
-
-          return (
-            <div
-              key={trek.place_id}
-              id={`trek-card-${trek.place_id}`}
-              className={`trek-detail-card ${isSelected ? "selected" : ""}`}
-              onClick={() => handleCardClick(trek)}
-              onMouseEnter={() => setHoveredId(trek.place_id)}
-              onMouseLeave={() => setHoveredId(null)}
-              style={{ cursor: "pointer", position: "relative" }}
-            >
-              <div className="trek-card-img-wrap">
-                <img src={imgUrl} alt={trek.place_name} loading="lazy" />
-                <div className="hs-card-overlay" />
-                <span className={`trek-difficulty-badge ${(trek.mobility || "difficult").toLowerCase()}`}>
-                  {trek.mobility || "Difficult"}
-                </span>
-                {trek.place_id === recommendedTrekId && (
-                  <span style={{ position: "absolute", top: 12, right: 12, padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#fff", background: "#10b981", boxShadow: "0 2px 4px rgba(0,0,0,0.15)", zIndex: 2 }}>
-                    Recommended
-                  </span>
-                )}
-              </div>
-              <div className="trek-card-body">
-                <h3>{trek.place_name}</h3>
-                <div className="trek-card-meta-row">
-                  <span style={{ color: cfg.color, fontWeight: 700 }}>{cfg.icon}</span>
-                  <span>{trek.category || "Adventure"}</span>
-                  <span style={{ color: "#64748b" }}>{trek.district}</span>
-                </div>
-                <button className="view-trek-btn">
-                  {isSelected ? "Selected" : "View Trek Itinerary"}
-                </button>
-              </div>
-            </div>
-          );
-        })}
       </div>
 
+      {/* Trek Grid */}
+      {validTreks.length === 0 ? (
+        <div className="sl-card" style={{ padding: 32, textAlign: "center" }}>
+          <p style={{ color: "#64748b" }}>No treks available in this district.</p>
+        </div>
+      ) : (
+        <div className="trek-selection-grid">
+          {validTreks.map((trek, idx) => {
+            const cfg = getCategoryCfg(trek.category);
+            const isSelected = selectedId === trek.place_id;
+            const imgUrl = `${trekImages[idx % trekImages.length]}`;
+
+            return (
+              <div
+                key={trek.place_id}
+                id={`trek-card-${trek.place_id}`}
+                className={`trek-detail-card sl-card ${isSelected ? "selected" : ""}`}
+                onClick={() => handleCardClick(trek)}
+                onMouseEnter={() => setHoveredId(trek.place_id)}
+                onMouseLeave={() => setHoveredId(null)}
+                style={{ cursor: "pointer", position: "relative" }}
+              >
+                <div className="trek-card-img-wrap">
+                  <img src={imgUrl} alt={trek.place_name} loading="lazy" />
+                  <div className="hs-card-overlay" />
+                  <span className={`trek-difficulty-badge ${(trek.mobility || "difficult").toLowerCase()}`}>
+                    {trek.mobility || "Difficult"}
+                  </span>
+                  {trek.place_id === recommendedTrekId && (
+                    <span style={{ position: "absolute", top: 12, right: 12, padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#fff", background: "#10b981", boxShadow: "0 2px 4px rgba(0,0,0,0.15)", zIndex: 2 }}>
+                      Recommended
+                    </span>
+                  )}
+                </div>
+                <div className="trek-card-body">
+                  <h3>{trek.place_name}</h3>
+                  <div className="trek-card-meta-row">
+                    <span style={{ color: cfg.color, fontWeight: 700 }}>{cfg.icon}</span>
+                    <span>{trek.category || "Adventure"}</span>
+                    <span style={{ color: "#64748b" }}>{trek.district}</span>
+                  </div>
+                  <button className="view-trek-btn">
+                    {isSelected ? "Selected" : "View Trek Itinerary"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Bottom Actions */}
       <div className="sl-bottom-actions">
         {onBack && (
           <button className="sl-btn sl-btn-secondary" onClick={onBack}>
@@ -245,6 +274,7 @@ export default function TrekSelection({ treks, onSelect, loading, recommendedTre
           onSelect={handleMarkerClick}
           mapCenter={mapCenter}
           mapZoom={mapZoom}
+          markerRefs={markerRefs}
         />
       }
     />
