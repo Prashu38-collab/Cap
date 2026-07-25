@@ -5,19 +5,32 @@ export default function SplitLayout({ leftContent, rightContent, className = "" 
   const leftRef = useRef(null);
 
   useEffect(() => {
-    if (leftRef.current) {
-      leftRef.current.scrollTop = 0;
-    }
-  }, [leftContent]);
+    const leftEl = leftRef.current;
+    if (!leftEl) return;
+
+    const handleWheel = (e) => {
+      const { scrollTop, scrollHeight, clientHeight } = leftEl;
+      const atBottom = scrollHeight - scrollTop <= clientHeight + 1;
+      const atTop = scrollTop <= 1;
+
+      if ((atBottom && e.deltaY > 0) || (atTop && e.deltaY < 0)) {
+        return;
+      }
+
+      e.preventDefault();
+      leftEl.scrollTop += e.deltaY;
+    };
+
+    leftEl.addEventListener("wheel", handleWheel, { passive: false });
+    return () => leftEl.removeEventListener("wheel", handleWheel);
+  }, []);
 
   return (
     <div className={`sl-wrap ${className}`}>
-      {/* Map fills entire right side AND extends behind left panel */}
       <div className="sl-map-layer">
         {rightContent}
       </div>
 
-      {/* Left panel scrolls independently, transparent to show map behind */}
       <div className="sl-left" ref={leftRef}>
         {leftContent}
       </div>

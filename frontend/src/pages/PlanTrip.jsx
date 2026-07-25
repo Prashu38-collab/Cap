@@ -689,6 +689,7 @@ function PlanTrip() {
             />
           ) : (
             <SplitLayout
+              key={step}
               leftContent={renderLeftPanelContent()}
               rightContent={renderMapContent()}
             />

@@ -1,8 +1,10 @@
 /* ================================================================
    SPLIT LAYOUT — Two-column layout with map behind content
-   Left panel (40%): Scrollable content with glass-morphism cards
-   Right panel (60%): Fixed map that stays in place
+   Left panel (60%): Scrollable content with glass-morphism cards
+   Right panel (40%): Fixed map that stays in place
    Map extends behind left panel (visible through transparent cards)
+   Scroll behavior: left panel scrolls independently, map stays fixed.
+   When left content ends, body scrolls to reveal footer.
    ================================================================ */
 
 /* ── Main Container ── */
@@ -14,12 +16,12 @@
   margin-top: 80px;
 }
 
-/* ── Map Layer (fills right 60% + extends behind left) ── */
+/* ── Map Layer (fills right 40% + extends behind left) ── */
 .sl-map-layer {
   position: absolute;
   top: 0;
   right: 0;
-  width: 60%;
+  width: 40%;
   height: 100%;
   z-index: 0;
 }
@@ -30,12 +32,13 @@
   border-radius: 0;
 }
 
-/* ── Left Panel (40% width, scrollable, transparent background) ── */
+/* ── Left Panel (60% width, scrollable, transparent background) ── */
 .sl-left {
   position: relative;
   z-index: 1;
-  width: 40%;
+  width: 60%;
   min-height: 100%;
+  max-height: calc(100vh - 80px);
   padding: 30px 24px;
   overflow-y: auto;
   background: transparent;
@@ -159,11 +162,11 @@
   }
 
   .sl-map-layer {
-    width: 55%;
+    width: 45%;
   }
 
   .sl-left {
-    width: 45%;
+    width: 55%;
     padding: 24px 20px;
   }
 }
@@ -187,6 +190,7 @@
 
   .sl-left {
     width: 100%;
+    max-height: none;
     padding: 20px 16px;
   }
 

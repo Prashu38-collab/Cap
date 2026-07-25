@@ -338,12 +338,22 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
   const [highlightedId, setHighlightedId] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
   const [mapZoom, setMapZoom] = useState(13);
+  const [selectedHotelIds, setSelectedHotelIds] = useState({});
   const markerRefs = useRef({});
+
+  const selectHotel = (dayNum, hotel) => {
+    setSelectedHotelIds(prev => ({ ...prev, [dayNum]: hotel.hotel_id }));
+  };
 
   if (!itinerary?.itinerary) return null;
   const days = itinerary.itinerary;
   const currentDay = days.find((d) => d.day === activeDay) || days[0];
   if (!currentDay) return null;
+
+  const selectedHotelId = selectedHotelIds[activeDay];
+  const displayHotel = selectedHotelId && currentDay.hotel_options
+    ? currentDay.hotel_options.find(h => h.hotel_id === selectedHotelId) || currentDay.hotel
+    : currentDay.hotel;
 
   const changeDay = (day) => {
     setMapCenter(null);
@@ -355,12 +365,13 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
   const allMarkers = [];
   let markerCounter = 1;
   days.forEach((d) => {
-    if (d.hotel?.latitude && d.hotel?.longitude) {
+    const dayHotel = d.day === activeDay ? displayHotel : d.hotel;
+    if (dayHotel?.latitude && dayHotel?.longitude) {
       allMarkers.push({
         id: `hotel-${d.day}`,
-        name: d.hotel.hotel_name,
-        lat: parseFloat(d.hotel.latitude),
-        lon: parseFloat(d.hotel.longitude),
+        name: dayHotel.hotel_name,
+        lat: parseFloat(dayHotel.latitude),
+        lon: parseFloat(dayHotel.longitude),
         day: d.day,
         type: "hotel",
         category: "hotel",
@@ -396,15 +407,13 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
 
   const activeBounds = allMarkers.filter((m) => m.day === activeDay).map((m) => [m.lat, m.lon]);
   const activeDayPts = [];
-  if (currentDay.hotel?.latitude) activeDayPts.push([parseFloat(currentDay.hotel.latitude), parseFloat(currentDay.hotel.longitude)]);
+  if (displayHotel?.latitude) activeDayPts.push([parseFloat(displayHotel.latitude), parseFloat(displayHotel.longitude)]);
   (currentDay.places || []).forEach((p) => { if (p.latitude && p.longitude) activeDayPts.push([parseFloat(p.latitude), parseFloat(p.longitude)]); });
 
   const schedule = buildSchedule(currentDay, activeDay - 1, days.length, corridor);
   const sightseeingPlaces = (currentDay.places || []).filter((p) => p.latitude && p.longitude);
   const totalDist = currentDay.total_travel_km || (currentDay.places || []).reduce((sum, p) => sum + (p.travel_dist_km || 0), 0) || 0;
   const recommendedTransport = (currentDay.places || []).find((p) => p.transport_mode)?.transport_mode || "Private Car / Local Bus";
-  const totalTravelTimeMin = (currentDay.places || []).reduce((sum, p) => sum + (p.duration ? p.duration * 60 : 0), 0) + (totalDist > 0 ? (totalDist / 30) * 60 : 0);
-  const travelTimeHrs = (totalTravelTimeMin / 60).toFixed(1);
 
   const focusPlace = (place) => {
     setHighlightedId(place.id);
@@ -466,14 +475,6 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
             <span className="ir-stat-lbl">Total Distance</span>
           </div>
           <div className="ir-stat-item">
-            <span className="ir-stat-val">~{travelTimeHrs} hrs</span>
-            <span className="ir-stat-lbl">Est. Duration</span>
-          </div>
-          <div className="ir-stat-item">
-            <span className="ir-stat-val">{sightseeingPlaces.length} Stops</span>
-            <span className="ir-stat-lbl">Visits</span>
-          </div>
-          <div className="ir-stat-item">
             <span className="ir-stat-val" style={{ fontSize: "12px" }}>{recommendedTransport}</span>
             <span className="ir-stat-lbl">Transport</span>
           </div>
@@ -503,13 +504,13 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
               <span className="ir-day-number-badge">Day {currentDay.day}</span>
               <div>
                 <h3 className="ir-day-title">{currentDay.day_title || currentDay.district}</h3>
-                {currentDay.hotel && (
+                {displayHotel && (
                   <span className="ir-day-hotel">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 21V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14"/>
                       <path d="M9 21V11h6v10"/>
                     </svg>
-                    {currentDay.hotel.hotel_name}
+                    {displayHotel.hotel_name}
                   </span>
                 )}
               </div>
@@ -533,6 +534,41 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
           </div>
         )}
 
+        {currentDay.hotel_options && currentDay.hotel_options.length > 0 && (
+          <div className="ir-hotel-options">
+            <div className="ir-hotel-options-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 21V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14"/>
+                <path d="M9 21V11h6v10"/>
+              </svg>
+              <span>Hotels in {currentDay.district}</span>
+            </div>
+            <div className="ir-hotel-options-list">
+              {currentDay.hotel_options.map((h) => {
+                const isSelected = selectedHotelId === h.hotel_id || (!selectedHotelId && currentDay.hotel?.hotel_id === h.hotel_id);
+                return (
+                  <div
+                    key={h.hotel_id}
+                    className={`ir-hotel-option-card ${isSelected ? "is-selected" : ""}`}
+                    onClick={() => selectHotel(activeDay, h)}
+                  >
+                    <div className="ir-hotel-option-info">
+                      <span className="ir-hotel-option-name">{h.hotel_name}</span>
+                      <span className="ir-hotel-option-meta">
+                        {h.review_score > 0 && <span className="ir-hotel-option-rating">★ {h.review_score.toFixed(1)}</span>}
+                        {h.budget > 0 && <span className="ir-hotel-option-price">NPR {Math.round(h.budget).toLocaleString()}</span>}
+                      </span>
+                    </div>
+                    {isSelected && (
+                      <span className="ir-hotel-option-check">✓</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Schedule Timeline */}
         <div className="ir-timeline-container">
           {schedule.map((item, idx) => {
@@ -552,7 +588,7 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
                 </div>
                 <div
                   className={`ir-tl-card ${isPlace ? "is-clickable" : ""} ${isHighlighted ? "is-highlighted" : ""}`}
-                  onClick={isPlace ? () => focusPlace({ id: itemId, lat: place.latitude, lon: place.longitude }) : isActivity && item.icon === "hotel" ? () => focusHotel(currentDay.hotel, activeDay) : undefined}
+                  onClick={isPlace ? () => focusPlace({ id: itemId, lat: place.latitude, lon: place.longitude }) : isActivity && item.icon === "hotel" ? () => focusHotel(displayHotel, activeDay) : undefined}
                   onMouseEnter={isPlace ? () => hoverPlace({ id: itemId, lat: place.latitude, lon: place.longitude }) : undefined}
                   onMouseLeave={isPlace ? unhoverPlace : undefined}
                 >
@@ -604,15 +640,15 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
 
         {/* Hotel / Reset Bar */}
         <div className="ir-bottom-actions">
-          {currentDay.hotel && (
+          {displayHotel && (
             <div
               className="ir-hotel-line"
-              onClick={() => focusHotel(currentDay.hotel, activeDay)}
+              onClick={() => focusHotel(displayHotel, activeDay)}
               onMouseEnter={() => { setHighlightedId(`hotel-${activeDay}`); setTimeout(() => { markerRefs.current[`hotel-${activeDay}`]?.openPopup(); }, 50); }}
               onMouseLeave={() => setHighlightedId(null)}
             >
               <div className="ir-hotel-dot" />
-              <span className="ir-hotel-name">{currentDay.hotel.hotel_name}</span>
+              <span className="ir-hotel-name">{displayHotel.hotel_name}</span>
               <span className="ir-hotel-hint">view on map</span>
             </div>
           )}
