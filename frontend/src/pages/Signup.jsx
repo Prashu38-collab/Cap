@@ -94,7 +94,7 @@ export default function Signup() {
   return (
     <div className="auth-container">
       <div className="auth-left">
-        <img src="/images/login.png" alt="Travel illustration" />
+        <img src="/images/Loginnew.png" alt="Travel illustration" />
       </div>
       <div className="auth-right">
         <div className="card">
