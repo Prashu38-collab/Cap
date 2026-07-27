@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import User_Preferences, auth,hotels, itinerary, weather,weather_places, traffic, places, map, admin, contact
-
+from app.routers import transport
 app = FastAPI(
     title="Travel Itinerary System API",
     description="Backend API for personalized travel itinerary planning",
@@ -11,13 +11,13 @@ app = FastAPI(
 # CORS
 
 origins = [
-    "http://localhost:5173",   # React (Vite)
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173",  # React (Vite)
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=origins,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,7 +37,7 @@ app.include_router(map.router)
 
 app.include_router(admin.router)
 app.include_router(contact.router)
-
+app.include_router(transport.router)
 
 @app.get("/")
 def home():

@@ -1,5 +1,8 @@
-from fastapi import APIRouter
-from app.logic.transport_logic import get_transport_for_user
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.logic.transport_logic import TransportService
 
 router = APIRouter(
     prefix="/transport",
@@ -7,12 +10,16 @@ router = APIRouter(
 )
 
 
-@router.get("/user/{user_id}")
-def transport_by_user(user_id: int):
+@router.get("/{preference_id}")
+def get_transport(
+    preference_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get transport options after itinerary generation.
+    """
 
-    transport = get_transport_for_user(user_id)
-
-    return {
-        "user_id": user_id,
-        "transport_options": transport
-    }
+    return TransportService.get_transport(
+        db,
+        preference_id
+    )

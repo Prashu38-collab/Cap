@@ -2,12 +2,14 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import VerifyOTP from "./pages/VerifyOTP";
 import Dashboard from "./pages/Dashboard";
 import PlanTrip from "./pages/PlanTrip";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import GenerateItinerary from "./pages/GenerateItinerary";
+import Transport from "./pages/Transport";
 
 import { getCurrentUser } from "./utils/authStorage";
 
@@ -37,9 +39,10 @@ function App() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/verify-otp" element={<VerifyOTP />} />
 
       <Route path="/generate" element={<GenerateItinerary />} />
-
+      <Route path="/transport"element={<Transport />}/>
       <Route path="/admin" element={<AdminDashboard />}>
           <Route index element={<DashboardSection />} />
           <Route path="users" element={<UsersSection />} />
