@@ -8,6 +8,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import GenerateItinerary from "./pages/GenerateItinerary";
+import ForgotPassword from "./pages/ForgotPassword";
 
 import AdminDashboard from "./pages/AdminDashboard";
 import DashboardSection from "./components/admin/AdminDashboardSection";
@@ -19,27 +20,22 @@ import ManageGeneratedItineraries from './components/admin/ManageGeneratedItiner
 
 import NotFound from "./pages/NotFound";
 
-// const ProtectedRoute = ({ children }) => {
-//   const token = localStorage.getItem("token");
-//   return token ? children : <Navigate to="/login" replace />;
-// };
-
 const UserProtectedRoute = ({ children }) => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
-    return token && role === "user"
-      ? children
-      : <Navigate to="/login" replace />;
+  return token && role === "user"
+  ? children
+  : <Navigate to="/login" replace />;
 };
 
 const AdminProtectedRoute = ({ children }) => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
-    return token && role === "admin"
-      ? children
-      : <Navigate to="/login" replace />;
+  return token && role === "admin"
+  ? children
+  : <Navigate to="/login" replace />;
 };
 
 function App() {
@@ -54,6 +50,7 @@ function App() {
       <Route path="/contact" element={<UserProtectedRoute><Contact /></UserProtectedRoute>} />
       <Route path="/profile" element={<UserProtectedRoute><Profile /></UserProtectedRoute>} />
       <Route path="/generate" element={<UserProtectedRoute><GenerateItinerary /></UserProtectedRoute>} />
+      <Route path="/forgot-password" element={<UserProtectedRoute><ForgotPassword /></UserProtectedRoute>} />
 
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
@@ -68,10 +65,6 @@ function App() {
       </Route>
 
       <Route path="*" element={<NotFound />} />
-
-      {/* <Route path="*" element={
-        <Navigate to={localStorage.getItem("token") ? "/dashboard" : "/login"} replace/>
-      }/> */}
 
     </Routes>
   );

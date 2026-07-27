@@ -3,6 +3,12 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from app.security.limiter import limiter
 
+from datetime import datetime, timedelta
+import random
+import re
+# from ..services.email_services import send_otp_email
+# from fastapi.security import OAuth2PasswordBearer
+
 from app.config import (
     ADMIN_EMAIL,
     ADMIN_PASSWORD,
@@ -67,17 +73,27 @@ def register(
             user.password
         )
 
+        # otp = generate_otp()
+        # otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+
         create_user(
             db=db,
             name=user.name,
             email=user.email,
             phone_number=user.phone_number,
             hashed_password=hashed_password,
-            terms_accepted=user.terms_accepted
+            terms_accepted=user.terms_accepted,
+            # otp=otp,
+            # otp_expiry=otp_expiry
         )
 
+        # send_verification_email(
+        #     user.email,
+        #     otp
+        # )
+
         return {
-            "message": "Registration successful."
+            "message": "Registration successful. Please check your email to verify your account."
         }
 
     except HTTPException as e:
@@ -139,6 +155,7 @@ def login(
         token = create_access_token(
             {
                 "sub": db_user.email,
+                "user_id": db_user.user_id,
                 "role": "user"
             }
         )
@@ -161,4 +178,4 @@ def login(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+

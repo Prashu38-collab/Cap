@@ -172,7 +172,7 @@ export default function Login() {
           <div className="row muted">
             <span>Don't have an account? <Link to="/signup">Sign Up</Link></span>
             <span className="divider">•</span>
-            <span><a href="#">Forgot Password?</a></span>
+            <span><Link to="/forgot-password">Forgot Password?</Link></span>
           </div>
         </div>
       </div>
