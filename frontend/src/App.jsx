@@ -8,6 +8,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import GenerateItinerary from "./pages/GenerateItinerary";
+import RecommendedItinerary from "./pages/RecommendedItinerary";
 
 import { getCurrentUser } from "./utils/authStorage";
 
@@ -39,6 +40,7 @@ function App() {
       <Route path="/signup" element={<Signup />} />
 
       <Route path="/generate" element={<GenerateItinerary />} />
+      <Route path="/recommended/:slug" element={<RecommendedItinerary />} />
 
       <Route path="/admin" element={<AdminDashboard />}>
           <Route index element={<DashboardSection />} />

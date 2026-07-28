@@ -547,3 +547,137 @@
 .category-card:hover .category-text p{
     opacity: 1;
 }
+
+/*-----------------------------------------------Recommended Itineraries----------------------------------------------*/
+
+.recommended-itineraries{
+    padding: 80px 80px 60px;
+}
+
+.recommended-header{
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.recommended-header h1{
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.recommended-header p{
+    font-size: 16px;
+    color: #666;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.recommended-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.recommended-card{
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    height: 380px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.recommended-card:hover{
+    transform: translateY(-6px);
+    box-shadow: 0 14px 36px rgba(0,0,0,0.25);
+}
+
+.recommended-card img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.recommended-card:hover img{
+    transform: scale(1.08);
+}
+
+.recommended-overlay{
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(transparent 30%, rgba(0,0,0,0.75) 100%);
+    display: flex;
+    align-items: flex-end;
+    padding: 24px;
+}
+
+.recommended-content{
+    color: white;
+    width: 100%;
+}
+
+.recommended-badge{
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(6px);
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.recommended-content h3{
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.recommended-duration{
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    opacity: 0.85;
+}
+
+.recommended-content p{
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    margin-bottom: 0;
+}
+
+.recommended-card:hover .recommended-content p{
+    opacity: 0.9;
+    max-height: 80px;
+    margin-bottom: 12px;
+}
+
+.recommended-btn{
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #facc15, #f97316);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+}
+
+.recommended-card:hover .recommended-btn{
+    opacity: 1;
+    transform: translateY(0);
+}
