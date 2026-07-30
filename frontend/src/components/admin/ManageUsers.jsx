@@ -2,11 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Swal from "sweetalert2";
-import axios from "axios";
+import api from "../../utils/api.js";
 
 function UsersSection() {
-
-const API_URL = "http://localhost:8000/api/admin/users";
 
 const [users, setUsers] = useState([]);
 const [showAdd, setShowAdd] = useState(false);
@@ -51,17 +49,13 @@ function showNotice(type, message) {
 }
 
 useEffect(() => {
-    fetchUsers();
-    // const interval = setInterval(() => {
-    //     fetchUsers();
-    // }, 5000);
-    // return () => clearInterval(interval);
+  fetchUsers();
 }, []);
 
 const fetchUsers = async () => {
 
   try {
-    const response = await axios.get(API_URL);
+    const response = await api.get("/api/admin/users");
     setUsers(response.data);
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -143,7 +137,7 @@ const handleAddUser = async () => {
 
   // Send Request
   try {
-    await axios.post(API_URL, newUser);
+    await api.get("/api/admin/users", newUser);
     Swal.fire("Success", "User added successfully.", "success");
     fetchUsers();
     setShowAdd(false);
@@ -162,8 +156,7 @@ const handleAddUser = async () => {
 const handleStatusChange = async (id, status) => {
 
   try {
-    const response = await axios.put(
-      `${API_URL}/${id}/status`,
+    const response = await api.put(`/api/admin/hotels/${id}/status`,
       {
         status: status
       }
@@ -202,7 +195,7 @@ const handleDeleteUser = async (id) => {
   if (!result.isConfirmed) return;
 
   try {
-    const response = await axios.delete(`${API_URL}/${id}`);
+    const response = await api.delete(`/api/admin/users/${id}`);
     await Swal.fire({
       title: "Deleted!",
       text: response.data.message,
@@ -269,7 +262,7 @@ return (
 
           <tr>
             <td colSpan="5" className="empty-table">
-              No cUsers found.
+              No users found.
             </td>
           </tr>
 

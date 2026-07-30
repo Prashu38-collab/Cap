@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
+import api from "../../utils/api.js";
 import Swal from "sweetalert2";
 
 function ManageDestinations() {
-
-const API_URL = "http://localhost:8000/api/admin/destinations";
 
 const navigate = useNavigate();
 const [destinations,setDestinations] = useState([]);
@@ -41,16 +40,12 @@ const [newDestination,setNewDestination]=useState({
 
 useEffect(()=>{
     fetchDestinations();
-    // const interval=setInterval(()=>{
-    // fetchDestinations();
-    // },5000);
-    // return()=>clearInterval(interval);
 },[]);
 
 // Fetch Data
 const fetchDestinations=async()=>{
     try{
-        const response=await axios.get(API_URL);
+        const response = await api.get("/api/admin/destinations");
         setDestinations(response.data);
     }
     catch(error){
@@ -124,7 +119,7 @@ const handleAdd=async()=>{
     }
 
     try{
-        const response=await axios.post( API_URL, newDestination );
+        const response = await api.post("/api/admin/destinations", newDestination);
         Swal.fire({
             icon:"success",
             title:"Success",
@@ -144,7 +139,7 @@ const handleAdd=async()=>{
 // Edit
 const handleEdit=async()=>{
     try{
-        const response = await axios.put( `${API_URL}/${selectedDestination.place_id}`, selectedDestination );
+        const response = await api.put(`/api/admin/destinations/${selectedDestination.place_id}`,selectedDestination);
         Swal.fire({
             icon:"success",
             title:"Updated",
@@ -176,8 +171,7 @@ const handleDelete=async(id)=>{
     if(!result.isConfirmed)
     return;
     try{
-        const response=await axios.delete(`${API_URL}/${id}`);
-
+        const response = await api.delete(`/api/admin/destinations/${id}`);
         await Swal.fire({
             icon:"success",
             title:"Deleted!",
@@ -301,10 +295,10 @@ return (
                     <label>Category <span className="required">*</span></label>
                     <select name="Category" value={newDestination.Category} onChange={handleInputChange}>
                         <option value="">Select Category</option>
-                        <option value="Adventure">Adventure</option>
-                        <option value="Nature">Nature</option>
-                        <option value="Cultural">Cultural</option>
-                        <option value="Religious">Religious</option>
+                        <option value="adventure">Adventure</option>
+                        <option value="nature">Nature</option>
+                        <option value="cultural">Cultural</option>
+                        <option value="religious">Religious</option>
                     </select>
 
                     <label>Indoor / Outdoor <span className="required">*</span></label>
@@ -452,10 +446,10 @@ return (
           <label>Category </label>
         <select value={selectedDestination.Category} onChange={(e) => setSelectedDestination({ ...selectedDestination, Category: e.target.value })}>
             <option value="">Select Category</option>
-            <option value="Adventure">Adventure</option>
-            <option value="Nature">Nature</option>
-            <option value="Cultural">Cultural</option>
-            <option value="Religious">Religious</option>
+            <option value="adventure">Adventure</option>
+            <option value="nature">Nature</option>
+            <option value="cultural">Cultural</option>
+            <option value="religious">Religious</option>
         </select>
 
           <label>Indoor / Outdoor</label>

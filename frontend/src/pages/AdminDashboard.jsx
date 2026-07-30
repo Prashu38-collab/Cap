@@ -9,8 +9,7 @@ function AdminDashboard() {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       sessionStorage.clear();
-
-      navigate("/login");
+      navigate("/login", { replace: true }); 
     };
 
     return (

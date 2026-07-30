@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react'
+// pages/MyProfile.jsx
+import React, { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import '../styles/profile.css'
 import {
   FaEnvelope,
@@ -9,325 +10,329 @@ import {
   FaMapMarkerAlt,
   FaRegCalendarAlt,
   FaUser,
-  FaCamera,
   FaEdit,
   FaLock,
-  FaGlobe,
-  FaPlane,
-  FaSuitcase,
-  FaStar,
-  FaHeart
+  FaHeart,
+  FaTrash,
+  FaSave
 } from 'react-icons/fa'
 
-// const navItems = [
-//   { label: 'Dashboard', to: '/dashboard' },
-//   { label: 'Plan My Trip', to: '/plan-my-trip' },
-//   { label: 'About Us', to: '/about-us' },
-//   { label: 'Contact Us', to: '/contact-us' },
-//   { label: 'My Profile', to: '/my-profile' }
-// ]
+const sampleImage = '/images/kathmandu.png'
 
 export default function MyProfile() {
   const navigate = useNavigate()
   const [profile, setProfile] = useState({
     fullName: 'Keonho Lee',
     email: 'keonholee@gmail.com',
-    phone: '982848189',
-    address: 'Busan, South Korea',
-    joined: 'Jan 2026'
+    phone: '982848189'
   })
-  const [avatarSrc, setAvatarSrc] = useState('/yak.png')
   const [isEditing, setIsEditing] = useState(false)
-  const fileInputRef = useRef(null)
+  const [showPasswordChange, setShowPasswordChange] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' })
+  const [savedItineraries, setSavedItineraries] = useState([])
+  const [editingId, setEditingId] = useState(null)
+  const [draftName, setDraftName] = useState('')
+  const [draftSummary, setDraftSummary] = useState('')
 
-  function logout() {
-    navigate('/login')
-  }
+  useEffect(() => {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
+    if (currentUser) {
+      setProfile(prev => ({
+        ...prev,
+        fullName: currentUser.name || prev.fullName,
+        email: currentUser.email || prev.email,
+        phone: currentUser.phone_number || prev.phone,
+      }))
+    }
 
-  function handleChangePhoto() {
-    fileInputRef.current?.click()
-  }
+    const stored = JSON.parse(localStorage.getItem('savedItineraries') || '[]')
+    setSavedItineraries(stored)
 
-  function handlePhotoSelected(event) {
-    const file = event.target.files?.[0]
-    if (!file) return
-    setAvatarSrc(URL.createObjectURL(file))
+    const loadSavedItineraries = async () => {
+      try {
+        const response = await listSavedItineraries()
+        const next = (response.itineraries || []).map(item => ({
+          id: item.itinerary_id,
+          title: item.itinerary_data?.title || `Trip #${item.itinerary_id}`,
+          destination: item.itinerary_data?.destination || 'Saved itinerary',
+          summary: item.itinerary_data?.summary || item.status || 'Saved itinerary',
+          createdAt: item.generated_at || 'Recently saved',
+          itinerary: item.itinerary_data?.itinerary || [],
+          notes: item.itinerary_data?.notes || '',
+        }))
+        setSavedItineraries(next)
+        localStorage.setItem('savedItineraries', JSON.stringify(next))
+      } catch (error) {
+        console.error('Unable to load saved itineraries', error)
+      }
+    }
+
+    loadSavedItineraries()
+  }, [])
+
+  function handleDeleteAccount() {
+    const confirmed = window.confirm('Are you sure you want to delete your account? This action cannot be undone.')
+    if (!confirmed) return
+
+    logoutUser()
+    localStorage.removeItem('token')
+    localStorage.removeItem('currentUser')
+    localStorage.removeItem('savedItineraries')
+    sessionStorage.clear()
+    navigate('/login', { replace: true })
   }
 
   function handleEditProfile() {
-    setIsEditing(prev => !prev)
+    if (isEditing) {
+      setIsEditing(false)
+      setShowPasswordChange(false)
+      setPasswordForm({ newPassword: '', confirmPassword: '' })
+    } else {
+      setIsEditing(true)
+      setShowPasswordChange(true)
+    }
   }
 
   function handleInputChange(field, value) {
-    setProfile(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    setProfile(prev => ({ ...prev, [field]: value }))
+  }
+
+  function handlePasswordFieldChange(field, value) {
+    setPasswordForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  function handlePasswordSave() {
+    if (!passwordForm.newPassword || passwordForm.newPassword !== passwordForm.confirmPassword) {
+      window.alert('Please make sure the new password and confirm password match.')
+      return
+    }
+
+    window.alert('Password updated successfully')
+    setPasswordForm({ newPassword: '', confirmPassword: '' })
+    setShowPasswordChange(false)
+    setIsEditing(false)
+  }
+
+  function saveItineraryToProfile(itinerary) {
+    const clone = {
+      id: Date.now(),
+      title: itinerary.title || 'Saved Trip',
+      destination: itinerary.destination || 'Custom route',
+      summary: itinerary.summary || 'Your generated itinerary is ready.',
+      createdAt: new Date().toLocaleString(),
+      itinerary: itinerary.itinerary || [],
+      notes: itinerary.notes || ''
+    }
+    const next = [clone, ...savedItineraries]
+    setSavedItineraries(next)
+    localStorage.setItem('savedItineraries', JSON.stringify(next))
+  }
+
+  useEffect(() => {
+    const handler = (event) => {
+      if (event.detail?.itinerary) {
+        saveItineraryToProfile(event.detail.itinerary)
+      }
+    }
+    window.addEventListener('saved-itinerary', handler)
+    return () => window.removeEventListener('saved-itinerary', handler)
+  }, [savedItineraries])
+
+  function startEditing(itinerary) {
+    setEditingId(itinerary.id)
+    setDraftName(itinerary.title)
+    setDraftSummary(itinerary.summary)
+  }
+
+  async function saveEdit(id) {
+    const next = savedItineraries.map(entry => entry.id === id ? {
+      ...entry,
+      title: draftName || entry.title,
+      summary: draftSummary || entry.summary
+    } : entry)
+    const entry = next.find(item => item.id === id)
+    setSavedItineraries(next)
+    localStorage.setItem('savedItineraries', JSON.stringify(next))
+    try {
+      await updateSavedItinerary(id, {
+        itinerary_data: {
+          title: entry.title,
+          destination: entry.destination,
+          summary: entry.summary,
+          itinerary: entry.itinerary,
+          notes: entry.notes,
+        }
+      })
+    } catch (error) {
+      console.error('Unable to update itinerary', error)
+    }
+    setEditingId(null)
+  }
+
+  async function deleteItinerary(id) {
+    const next = savedItineraries.filter(entry => entry.id !== id)
+    setSavedItineraries(next)
+    localStorage.setItem('savedItineraries', JSON.stringify(next))
+    try {
+      await deleteSavedItinerary(id)
+    } catch (error) {
+      console.error('Unable to delete itinerary', error)
+    }
   }
 
   return (
     <div className="profile-page">
-
-     < Navbar />
-
+      <Navbar />
+      
+      {/* Hero Section */}
       <section className="profile-hero">
-        <img src="\images\contactus.png" alt="Boudhanath Stupa Nepal" className="profile-hero-image" />
+        <img src="/images/contactus.png" alt="Boudhanath Stupa Nepal" className="profile-hero-image" />
         <div className="profile-hero-overlay" />
         <div className="profile-hero-copy">
-          <a href="#profile-card" className="profile-hero-button">My Profile</a>
+          <h1 className="profile-hero-title">Every Journey Tells a Story</h1>
+          <p className="profile-hero-quote">"Travel isn't always about the destination, it's about the memories you create along the way."</p>
         </div>
       </section>
 
-      {/* MAIN CONTENT CONTAINER */}
-      <p className='text'>Welcome Back, Traveler</p>
-
       <main className="profile-main">
-        
-        {/* PERSONAL INFORMATION CARD */}
-        <section id="profile-card" className="profile-card">
-          <div className="profile-avatar-container">
-            <div className="profile-avatar">
-              <img src={avatarSrc} alt="Profile avatar" />
-            </div>
-            <button
-              className="profile-action-btn photo-btn"
-              type="button"
-              onClick={handleChangePhoto}
-            >
-              <FaCamera /> Change Photo
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden-file-input"
-              accept="image/*"
-              onChange={handlePhotoSelected}
-            />
-          </div>
-
+        {/* Profile Card */}
+        <section className="profile-card">
           <div className="profile-card-info">
             <h2>Personal Information</h2>
-            
             <div className="profile-detail-grid">
               <div className="profile-detail-row">
-                <FaUser className="detail-icon" />
-                <span className="detail-label">Full Name</span>
+                <FaUser className="profile-detail-icon" />
+                <span className="profile-detail-label">Full Name</span>
                 {isEditing ? (
-                  <input
-                    className="profile-detail-input"
-                    value={profile.fullName}
-                    onChange={e => handleInputChange('fullName', e.target.value)}
-                  />
+                  <input className="profile-detail-input" value={profile.fullName} onChange={e => handleInputChange('fullName', e.target.value)} />
                 ) : (
                   <span className="profile-detail-value">{profile.fullName}</span>
                 )}
               </div>
               <div className="profile-detail-row">
-                <FaEnvelope className="detail-icon" />
-                <span className="detail-label">Email</span>
-                {isEditing ? (
-                  <input
-                    className="profile-detail-input"
-                    value={profile.email}
-                    onChange={e => handleInputChange('email', e.target.value)}
-                  />
-                ) : (
-                  <span className="profile-detail-value">{profile.email}</span>
-                )}
+                <FaEnvelope className="profile-detail-icon" />
+                <span className="profile-detail-label">Email Address</span>
+                <span className="profile-detail-value">{profile.email}</span>
               </div>
               <div className="profile-detail-row">
-                <FaPhone className="detail-icon" />
-                <span className="detail-label">Phone</span>
+                <FaPhone className="profile-detail-icon" />
+                <span className="profile-detail-label">Phone Number</span>
                 {isEditing ? (
-                  <input
-                    className="profile-detail-input"
-                    value={profile.phone}
-                    onChange={e => handleInputChange('phone', e.target.value)}
-                  />
+                  <input className="profile-detail-input" value={profile.phone} onChange={e => handleInputChange('phone', e.target.value)} />
                 ) : (
                   <span className="profile-detail-value">{profile.phone}</span>
                 )}
               </div>
-              <div className="profile-detail-row">
-                <FaMapMarkerAlt className="detail-icon" />
-                <span className="detail-label">Address</span>
-                {isEditing ? (
+            </div>
+
+            {/* Password Change Panel */}
+            {showPasswordChange && (
+              <div className="profile-password-panel">
+                <h3 className="profile-password-title">Change Password</h3>
+                <div className="profile-password-field">
+                  <label className="profile-password-label" htmlFor="new-password">New Password</label>
                   <input
+                    id="new-password"
                     className="profile-detail-input"
-                    value={profile.address}
-                    onChange={e => handleInputChange('address', e.target.value)}
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={e => handlePasswordFieldChange('newPassword', e.target.value)}
                   />
-                ) : (
-                  <span className="profile-detail-value">{profile.address}</span>
-                )}
+                </div>
+                <div className="profile-password-field">
+                  <label className="profile-password-label" htmlFor="confirm-password">Confirm Password</label>
+                  <input
+                    id="confirm-password"
+                    className="profile-detail-input"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={e => handlePasswordFieldChange('confirmPassword', e.target.value)}
+                  />
+                </div>
+                <div className="profile-button-row">
+                  <button className="profile-btn profile-btn-save-password" type="button" onClick={handlePasswordSave}>
+                    <FaLock /> Save Password
+                  </button>
+                </div>
               </div>
-              <div className="profile-detail-row">
-                <FaRegCalendarAlt className="detail-icon" />
-                <span className="detail-label">Date Joined</span>
-                <span className="profile-detail-value">{profile.joined}</span>
-              </div>
-            </div>
+            )}
 
+            {/* Action Buttons */}
             <div className="profile-button-row">
-              <button
-                className="profile-action-btn edit-btn"
-                type="button"
-                onClick={handleEditProfile}
-              >
-                <FaEdit />
-                {isEditing ? ' Save Profile' : ' Edit Profile'}
-              </button>
-              {isEditing && (
-                <button
-                  className="profile-action-btn cancel-btn"
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Cancel
-                </button>
+              {isEditing ? (
+                <>
+                <div className="end-btn">
+                  <button className="profile-btn profile-btn-edit" type="button" onClick={handleEditProfile}>
+                    <FaSave /> Save Profile
+                  </button>
+                  <button
+                    className="profile-btn profile-btn-cancel"
+                    type="button"
+                    onClick={() => {
+                      setIsEditing(false)
+                      setShowPasswordChange(false)
+                      setPasswordForm({ newPassword: '', confirmPassword: '' })
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button className="profile-btn profile-btn-edit" type="button" onClick={handleEditProfile}>
+                    <FaEdit /> Edit Profile
+                  </button>
+                  <button className="profile-btn profile-btn-delete" type="button" onClick={handleDeleteAccount}>
+                    <FaTrash /> Delete Account
+                  </button>
+                </>
               )}
-              <button className="profile-action-btn password-btn" type="button">
-                <FaLock /> Change Password
-              </button>
             </div>
           </div>
         </section>
 
-        {/* TRAVEL STATS COUNTER */}
-        <section className="profile-stats">
-          <div className="stat-card">
-            <FaGlobe className="stat-icon" />
-            <p className="stat-number">8</p>
-            <p className="stat-label">Countries Visited</p>
-          </div>
-          <div className="stat-card">
-            <FaPlane className="stat-icon" />
-            <p className="stat-number">12</p>
-            <p className="stat-label">Trips Completed</p>
-          </div>
-          <div className="stat-card">
-            <FaSuitcase className="stat-icon" />
-            <p className="stat-number">15</p>
-            <p className="stat-label">Bookings Made</p>
-          </div>
-          <div className="stat-card">
-            <FaStar className="stat-icon" />
-            <p className="stat-number">5</p>
-            <p className="stat-label">Reviews Given</p>
-          </div>
-        </section>
-
-        {/* UPCOMING TRIPS SECTION */}
+        {/* Saved Itineraries */}
         <section className="profile-section">
-          <h2>My Upcoming Trips</h2>
-          <div className="upcoming-grid">
-            <article className="trip-card">
-              <div className="trip-img-wrapper">
-                <img src="images/chitwan.png" alt="Chitwan Package" />
-              </div>
-              <div className="trip-card-content">
-                <h3>Chitwan Package</h3>
-                <p className="trip-date">📅 15 June 2026</p>
-                <p className="trip-route">✈️ South Korea → Chitwan</p>
-                <div className="trip-card-footer">
-                  <span className="badge badge-confirmed">Confirmed</span>
-                  <button type="button" className="view-details-btn">View Details</button>
+          <h2>Saved Itineraries</h2>
+          <div className="profile-dest-grid">
+            {savedItineraries.length === 0 ? (
+              <div className="profile-empty-state">No saved itineraries yet. Generate one from the planner and save it to see it here.</div>
+            ) : savedItineraries.map(item => (
+              <article className="profile-dest-card" key={item.id}>
+                <div className="profile-dest-img-wrapper">
+                  <img src={sampleImage} alt={item.title} />
+                  <button className="profile-heart-btn" type="button" aria-label="Favorite"><FaHeart /></button>
                 </div>
-              </div>
-            </article>
-
-            <article className="trip-card">
-              <div className="trip-img-wrapper">
-                <img src="images/bhaktapur.png" alt="Bhaktapur Package" />
-              </div>
-              <div className="trip-card-content">
-                <h3>Bhaktapur Package</h3>
-                <p className="trip-date">📅 25 September 2026</p>
-                <p className="trip-route">✈️ South Korea → Bhaktapur</p>
-                <div className="trip-card-footer">
-                  <span className="badge badge-confirmed">Confirmed</span>
-                  <button type="button" className="view-details-btn">View Details</button>
+                <div className="profile-dest-content">
+                  {editingId === item.id ? (
+                    <>
+                      <input className="profile-detail-input" value={draftName} onChange={(e) => setDraftName(e.target.value)} />
+                      <textarea className="profile-detail-input" value={draftSummary} onChange={(e) => setDraftSummary(e.target.value)} style={{ marginTop: 8, minHeight: 72 }} />
+                      <div className="profile-button-row" style={{ marginTop: 8 }}>
+                        <button className="profile-btn profile-btn-edit" type="button" onClick={() => saveEdit(item.id)}><FaSave /> Save</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h3>{item.title}</h3>
+                      <p>{item.destination}</p>
+                      <p className="profile-saved-meta">{item.summary}</p>
+                      <p className="profile-saved-meta">Saved: {item.createdAt}</p>
+                      <div className="profile-button-row" style={{ marginTop: 8 }}>
+                        <button className="profile-btn profile-btn-edit" type="button" onClick={() => startEditing(item)}><FaEdit /> Edit</button>
+                        <button className="profile-btn profile-btn-delete" type="button" onClick={() => deleteItinerary(item.id)}><FaTrash /> Delete</button>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        {/* TRAVEL HISTORY TABLE */}
-        <section className="profile-section">
-          <h2>Recent Travel History</h2>
-          <div className="table-responsive">
-            <table className="profile-table">
-              <thead>
-                <tr>
-                  <th>Destination</th>
-                  <th>Date</th>
-                  <th>Package</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><img src="images/pokhara.png" alt="" className="table-thumb" /> Pokhara</td>
-                  <td>Mar 2026</td>
-                  <td>Family Tour</td>
-                  <td><span className="badge badge-completed">Completed</span></td>
-                </tr>
-                <tr>
-                  <td><img src="images/kathmandu.png" alt="" className="table-thumb" /> Kathmandu</td>
-                  <td>Feb 2026</td>
-                  <td>Wildlife Tour</td>
-                  <td><span className="badge badge-completed">Completed</span></td>
-                </tr>
-                <tr>
-                  <td><img src="images/mustang.png" alt="" className="table-thumb" /> Mustang</td>
-                  <td>Dec 2025</td>
-                  <td>Holiday Package</td>
-                  <td><span className="badge badge-completed">Completed</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="profile-section">
-          <h2>Favourite Destinations</h2>
-          <div className="dest-grid">
-            <article className="destination-card">
-              <div className="dest-img-wrapper">
-                <img src="images/pokhara.png" alt="Pokhara" />
-                <button className="heart-btn" type="button" aria-label="Favorite"><FaHeart /></button>
-              </div>
-              <div className="destination-content">
-                <h3>Pokhara</h3>
-                <p>Nepal</p>
-              </div>
-            </article>
-            <article className="destination-card">
-              <div className="dest-img-wrapper">
-                <img src="images/kathmandu.png" alt="Kathmandu" />
-                <button className="heart-btn liked" type="button" aria-label="Favorite"><FaHeart /></button>
-              </div>
-              <div className="destination-content">
-                <h3>Kathmandu</h3>
-                <p>Nepal</p>
-              </div>
-            </article>
-            <article className="destination-card">
-              <div className="dest-img-wrapper">
-                <img src="images/mustang.png" alt="Mustang" />
-                <button className="heart-btn" type="button" aria-label="Favorite"><FaHeart /></button>
-              </div>
-              <div className="destination-content">
-                <h3>Mustang</h3>
-                <p>Nepal</p>
-              </div>
-            </article>
+              </article>
+            ))}
           </div>
         </section>
       </main>
-
-            < Footer />
+      
+      <Footer />
     </div>
   )
 }

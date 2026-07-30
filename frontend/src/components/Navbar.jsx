@@ -9,8 +9,11 @@ function Navbar() {
   const handleLogout = () => {
     // Clear all auth data
     localStorage.removeItem('token');
+    localStorage.removeItem("user");
+    localStorage.removeItem("role");
     sessionStorage.clear();
-    navigate("/login");
+    navigate("/login", { replace: true }); 
+    // Replace true prevents the user from pressing the browser's Back button and returning to the previous page in the history.
   };
 
   const [scrolled, setScrolled] = useState(false);
@@ -30,13 +33,17 @@ function Navbar() {
         <div className="container">
             {/*--Logo-- */}
             <div className="logo">
-              <NavLink to="/">Go Travel</NavLink>
+              <NavLink to="/dashboard">Go Travel</NavLink>
             </div>
 
             {/* --Navigation Links-- */}
             <nav>
 
-              <NavLink to="/" className={({ isActive }) => isActive ? "active" : "" } >
+              {/* <NavLink to="/" className={({ isActive }) => isActive ? "active" : "" } >
+                Dashboard
+              </NavLink> */}
+
+              <NavLink to="/dashboard" className={({ isActive }) => (isActive ? "active" : "")} >
                 Dashboard
               </NavLink>
 
@@ -57,11 +64,6 @@ function Navbar() {
               </NavLink>
 
           </nav>
-
-            {/* --Logout button-- */}
-            {/* <NavLink to="/login" className="logout">
-              Logout
-            </NavLink> */}
 
             <button onClick={handleLogout} className="logout"> Logout </button>
 

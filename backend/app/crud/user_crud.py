@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+from app.crud.admin_activity_crud import log_admin_activity
+
 # Get User By Email
 
 def get_user_by_email(db: Session, email: str):
@@ -14,7 +16,6 @@ def get_user_by_email(db: Session, email: str):
                 phone_number,
                 password,
                 terms_accepted,
-                confirm_password,
                 is_verified,
                 otp,
                 otp_expiry,
@@ -40,7 +41,6 @@ def get_user_by_id(db: Session, user_id: int):
                 phone_number,
                 password,
                 terms_accepted,
-                confirm_password,
                 is_verified,
                 otp,
                 otp_expiry,
@@ -82,7 +82,6 @@ def create_user(
     phone_number: str,
     hashed_password: str,
     terms_accepted: bool,
-    confirm_password: str,
     otp: str = None,
     otp_expiry=None,
     is_verified: bool = False,
@@ -98,7 +97,6 @@ def create_user(
                 phone_number,
                 password,
                 terms_accepted,
-                confirm_password,
                 is_verified,
                 otp,
                 otp_expiry,
@@ -112,7 +110,6 @@ def create_user(
                 :phone_number,
                 :password,
                 :terms_accepted,
-                :confirm_password,
                 :is_verified,
                 :otp,
                 :otp_expiry,
@@ -125,7 +122,6 @@ def create_user(
             "phone_number": phone_number,
             "password": hashed_password,
             "terms_accepted": terms_accepted,
-            "confirm_password": confirm_password,
             "is_verified": is_verified,
             "otp": otp,
             "otp_expiry": otp_expiry,
@@ -134,6 +130,12 @@ def create_user(
     )
 
     db.commit()
+
+    log_admin_activity(
+        db,
+        "User Added",
+        f"Added new user '{name}'"
+    )
 
 # Verify User
 
@@ -192,6 +194,27 @@ def update_user_status(
     status: str
 ):
 
+    # Get current user information
+    user = db.execute(
+        text("""
+            SELECT
+                name,
+                status
+            FROM users
+            WHERE user_id = :user_id
+        """),
+        {
+            "user_id": user_id
+        }
+    ).mappings().first()
+
+    if not user:
+        return False
+
+    old_status = user["status"]
+    user_name = user["name"]
+
+    # Update status
     result = db.execute(
         text("""
             UPDATE users
@@ -206,6 +229,13 @@ def update_user_status(
 
     db.commit()
 
+    # Log activity
+    log_admin_activity(
+        db,
+        "User Status Updated",
+        f"Changed status of '{user_name}' from {old_status} to {status}"
+    )
+
     return result.rowcount > 0
 
 # Delete User
@@ -215,10 +245,26 @@ def delete_user(
     user_id: int
 ):
 
+    user = db.execute(
+        text("""
+            SELECT name
+            FROM users
+            WHERE user_id=:user_id
+        """),
+        {
+            "user_id": user_id
+        }
+    ).mappings().first()
+
+    if not user:
+        return False
+
+    user_name = user["name"]
+
     result = db.execute(
         text("""
             DELETE FROM users
-            WHERE user_id = :user_id
+            WHERE user_id=:user_id
         """),
         {
             "user_id": user_id
@@ -226,5 +272,11 @@ def delete_user(
     )
 
     db.commit()
+
+    log_admin_activity(
+        db,
+        "User Deleted",
+        f"Deleted user '{user_name}'"
+    )
 
     return result.rowcount > 0

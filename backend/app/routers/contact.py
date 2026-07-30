@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Request, APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
+from app.security.limiter import limiter
 
 from app.database import get_db
 
@@ -18,7 +20,9 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=ContactResponse)
+@limiter.limit("5/minute")
 def send_message(
+    request: Request,
     data: ContactCreate,
     db: Session = Depends(get_db)
 ):

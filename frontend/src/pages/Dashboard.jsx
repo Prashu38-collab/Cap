@@ -4,7 +4,6 @@ import WeatherSection from "../components/WeatherSection";
 import MapSection from "../components/MapSection";
 import TravelCategories from "../components/TravelCategories";
 import RecommendedItineraries from "../components/RecommendedItineraries";
-import Feedback from "../components/Feedback";
 import Footer from "../components/Footer";
 
 import "../styles/dashboard.css";
@@ -18,7 +17,6 @@ function Dashboard() {
       <MapSection />
       <TravelCategories />
       <RecommendedItineraries />
-      <Feedback />
       <Footer />
     </>
   );

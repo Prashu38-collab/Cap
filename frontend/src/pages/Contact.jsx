@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import '../styles/contact.css'
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import axios from "axios";
+import api from "../utils/api";
 
 import {
 FaUser,
@@ -22,8 +22,6 @@ phone: '',
 subject: '',
 message: ''
 })
-
-const API_URL = "http://localhost:8000/contact";
 
 function updateForm(event) {
 const { name, value } = event.target
@@ -50,7 +48,7 @@ async function submitForm(event) {
   }
 
   try{
-    const response = await axios.post(API_URL, form);
+    const response = await api.post("/contact/", form);
     alert(response.data.message);
     setForm({
     name:"",

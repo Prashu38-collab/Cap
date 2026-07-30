@@ -1,4 +1,3 @@
-// import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 function MapSection() {
   return (
@@ -107,25 +106,6 @@ function MapSection() {
         </div>
         
       </div>
-
-      {/* <MapContainer
-        center={[27.7172, 85.3240]}
-        zoom={12}
-        scrollWheelZoom={true}
-        className="map-container"
-      >
-        <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        <Marker position={[27.7172, 85.3240]}>
-          <Popup>
-            Kathmandu, Nepal
-          </Popup>
-        </Marker>
-
-      </MapContainer> */}
 
     </section>
   );

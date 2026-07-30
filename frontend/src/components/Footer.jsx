@@ -26,7 +26,7 @@ function Footer() {
 
         <div className="footer-links">
           <ul>
-            <li><Link to="/">Dashboard</Link></li>
+            <li><Link to="/dashboard">Dashboard</Link></li>
             <li><Link to="/plantrip">Plan My Trip</Link></li>
             <li><Link to="/about">About Us</Link></li>
             <li><Link to="/contact">Contact Us</Link></li>

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
+import api from "../../utils/api.js";
 import Swal from "sweetalert2";
 
 function ManageGeneratedItineraries() {
   const navigate = useNavigate();
-  const API = "http://localhost:8000/api/admin/generated-itineraries";
 
   const [itineraries, setItineraries] = useState([]);
   const [selectedItinerary, setSelectedItinerary] = useState(null);
@@ -17,7 +17,7 @@ function ManageGeneratedItineraries() {
   // Fetch Itineraries
   const fetchItineraries = async () => {
     try {
-      const res = await axios.get(API);
+      const res = await api.get("/api/admin/generated-itineraries");
       setItineraries(res.data);
     } catch (err) {
       console.error(err);
@@ -44,7 +44,7 @@ function ManageGeneratedItineraries() {
     if (!result.isConfirmed) return;
 
     try {
-      const response = await axios.delete(`${API}/${id}`);
+      const response = await api.delete(`/api/admin/generated-itineraries/${id}`);
 
       await Swal.fire({
         icon: "success",
@@ -68,7 +68,7 @@ function ManageGeneratedItineraries() {
   // Download
   const handleDownload = async (id) => {
     try {
-      const response = await axios.get(`${API}/${id}`);
+       const response = await api.get(`/api/admin/generated-itineraries/${id}`);
       const data = response.data;
 
       const blob = new Blob(
@@ -96,7 +96,7 @@ function ManageGeneratedItineraries() {
   // View
   const handleView = async (id) => {
     try {
-      const res = await axios.get(`${API}/${id}`);
+      const res = await api.get(`/api/admin/generated-itineraries/${id}`);
       setSelectedItinerary(res.data);
       setShowView(true);
     } catch (error) {

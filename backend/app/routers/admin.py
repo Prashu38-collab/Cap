@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Request, APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
+# from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
 from app.database import get_db
+from app.security.limiter import limiter
 
 import re
 
@@ -11,8 +12,14 @@ from app.schemas.admin_schema import (
     StatusUpdate
 )
 
+from app.security.password import hash_password
+from app.security.admin_authorize import verify_admin
+
 from app.crud.admin_crud import (
-    get_dashboard_stats
+    get_dashboard_stats,
+    get_destinations_per_district,
+    get_category_distribution,
+    get_recent_messages
 )
 
 from app.crud.contact_crud import (
@@ -61,9 +68,8 @@ from app.crud.generated_itinerary_crud import (
     delete_generated_itinerary
 )
 
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
+from app.crud.admin_activity_crud import (
+    get_recent_admin_activities
 )
 
 router = APIRouter(
@@ -75,14 +81,51 @@ router = APIRouter(
 class MessageStatus(BaseModel):
     status: str
 
+# ------------------------------------------------DASHBOARD-----------------------------------------
+
 # DASHBOARD STATISTICS
 
 @router.get("/stats")
 def dashboard_stats(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
-
     return get_dashboard_stats(db)
+
+# DASHBOARD DISTRICT CHART
+
+@router.get("/dashboard/districts")
+def dashboard_districts(
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
+):
+    return get_destinations_per_district(db)
+
+# CATEGORY DISTRIBUTION
+
+@router.get("/dashboard/category-distribution")
+def dashboard_category_distribution(
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
+):
+    return get_category_distribution(db)
+
+# RECENT MESSAGES
+
+@router.get("/dashboard/recent-messages")
+def dashboard_recent_messages(
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
+):
+    return get_recent_messages(db)
+
+# RECENT ACTIVITIES
+@router.get("/dashboard/recent-activities")
+def dashboard_recent_activities(
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
+):
+    return get_recent_admin_activities(db)
 
 
 # -----------------------------------------------------------USERS-------------------------------------------------------------------
@@ -90,8 +133,11 @@ def dashboard_stats(
 # GET ALL USERS
 
 @router.get("/users")
+@limiter.limit("10/minute")
 def get_users(
-    db: Session = Depends(get_db)
+    request: Request,
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     users = get_all_users(db)
@@ -111,9 +157,12 @@ def get_users(
 # CREATE USER
 
 @router.post("/users")
+@limiter.limit("10/minute")
 def add_user(
+    request: Request,
     user: AdminCreateUser,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     # Name Validation
@@ -186,8 +235,7 @@ def add_user(
         )
 
     # Hash Password
-
-    hashed_password = pwd_context.hash(password)
+    hashed_password = hash_password(password)
 
     # Create User
 
@@ -198,7 +246,6 @@ def add_user(
         phone_number=user.phone_number,
         hashed_password=hashed_password,
         terms_accepted=True,
-        confirm_password=password,
         otp=None,
         otp_expiry=None
     )
@@ -221,9 +268,12 @@ def add_user(
 # DELETE USER
 
 @router.delete("/users/{user_id}")
+@limiter.limit("10/minute")
 def remove_user(
+    request: Request,
     user_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     success = delete_user(
@@ -245,10 +295,13 @@ def remove_user(
 # UPDATE USER STATUS
 
 @router.put("/users/{user_id}/status")
+@limiter.limit("10/minute")
 def change_status(
+    request: Request,
     user_id: int,
     data: StatusUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     if data.status not in [
@@ -283,8 +336,11 @@ def change_status(
 # GET ALL CONTACT MESSAGES
 
 @router.get("/messages")
+@limiter.limit("10/minute")
 def admin_get_messages(
-    db: Session = Depends(get_db)
+    request: Request,
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     rows = get_all_messages(db)
@@ -307,10 +363,13 @@ def admin_get_messages(
 # UPDATE MESSAGE STATUS
 
 @router.put("/messages/{message_id}/read")
+@limiter.limit("10/minute")
 def admin_update_message_status(
+    request: Request,
     message_id: int,
     # data: MessageStatus,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     success = update_message_status(
@@ -333,9 +392,12 @@ def admin_update_message_status(
 # DELETE MESSAGE
 
 @router.delete("/messages/{message_id}")
+@limiter.limit("10/minute")
 def admin_delete_message(
+    request: Request,
     message_id:int,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     success=delete_message(
@@ -358,8 +420,11 @@ def admin_delete_message(
 # GET ALL DESTINATIONS
 
 @router.get("/destinations")
+@limiter.limit("10/minute")
 def admin_get_destinations(
-    db: Session = Depends(get_db)
+    request: Request,
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     destinations = get_all_destinations(db)
@@ -391,9 +456,12 @@ def admin_get_destinations(
 # GET ONE DESTINATION
 
 @router.get("/destinations/{place_id}")
+@limiter.limit("10/minute")
 def admin_get_destination(
+    request: Request,
     place_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
     destination = get_destination_by_id(db, place_id)
 
@@ -427,9 +495,12 @@ def admin_get_destination(
 # ADD DESTINATION
 
 @router.post("/destinations")
+@limiter.limit("10/minute")
 def admin_add_destination(
+    request: Request,
     destination: DestinationCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
     create_destination(
         db,
@@ -443,10 +514,13 @@ def admin_add_destination(
 # UPDATE DESTINATION
 
 @router.put("/destinations/{place_id}")
+@limiter.limit("10/minute")
 def admin_update_destination(
+    request: Request,
     place_id: int,
     destination: DestinationUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
     success = update_destination(
         db,
@@ -467,9 +541,12 @@ def admin_update_destination(
 # DELETE DESTINATION
 
 @router.delete("/destinations/{place_id}")
+@limiter.limit("10/minute")
 def admin_delete_destination(
+    request: Request,
     place_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
     success = delete_destination(
         db,
@@ -492,8 +569,11 @@ def admin_delete_destination(
 # GET ALL HOTELS
 
 @router.get("/hotels")
+@limiter.limit("10/minute")
 def admin_get_hotels(
-    db: Session = Depends(get_db)
+    request: Request,
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     return get_all_hotels(db)
@@ -502,9 +582,12 @@ def admin_get_hotels(
 # GET HOTEL
 
 @router.get("/hotels/{hotel_id}")
+@limiter.limit("10/minute")
 def admin_get_hotel(
+    request: Request,
     hotel_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     hotel = get_hotel_by_id(
@@ -524,9 +607,12 @@ def admin_get_hotel(
 # ADD HOTEL
 
 @router.post("/hotels")
+@limiter.limit("10/minute")
 def admin_add_hotel(
+    request: Request,
     hotel: HotelCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     if hotel.review_score < 0 or hotel.review_score > 5:
@@ -554,10 +640,13 @@ def admin_add_hotel(
 # UPDATE HOTEL
 
 @router.put("/hotels/{hotel_id}")
+@limiter.limit("10/minute")
 def admin_update_hotel(
+    request: Request,
     hotel_id: int,
     hotel: HotelUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     if hotel.review_score < 0 or hotel.review_score > 5:
@@ -586,9 +675,12 @@ def admin_update_hotel(
 # DELETE HOTEL
 
 @router.delete("/hotels/{hotel_id}")
+@limiter.limit("10/minute")
 def admin_delete_hotel(
+    request: Request,
     hotel_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     success = delete_hotel(
@@ -612,17 +704,23 @@ def admin_delete_hotel(
 # GET ALL GENERATED ITINERARIES
 
 @router.get("/generated-itineraries")
+@limiter.limit("10/minute")
 def admin_get_generated_itineraries(
-    db: Session = Depends(get_db)
+    request: Request,
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
     return get_all_generated_itineraries(db)
 
 # GET ONE GENERATED ITINERARY
 
 @router.get("/generated-itineraries/{itinerary_id}")
+@limiter.limit("10/minute")
 def admin_get_generated_itinerary(
+    request: Request,
     itinerary_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
     itinerary = get_generated_itinerary_by_id(
         db,
@@ -640,9 +738,12 @@ def admin_get_generated_itinerary(
 # DELETE GENERATED ITINERARY
 
 @router.delete("/generated-itineraries/{itinerary_id}")
+@limiter.limit("10/minute")
 def admin_delete_generated_itinerary(
+    request: Request,
     itinerary_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
     success = delete_generated_itinerary(
         db,

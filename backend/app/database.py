@@ -1,7 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = "postgresql://postgres.fzmwbkmbumgfmqelvmjo:CAPSTONE%401234%40@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres"
+from app.config import DATABASE_URL
+
+# DATABASE_URL = "postgresql://postgres.fzmwbkmbumgfmqelvmjo:CAPSTONE%401234%40@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres"
+
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,

@@ -10,8 +10,6 @@ import Profile from "./pages/Profile";
 import GenerateItinerary from "./pages/GenerateItinerary";
 import RecommendedItinerary from "./pages/RecommendedItinerary";
 
-import { getCurrentUser } from "./utils/authStorage";
-
 import AdminDashboard from "./pages/AdminDashboard";
 import DashboardSection from "./components/admin/AdminDashboardSection";
 import UsersSection from "./components/admin/ManageUsers";
@@ -20,38 +18,54 @@ import ManageDestinations from "./components/admin/ManageDestinations";
 import ManageHotels from "./components/admin/ManageHotels";
 import ManageGeneratedItineraries from './components/admin/ManageGeneratedItineraries';
 
-const ProtectedRoute = ({ children }) => {
-  return getCurrentUser() ? children : <Navigate to="/login" replace />;
+import NotFound from "./pages/NotFound";
+
+const UserProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  return token && role === "user"
+  ? children
+  : <Navigate to="/login" replace />;
+};
+
+const AdminProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  return token && role === "admin"
+  ? children
+  : <Navigate to="/login" replace />;
 };
 
 function App() {
 
-  const isAuthenticated = !!getCurrentUser();
-
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/plantrip" element={<PlanTrip />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/profile" element={<Profile />} />
+
+      <Route path="/" element={<Login />} />
+      <Route path="/dashboard" element={<UserProtectedRoute><Dashboard /></UserProtectedRoute>} />
+      <Route path="/plantrip" element={<UserProtectedRoute><PlanTrip /></UserProtectedRoute>} />
+      <Route path="/about" element={<UserProtectedRoute><About /></UserProtectedRoute>} />
+      <Route path="/contact" element={<UserProtectedRoute><Contact /></UserProtectedRoute>} />
+      <Route path="/profile" element={<UserProtectedRoute><Profile /></UserProtectedRoute>} />
+      <Route path="/generate" element={<UserProtectedRoute><GenerateItinerary /></UserProtectedRoute>} />
+      {/* <Route path="/forgot-password" element={<UserProtectedRoute><ForgotPassword /></UserProtectedRoute>} /> */}
+      <Route path="/recommended/:slug" element={<UserProtectedRoute><RecommendedItinerary /></UserProtectedRoute>} />
+
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
-      <Route path="/generate" element={<GenerateItinerary />} />
-      <Route path="/recommended/:slug" element={<RecommendedItinerary />} />
-
-      <Route path="/admin" element={<AdminDashboard />}>
-          <Route index element={<DashboardSection />} />
-          <Route path="users" element={<UsersSection />} />
-          <Route path="messages" element={<ContactSection />} />
-          <Route path="destinations" element={<ManageDestinations />} />
-          <Route path="hotels" element={<ManageHotels />} />
-          <Route path="generated-itineraries" element={<ManageGeneratedItineraries />} />
+      <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>}>
+        <Route index element={<DashboardSection />} />
+        <Route path="users" element={<UsersSection />} />
+        <Route path="messages" element={<ContactSection />} />
+        <Route path="destinations" element={<ManageDestinations />} />
+        <Route path="hotels" element={<ManageHotels />} />
+        <Route path="generated-itineraries" element={<ManageGeneratedItineraries />} />
       </Route>
 
-      <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
+      <Route path="*" element={<NotFound />} />
 
     </Routes>
   );

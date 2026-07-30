@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+from app.crud.admin_activity_crud import log_admin_activity
 
 # Create Contact Message
 
@@ -69,17 +70,56 @@ def get_all_messages(db: Session):
 
 # Update Status
 
+# def update_message_status(
+#     db: Session,
+#     message_id: int,
+#     status: str
+# ):
+
+#     result = db.execute(
+#         text("""
+#             UPDATE contact_messages
+#             SET status=:status
+#             WHERE message_id=:message_id
+#         """),
+#         {
+#             "status": status,
+#             "message_id": message_id
+#         }
+#     )
+
+#     db.commit()
+
+#     return result.rowcount > 0
+
 def update_message_status(
     db: Session,
     message_id: int,
     status: str
 ):
 
+    # Get sender name before updating
+    message = db.execute(
+        text("""
+            SELECT
+                name,
+                subject
+            FROM contact_messages
+            WHERE message_id = :message_id
+        """),
+        {
+            "message_id": message_id
+        }
+    ).mappings().first()
+
+    if not message:
+        return False
+
     result = db.execute(
         text("""
             UPDATE contact_messages
-            SET status=:status
-            WHERE message_id=:message_id
+            SET status = :status
+            WHERE message_id = :message_id
         """),
         {
             "status": status,
@@ -88,6 +128,12 @@ def update_message_status(
     )
 
     db.commit()
+
+    log_admin_activity(
+        db,
+        "Message Status Updated",
+        f"Marked message from '{message['name']}' as {status}"
+    )
 
     return result.rowcount > 0
 
@@ -98,10 +144,27 @@ def delete_message(
     message_id: int
 ):
 
+    # Get message details before deleting
+    message = db.execute(
+        text("""
+            SELECT
+                name,
+                subject
+            FROM contact_messages
+            WHERE message_id = :message_id
+        """),
+        {
+            "message_id": message_id
+        }
+    ).mappings().first()
+
+    if not message:
+        return False
+
     result = db.execute(
         text("""
             DELETE FROM contact_messages
-            WHERE message_id=:message_id
+            WHERE message_id = :message_id
         """),
         {
             "message_id": message_id
@@ -109,5 +172,11 @@ def delete_message(
     )
 
     db.commit()
+
+    log_admin_activity(
+        db,
+        "Message Deleted",
+        f"Deleted message from '{message['name']}' ({message['subject']})"
+    )
 
     return result.rowcount > 0

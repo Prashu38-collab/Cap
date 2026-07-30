@@ -68,7 +68,7 @@ export default function AboutUs() {
 <div className="team-card">
   <img src="images/Kritika.jpg" alt="E" className="team-image" />
   <h3>Kritika Maharjan </h3>
-  <p>Role: Frontend, Security</p>
+  <p>Role: Frontend, Backend, <br></br>Security</p>
 </div>
 
 <div className="team-card">

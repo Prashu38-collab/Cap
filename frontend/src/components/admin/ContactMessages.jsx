@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import axios from "axios";
+import api from "../../utils/api.js";
 import Swal from "sweetalert2";
 
 function ContactSection() {
-
-  const API_URL = "http://localhost:8000/api/admin/messages";
 
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
@@ -39,15 +37,11 @@ function ContactSection() {
 
   useEffect(() => {
       fetchMessages();
-      // const interval = setInterval(() => {
-      //     fetchMessages();
-      // }, 5000);
-      // return () => clearInterval(interval);
   }, []);
 
   const fetchMessages = async () => {
     try {
-      const response = await axios.get(API_URL);
+      const response = await api.get("/api/admin/messages");
       setMessages(response.data);
       const maxPage = Math.ceil(response.data.length / messagesPerPage);
       if (currentPage > maxPage && maxPage > 0) {
@@ -66,11 +60,7 @@ const handleView = async (message) => {
 
     try {
       if (message.status === "Unread") {
-
-        const response = await axios.put(
-            `${API_URL}/${message.message_id}/read`
-        );
-
+        const response = await api.put(`/api/admin/messages/${message.message_id}/read`);
         console.log(response.data);
       }
 
@@ -112,7 +102,7 @@ const handleView = async (message) => {
         return;
 
     try {
-        await axios.delete(`${API_URL}/${message_id}`);
+        await api.delete(`/api/admin/messages/${message_id}`);
         await Swal.fire({
             icon: "success",
             title: "Deleted!",

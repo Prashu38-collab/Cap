@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "dev": "concurrently \"cd backend && .venv\\Scripts\\activate && uvicorn app.main:app --reload\" \"cd frontend && npm run dev\""
+    "dev": "concurrently \"cd backend && uvicorn app.main:app --reload\" \"cd frontend && npm run dev\""
   },
   "devDependencies": {
-    "concurrently": "^10.0.3"
+    "concurrently": "^10.0.4"
   }
 }
