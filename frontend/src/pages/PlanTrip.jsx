@@ -7,7 +7,7 @@ import HotelSelection, { HotelSelectionMap } from "../components/HotelSelection"
 import TrekSelection from "../components/TrekSelection";
 import TrekItineraryResult from "../components/TrekItineraryResult";
 import PlanTripMap from "../components/PlanTripMap";
-import { createPreference, generateFromHotel, generateTrek, selectTrekHotel, getPlacesByDistrict } from "../utils/api";
+import { createPreference, generateFromHotel, checkWeather, generateTrek, selectTrekHotel, getPlacesByDistrict } from "../utils/api";
 
 import "../styles/plantrip.css";
 
@@ -49,6 +49,9 @@ function PlanTrip() {
   const [selectedTransitDistricts, setSelectedTransitDistricts] = useState([]);
   const [noTrekFallback, setNoTrekFallback] = useState(null);
   const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+
+  const [weatherAdvisory, setWeatherAdvisory] = useState(null);
+  const [pendingHotelId, setPendingHotelId] = useState(null);
 
   const [trekRecommendation, setTrekRecommendation] = useState(null);
   const [trekDurationMessage, setTrekDurationMessage] = useState(null);
@@ -258,18 +261,94 @@ function PlanTrip() {
     setSubmitting(true);
     setError(null);
     try {
-      const data = await generateFromHotel(prefId, hotelId, {
+      // Check weather first
+      const weatherCheck = await checkWeather(prefId, {
         includeTransit: selectedTransitDistricts.length > 0,
         transitDistricts: selectedTransitDistricts,
       });
+
+      const weatherStatus = weatherCheck?.weather?.status;
+
+      // Weather is favourable or outside forecast → generate normally
+      if (weatherStatus === "favourable" || weatherStatus === "outside_forecast" || weatherStatus === "unavailable") {
+        const data = await generateFromHotel(prefId, hotelId, {
+          includeTransit: selectedTransitDistricts.length > 0,
+          transitDistricts: selectedTransitDistricts,
+        });
+        if (!data?.data?.itinerary || data.data.itinerary.length === 0) {
+          setError("Could not generate itinerary for this selection. Please try a different hotel.");
+          setSubmitting(false);
+          return;
+        }
+        setResult(data);
+        setStep("result");
+      } else {
+        // Weather is unfavourable — show advisory modal
+        setWeatherAdvisory(weatherCheck.weather);
+        setPendingHotelId(hotelId);
+      }
+    } catch (err) {
+      setError(err.message || "Failed to generate itinerary");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleWeatherContinueAnyway = async () => {
+    if (!pendingHotelId) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const data = await generateFromHotel(prefId, pendingHotelId, {
+        includeTransit: selectedTransitDistricts.length > 0,
+        transitDistricts: selectedTransitDistricts,
+        weatherAction: "continue",
+      });
       if (!data?.data?.itinerary || data.data.itinerary.length === 0) {
-        setError("Could not generate itinerary for this selection. Please try a different hotel.");
+        setError("Could not generate itinerary. Please try again.");
         setSubmitting(false);
         return;
       }
+      data.data._weather_advisory = weatherAdvisory;
       setResult(data);
-      setWeatherForecast(data.weather_forecast || []);
+      setWeatherAdvisory(null);
+      setPendingHotelId(null);
       setStep("result");
+    } catch (err) {
+      setError(err.message || "Failed to generate itinerary");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleWeatherAware = async () => {
+    if (!pendingHotelId) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const data = await generateFromHotel(prefId, pendingHotelId, {
+        includeTransit: selectedTransitDistricts.length > 0,
+        transitDistricts: selectedTransitDistricts,
+        weatherAction: "weather_aware",
+      });
+      if (!data?.data?.itinerary || data.data.itinerary.length === 0) {
+        setError("Could not generate itinerary. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+      data.data._weather_advisory = weatherAdvisory;
+      data.data._weather_aware = true;
+      setResult(data);
+      setWeatherAdvisory(null);
+      setPendingHotelId(null);
+      setStep("result");
+
+      const warnings = data.data?._weather_removals;
+      if (warnings?.length > 0) {
+        setTimeout(() => {
+          alert(warnings.map(w => w.warning).join("\n\n"));
+        }, 500);
+      }
     } catch (err) {
       setError(err.message || "Failed to generate itinerary");
     } finally {
@@ -650,6 +729,65 @@ function PlanTrip() {
 
                 <button className="modal-close-btn" onClick={() => { setShowInsufficientModal(false); setStep("form"); }}>
                   Back to Form
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* WEATHER ADVISORY MODAL */}
+          {weatherAdvisory && (
+            <div className="modal-overlay">
+              <div className="modal-card" style={{ maxWidth: "480px" }}>
+                <div className="modal-icon" style={{ fontSize: "36px" }}>🌧️</div>
+                <h2 className="modal-title">{weatherAdvisory.advisory?.title || "Weather Advisory"}</h2>
+                <p className="modal-msg">{weatherAdvisory.advisory?.message || "Adverse weather expected."}</p>
+
+                <div className="modal-stats">
+                  <div className="modal-stat">
+                    <span className="modal-stat-val">{weatherAdvisory.condition || "Unknown"}</span>
+                    <span className="modal-stat-lbl">Forecast</span>
+                  </div>
+                  <div className="modal-stat">
+                    <span className="modal-stat-val">{weatherAdvisory.indoor_alternatives_available ? "Yes" : "No"}</span>
+                    <span className="modal-stat-lbl">Indoor Alternatives</span>
+                  </div>
+                </div>
+
+                <div className="modal-options" style={{ marginTop: "20px" }}>
+                  <button
+                    className="modal-option-btn"
+                    onClick={handleWeatherContinueAnyway}
+                    disabled={submitting}
+                  >
+                    <span className="modal-option-title">Continue Anyway</span>
+                    <span className="modal-option-desc">
+                      Keep outdoor attractions in your itinerary despite the weather.
+                    </span>
+                  </button>
+                  <button
+                    className="modal-option-btn"
+                    onClick={handleWeatherAware}
+                    disabled={submitting}
+                  >
+                    <span className="modal-option-title">Generate Weather-Aware Itinerary</span>
+                    <span className="modal-option-desc">
+                      Only include indoor attractions suitable for bad weather.
+                    </span>
+                  </button>
+                </div>
+
+                <button
+                  className="modal-close-btn"
+                  onClick={() => { setWeatherAdvisory(null); setPendingHotelId(null); }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="modal-close-btn"
+                  onClick={() => { setWeatherAdvisory(null); setPendingHotelId(null); }}
+                >
+                  Cancel
                 </button>
               </div>
             </div>

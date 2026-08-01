@@ -1006,6 +1006,60 @@ def get_nearby_districts(payload: dict, db: Session = Depends(get_db)):
 
 
 # ──────────────────────────────────────────────
+#  POST /itinerary/{preference_id}/check-weather
+# ──────────────────────────────────────────────
+@router.post("/itinerary/{preference_id}/check-weather")
+def check_weather(
+    preference_id: int,
+    payload: dict,
+    db: Session = Depends(get_db)
+):
+    """Check weather advisory for a preference without generating itinerary."""
+    try:
+        from app.logic.transit_corridors import compute_corridor
+        from app.logic.itinerary_engine import get_preferences
+        from app.logic.weather.weather_adapter import check_weather_advisory
+
+        pref_full = get_preferences(db, preference_id)
+        start_d = getattr(pref_full, "starting_district", "") or ""
+        end_d = getattr(pref_full, "ending_district", "") or start_d
+        travel_date = str(getattr(pref_full, "travel_date", ""))
+        corridor = compute_corridor(start_d, end_d)
+
+        include_transit = payload.get("include_transit", False)
+        transit_districts = payload.get("transit_districts", [])
+        if include_transit and transit_districts:
+            for td in transit_districts:
+                td_norm = td.strip().title()
+                if td_norm not in corridor:
+                    try:
+                        sub = compute_corridor(corridor[-1], td_norm)
+                        for s in sub[1:]:
+                            if s not in corridor:
+                                corridor.append(s)
+                    except Exception:
+                        corridor.append(td_norm)
+
+        result = check_weather_advisory(
+            db=db,
+            districts=list(dict.fromkeys(corridor)),
+            travel_date_str=travel_date,
+        )
+
+        return {
+            "status": "weather_check",
+            "preference_id": preference_id,
+            "corridor": corridor,
+            "weather": result,
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ──────────────────────────────────────────────
 #  POST /itinerary/{preference_id}/generate
 # ──────────────────────────────────────────────
 @router.post("/itinerary/{preference_id}/generate")
@@ -1024,6 +1078,7 @@ def generate_from_hotel(
 
         include_transit = payload.get("include_transit", False)
         transit_districts = payload.get("transit_districts", [])
+        weather_action = payload.get("weather_action")  # "continue" | "weather_aware" | None
 
         # Get preference details
         pref = db.execute(
@@ -1090,7 +1145,32 @@ def generate_from_hotel(
                         extended_corridor.append(td_norm)
             corridor = extended_corridor
 
-        result = generate_master_itinerary(db, preference_id, corridor_override=corridor)
+        # ── Weather-Aware: indoor-only per district (post-process, no fallback changes) ──
+        if weather_action == "weather_aware":
+            result = generate_master_itinerary(db, preference_id, corridor_override=corridor)
+
+            removals = []
+            for day in result.get("itinerary", []):
+                d = day.get("district", "")
+                kept = []
+                for p in day.get("places", []):
+                    io = (p.get("indoor_outdoor") or "").lower()
+                    is_trek = p.get("is_trek", False)
+                    if io in ("indoor", "both") or is_trek:
+                        kept.append(p)
+                day["places"] = kept
+                if not kept:
+                    day["weather_message"] = (
+                        f"No indoor places available in {d}. "
+                        f"This district is mainly for outdoor activities."
+                    )
+                    removals.append({
+                        "district": d,
+                        "warning": f"No indoor places available in {d}. This district is mainly for outdoor activities. Consider travelling when weather conditions become favourable.",
+                    })
+            result["_weather_removals"] = removals
+        else:
+            result = generate_master_itinerary(db, preference_id, corridor_override=corridor)
 
         cats_lower = (pref.category or "").lower()
         user_wants_adventure = any(kw in cats_lower for kw in ["adventure", "trek"])

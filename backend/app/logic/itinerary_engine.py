@@ -773,7 +773,7 @@ def _inject_meals(itinerary_days: list, districts_per_day: Optional[list] = None
 # ==============================
 # 3. MAIN ITINERARY BUILDER
 # ==============================
-def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = None, starting_hotel_id: Optional[int] = None):
+def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = None, starting_hotel_id: Optional[int] = None, ranked_places_override: Optional[list] = None):
     pref = get_preferences(db, preference_id)
     city = getattr(pref, "starting_district", "") or getattr(pref, "district", "")
     days = getattr(pref, "travel_days", 1)
@@ -864,11 +864,14 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
 
     hotel_plan = get_hotel_plan(db, preference_id, days, districts_per_day, hotel_budget)
 
-    rec_service = RecommendationService()
-    ranked_places = rec_service.get_ranked_places(
-        db, preference_id,
-        districts_override=corridor,
-    )
+    if ranked_places_override is not None:
+        ranked_places = ranked_places_override
+    else:
+        rec_service = RecommendationService()
+        ranked_places = rec_service.get_ranked_places(
+            db, preference_id,
+            districts_override=corridor,
+        )
     if not ranked_places:
         cities_str = ", ".join(corridor)
         raise HTTPException(404, f"No places found for your preferences in {cities_str}")
@@ -1558,7 +1561,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
 # ==============================
 # 4. MASTER ORCHESTRATOR
 # ==============================
-def generate_master_itinerary(db: Session, preference_id: int, corridor_override: list = None):
+def generate_master_itinerary(db: Session, preference_id: int, corridor_override: list = None, ranked_places_override: Optional[list] = None):
     """
     Master orchestrator entry point.
     Reads preferences, computes corridor, builds the full itinerary.
@@ -1573,7 +1576,7 @@ def generate_master_itinerary(db: Session, preference_id: int, corridor_override
     else:
         corridor = compute_corridor(start, end)
 
-    result = build_itinerary(db, preference_id, corridor=corridor)
+    result = build_itinerary(db, preference_id, corridor=corridor, ranked_places_override=ranked_places_override)
     result["corridor"] = corridor
     result["district"] = end
     return result

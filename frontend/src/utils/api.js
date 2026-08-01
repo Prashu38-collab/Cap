@@ -58,11 +58,25 @@ export function createPreference(payload) {
   });
 }
 
-export function generateFromHotel(preferenceId, startingHotelId, { includeTransit = false, transitDistricts = [] } = {}) {
+export function generateFromHotel(preferenceId, startingHotelId, { includeTransit = false, transitDistricts = [], weatherAction = null } = {}) {
+  const body = {
+    starting_hotel_id: startingHotelId,
+    include_transit: includeTransit,
+    transit_districts: transitDistricts,
+  };
+  if (weatherAction) {
+    body.weather_action = weatherAction;
+  }
   return request(`/itinerary/${preferenceId}/generate`, {
     method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function checkWeather(preferenceId, { includeTransit = false, transitDistricts = [] } = {}) {
+  return request(`/itinerary/${preferenceId}/check-weather`, {
+    method: "POST",
     body: JSON.stringify({
-      starting_hotel_id: startingHotelId,
       include_transit: includeTransit,
       transit_districts: transitDistricts,
     }),

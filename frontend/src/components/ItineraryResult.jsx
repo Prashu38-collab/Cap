@@ -109,6 +109,14 @@ function EventIcon({ type, category }) {
       </svg>
     );
   }
+  if (type === "weather") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M2 12h2"/><path d="M4.93 19.07l1.41-1.41"/><path d="M12 20v2"/><path d="M19.07 19.07l-1.41-1.41"/><path d="M22 12h-2"/><path d="M17.66 6.34l1.41-1.41"/>
+        <circle cx="12" cy="12" r="4"/>
+      </svg>
+    );
+  }
   const color = getCatColor(category);
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -252,7 +260,11 @@ function buildSchedule(day, dayIndex, totalDays, corridor) {
   items.push({ time: "07:00", label: "Breakfast", type: "meal", icon: "meal" });
 
   if (places.length === 0) {
-    items.push({ time: "09:00", label: "Continue sightseeing", type: "activity", icon: "explore", description: "Free day — revisit favourites or relax." });
+    if (day.weather_message) {
+      items.push({ time: "09:00", label: day.weather_message, type: "activity", icon: "weather", description: day.weather_message });
+    } else {
+      items.push({ time: "09:00", label: "Continue sightseeing", type: "activity", icon: "explore", description: "Free day — revisit favourites or relax." });
+    }
     items.push({ time: "12:30", label: "Lunch", type: "meal", icon: "meal" });
     items.push({ time: "19:00", label: "Dinner", type: "meal", icon: "meal" });
     return items;
