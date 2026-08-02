@@ -12,11 +12,7 @@ router = APIRouter(
     tags=["Hotels"]
 )
 
-
-# =====================================================
 # GET HOTELS
-# =====================================================
-
 @router.get("/{preference_id}/hotels")
 def fetch_hotels(
     preference_id: int,
@@ -25,9 +21,7 @@ def fetch_hotels(
     return get_hotels_by_preference(preference_id, db)
 
 
-# =====================================================
 # SAVE HOTEL (DAY-WISE VERSION)
-# =====================================================
 
 @router.post("/{preference_id}/hotel")
 def choose_hotel(

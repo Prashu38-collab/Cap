@@ -25,9 +25,7 @@ from app.logic.transit_corridors import (
     _normalize,
 )
 
-
-def _allocate_days_to_corridor(corridor: list, days: int) -> list:
-    """Allocate travel days to corridor districts with smart distribution.
+"""Allocate travel days to corridor districts with smart distribution.
 
     Rules:
       - 1 district  → all days there
@@ -35,6 +33,7 @@ def _allocate_days_to_corridor(corridor: list, days: int) -> list:
       - 3+ districts → first district gets floor(days/3)+1, intermediates share, last gets remainder
     Always returns a list of district names, length == days.
     """
+def _allocate_days_to_corridor(corridor: list, days: int) -> list:
     n = len(corridor)
     if n == 0:
         return []
@@ -42,7 +41,6 @@ def _allocate_days_to_corridor(corridor: list, days: int) -> list:
         return [corridor[0]] * days
     if days == 1:
         return [corridor[0]]
-
     # Two districts: first gets at least 1 day, destination gets rest
     if n == 2:
         first_days = max(1, days // 3)
@@ -66,10 +64,8 @@ def _allocate_days_to_corridor(corridor: list, days: int) -> list:
     allocation.extend([corridor[-1]] * dest_days)
     return allocation
 
-# ==============================
-# PHASE 1: HELPER FUNCTIONS
-# ==============================
 
+# PHASE 1: HELPER FUNCTIONS
 def parse_time(time_str: Optional[str]) -> Optional[time]:
     """Safely parse a time string (HH:MM:SS or HH:MM) to a time object."""
     if not time_str:
@@ -158,9 +154,8 @@ def compute_transport_modes(
     return result
 
 
-# ==============================
-# 1. BULLETPROOF TREK MATCHER
-# ==============================
+
+#TREK MATCHER
 def find_matching_trek(place_name: str):
     """Finds a trek by matching the place name, ignoring spaces and casing."""
     if not place_name:
@@ -175,9 +170,8 @@ def find_matching_trek(place_name: str):
             
     return None, None
 
-# ==============================
-# 2. DB HELPERS
-# ==============================
+
+#DB HELPERS
 def get_preferences(db: Session, preference_id: int):
     q = text(""" SELECT * FROM "User_Preferences" WHERE preference_id = :pid """)
     pref = db.execute(q, {"pid": preference_id}).fetchone()
@@ -431,9 +425,8 @@ def get_hotel_plan(db: Session, preference_id: int, days: int, district_or_distr
 
     return hotel_plan
 
-# ──────────────────────────────────────────────
+
 # MEAL INJECTION
-# ──────────────────────────────────────────────
 MEAL_TEMPLATES = {
     "breakfast": {"name": "Breakfast", "time_of_day": "morning", "start_time": "07:00", "duration_hours": 1.0, "type": "meal", "cost_estimate": 300, "icon": "🍳"},
     "lunch":     {"name": "Lunch",     "time_of_day": "afternoon", "start_time": "12:00", "duration_hours": 1.0, "type": "meal", "cost_estimate": 500, "icon": "🍛"},
@@ -770,9 +763,8 @@ def _inject_meals(itinerary_days: list, districts_per_day: Optional[list] = None
     return itinerary_days
 
 
-# ==============================
-# 3. MAIN ITINERARY BUILDER
-# ==============================
+
+#MAIN ITINERARY BUILDER
 def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = None, starting_hotel_id: Optional[int] = None, ranked_places_override: Optional[list] = None):
     pref = get_preferences(db, preference_id)
     city = getattr(pref, "starting_district", "") or getattr(pref, "district", "")
@@ -782,10 +774,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
     mobility = getattr(pref, "mobility", "moderate") or "moderate"
     travel_date = str(getattr(pref, "travel_date", ""))
 
-    # ──────────────────────────────────────────────
-    # Compute corridor + day-district allocation
-    # ──────────────────────────────────────────────
-    if corridor is None:
+    if corridor is None:# Compute corridor + day-district allocation
         start = city
         end = getattr(pref, "ending_district", "") or start
         corridor = compute_corridor(start, end)
@@ -798,9 +787,8 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
 
     districts_per_day = [end_district] * days
 
-    # ──────────────────────────────────────────────
     # Fetch weather flags for place selection
-    # ──────────────────────────────────────────────
+
     is_multi_district = len(set(_normalize(d) for d in corridor)) > 1
     is_valley_trip = is_multi_district and all(_normalize(d) in VALLEY_CLUSTER for d in corridor)
     weather_by_day = {}
@@ -876,7 +864,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
         cities_str = ", ".join(corridor)
         raise HTTPException(404, f"No places found for your preferences in {cities_str}")
 
-    # 🔥 1. CHECK FOR STATIC TREK INJECTION
+    # CHECK FOR STATIC TREK INJECTION
     top_place_name = ranked_places[0].get("place_name", "")
     trek_name, trek_data = find_matching_trek(top_place_name)
 
@@ -884,7 +872,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
         if trek_data['total_days'] > days:
              raise HTTPException(400, f"{trek_name} requires {trek_data['total_days']} days, but you selected {days} days.")
 
-        # 🏔️ INJECT STATIC TREK ROUTE
+        #INJECT STATIC TREK ROUTE
         itinerary = []
         origin_district = city
         trek_place_id = ranked_places[0]['place_id'] 
@@ -926,7 +914,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
             "trek_route_injected": trek_name
         }
 
-    # 🔥 2. SKIP PLACES REQUIRING MORE DAYS THAN AVAILABLE
+    # SKIP PLACES REQUIRING MORE DAYS THAN AVAILABLE
     valid_places = []
     for p in ranked_places:
         p_raw_val = float(p.get("raw_duration_value", 0))
@@ -943,7 +931,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
     if not ranked_places:
         raise HTTPException(404, "No valid places found that fit within your travel days.")
 
-    # 🔥 3. CATEGORIZE POOLS
+    # CATEGORIZE POOLS
     multi_day_pool, full_day_pool, standard_pool = [], [], []
     for p in ranked_places:
         duration_hours = float(p.get("duration_hours", 2.0))
@@ -984,7 +972,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
         else: 
             preferred_categories = [x.strip().lower() for x in str(raw_cats).split(",")]
 
-    # 🔥 4. CREATE DAY SLOTS & ASSIGN ANCHORS
+    #CREATE DAY SLOTS & ASSIGN ANCHORS
     day_slots = [{"day_num": i + 1, "places": [], "is_blocked": False} for i in range(days)]
     
     current_idx = 0
@@ -1076,7 +1064,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
                 last_adventure_day = day_num
 
     
-    # 🔥 5. FILL UNBLOCKED DAYS (GEOGRAPHIC GRAVITY v2 — Elevation + Time + Budget)
+    # FILL UNBLOCKED DAYS (GEOGRAPHIC GRAVITY v2 — Elevation + Time + Budget)
     MAX_HOURS_PER_DAY = 8.0
     used_place_ids = set()
 
@@ -1328,7 +1316,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
             }
             slot['places'] = [coffee_place]
 
-    # 🔥 5.5 REBALANCE ATTRACTIONS ACROSS DAYS
+    #REBALANCE ATTRACTIONS ACROSS DAYS
     # First: inject fallback activities for days that ended up empty
     for slot in day_slots:
         if slot['is_blocked'] or slot.get('places'):
@@ -1561,7 +1549,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
 # ==============================
 # 4. MASTER ORCHESTRATOR
 # ==============================
-def generate_master_itinerary(db: Session, preference_id: int, corridor_override: list = None, ranked_places_override: Optional[list] = None):
+def generate_master_itinerary(db: Session, preference_id: int, corridor_override: list = None):
     """
     Master orchestrator entry point.
     Reads preferences, computes corridor, builds the full itinerary.

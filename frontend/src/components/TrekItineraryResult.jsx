@@ -90,7 +90,7 @@ function getTabLabel(day) {
   return (day.stop_name || "").substring(0, 8) || `Day ${day.day_number}`;
 }
 
-/* ─── Main Component ─── */
+//Main Component 
 export default function TrekItineraryResult({ trekItinerary, hotelSelections, onHotelSelect, onBack, onReset }) {
   const [activeDay, setActiveDay] = useState(1);
   const [animDir, setAnimDir] = useState("next");
@@ -216,7 +216,8 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
               {currentDay.nearby_hotels.map((hotel) => {
                 const isSel = hotelSelections[currentDay.day_number] === hotel.hotel_id;
                 return (
-                  <div key={hotel.hotel_id} className={`trek-hotel-recommendation-card ${isSel ? "selected" : ""}`} onClick={() => onHotelSelect(currentDay.day_number, hotel.hotel_id)}>
+                  <div key={hotel.hotel_id} className={`trek-hotel-recommendation-card ${isSel ? "selected" : ""}`} 
+                  onClick={() => onHotelSelect(currentDay.day_number, hotel.hotel_id)}>
                     <div className="trek-hotel-recommendation-info">
                       <h4>{hotel.hotel_name}</h4>
                       <p>NPR {hotel.budget?.toLocaleString()} / night · {hotel.distance_km} km away</p>
@@ -274,7 +275,7 @@ export default function TrekItineraryResult({ trekItinerary, hotelSelections, on
   );
 }
 
-/* ─── Trek Map (right panel) ─── */
+//Trek Map (right panel) 
 function TrekItineraryMap({ days, activeDay, selectedHotel, mapCenter, markerRefs, onMarkerClick }) {
   const allMarkers = days.map((d) => ({
     id: `day-${d.day_number}`, name: d.stop_name, lat: parseFloat(d.latitude),

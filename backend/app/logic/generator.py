@@ -98,7 +98,7 @@ def allocate_places_balanced(
     if num_places <= 0 or travel_days <= 0:
         return []
 
-    # ── single-day ──
+        # single-day    
     if travel_days == 1:
         if places:
             dur = _total_duration_hours(places[:num_places])
@@ -107,15 +107,15 @@ def allocate_places_balanced(
             cap = 3
         return [min(num_places, cap)]
 
-    # ── exactly 1 place ──
+    # exactly 1 place 
     if num_places == 1:
         return [1] + [0] * (travel_days - 1)
 
-    # ── exactly 2 places ──
+    # exactly 2 places 
     if num_places == 2:
         return [1, 1] + [0] * (travel_days - 2)
 
-    # ── two days ──
+    # two days 
     if travel_days == 2:
         if places:
             per = max(1, min(5, int(SIGHTSEEING_HOURS_PER_DAY / max(_place_duration_hours(places[0]), 0.5))))
@@ -124,7 +124,7 @@ def allocate_places_balanced(
         first = min(max(1, num_places // 2), per)
         return [first, num_places - first]
 
-    # ── travel_days >= 3 ──
+    # travel_days >= 3 
     # Determine middle-day capacity using ACTUAL average durations
     if places:
         durations = [_place_duration_hours(p) for p in places[:num_places]]
@@ -177,9 +177,8 @@ def allocate_places_balanced(
     return allocations
 
 
-# ──────────────────────────────────────────────
+
 #  Route optimisation
-# ──────────────────────────────────────────────
 
 def optimize_route(places: List[dict], hotel: dict) -> List[dict]:
     """Nearest-neighbour greedy route optimisation."""
@@ -206,9 +205,8 @@ def optimize_route(places: List[dict], hotel: dict) -> List[dict]:
     return route
 
 
-# ──────────────────────────────────────────────
+
 #  Itinerary generation
-# ──────────────────────────────────────────────
 
 def generate_itinerary(
     db: Session,
@@ -270,7 +268,7 @@ def generate_itinerary(
                 return hlist
         return []
 
-    # ── Sort ALL places by distance from hotel ──
+    # Sort ALL places by distance from hotel
     for p in normal_places:
         p["_dist"] = haversine(
             anchor_hotel["latitude"], anchor_hotel["longitude"],
@@ -278,12 +276,12 @@ def generate_itinerary(
         )
     normal_places.sort(key=lambda x: x["_dist"])
 
-    # ── Duration-aware allocation ──
+    #  Duration-aware allocation 
     allocations = allocate_places_balanced(
         len(normal_places), travel_days, places=normal_places
     )
 
-    # ── Build each day ──
+    #  Build each day 
     used_indices: set = set()
     itinerary = []
     current_hotel = anchor_hotel
@@ -300,7 +298,7 @@ def generate_itinerary(
                 if len(day_places) >= count:
                     break
 
-        # ── Multi-district hotel: reassign hotel if day's places are in a different district ──
+        #  Multi-district hotel: reassign hotel if day's places are in a different district 
         if day_places:
             districts_in_day = set()
             for p in day_places:
@@ -422,7 +420,7 @@ def generate_itinerary(
 
         itinerary.append(day_entry)
 
-    # ── Final safety: if a middle day is empty but places remain, fill it ──
+    #  Final safety: if a middle day is empty but places remain, fill it 
     unused = [p for i, p in enumerate(normal_places) if i not in used_indices]
     for day_entry in itinerary:
         if not unused:

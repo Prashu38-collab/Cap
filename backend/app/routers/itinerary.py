@@ -161,10 +161,6 @@ def _get_nearby_districts(district: str) -> list:
 
 
 def _find_best_trek(db: Session, district: str, travel_days: int):
-    """Find the trek whose duration most closely matches travel_days.
-
-    Returns (place_id, place_name, trek_days) or None.
-    """
     trek_rows = db.execute(
         text("""
             SELECT p.place_id, p.place_name,
@@ -185,9 +181,7 @@ def _find_best_trek(db: Session, district: str, travel_days: int):
     return None
 
 
-# ──────────────────────────────────────────────
 #  GET /itinerary/get-trek-options
-# ──────────────────────────────────────────────
 @router.post("/itinerary/get-trek-options")
 def get_trek_options(payload: dict, db: Session = Depends(get_db)):
     try:
@@ -231,9 +225,8 @@ def get_trek_options(payload: dict, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ──────────────────────────────────────────────
+
 #  Trek timeline builder
-# ──────────────────────────────────────────────
 
 import re
 
@@ -276,7 +269,12 @@ def _advance_time(time_str: str, minutes: int) -> str:
     total = h * 60 + m + minutes
     return f"{(total // 60) % 24:02d}:{total % 60:02d}"
 
+"""Build a realistic daily timeline from trek_stops data.
 
+    Uses trek_stops.travel_time and trek_stops.activity as the PRIMARY source.
+    Only adds breakfast/lunch/dinner/check-in around the database values.
+    Never invents generic activities.
+    """
 def _build_day_timeline(
     stop_name: str,
     activity: str,
@@ -289,18 +287,12 @@ def _build_day_timeline(
     is_trek_day: bool = False,
     is_return_day: bool = False,
 ) -> list:
-    """Build a realistic daily timeline from trek_stops data.
-
-    Uses trek_stops.travel_time and trek_stops.activity as the PRIMARY source.
-    Only adds breakfast/lunch/dinner/check-in around the database values.
-    Never invents generic activities.
-    """
     is_first_trek_day = is_trek_day and day_number == 2
     is_last = is_return_day or day_number == total_days
 
     travel_hours, travel_mode = _parse_travel_hours(travel_time or activity)
 
-    # ── Fallback defaults when no parseable travel time ──
+    # Fallback defaults when no parseable travel tim
     if travel_hours == 0:
         if travel_mode == "drive":
             travel_hours = 5.0
@@ -439,9 +431,7 @@ def _build_day_timeline(
     return events
 
 
-# ──────────────────────────────────────────────
 #  POST /itinerary/generate-trek
-# ──────────────────────────────────────────────
 @router.post("/itinerary/generate-trek")
 def generate_trek(payload: dict, db: Session = Depends(get_db)):
     try:
@@ -463,7 +453,7 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
         if not trek_info:
             raise HTTPException(status_code=404, detail="Trek not found")
 
-        # ── Fetch starting district coordinates ──
+        #Fetch starting district coordinates 
         start_coords = None
         if starting_district:
             start_row = db.execute(
@@ -695,9 +685,7 @@ def generate_trek(payload: dict, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ──────────────────────────────────────────────
 #  POST /itinerary/select-trek-hotel
-# ──────────────────────────────────────────────
 @router.post("/itinerary/select-trek-hotel")
 def select_trek_hotel(payload: dict, db: Session = Depends(get_db)):
     try:
@@ -754,9 +742,7 @@ def select_trek_hotel(payload: dict, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ──────────────────────────────────────────────
 #  POST /itinerary/create-preference
-# ──────────────────────────────────────────────
 @router.post("/itinerary/create-preference")
 def create_preference_route(payload: dict, db: Session = Depends(get_db)):
     try:
@@ -975,9 +961,7 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ──────────────────────────────────────────────
 #  POST /itinerary/nearby-districts
-# ──────────────────────────────────────────────
 @router.post("/itinerary/nearby-districts")
 def get_nearby_districts(payload: dict, db: Session = Depends(get_db)):
     """Fetch places from multiple districts (for transit expansion)."""
@@ -1059,9 +1043,7 @@ def check_weather(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ──────────────────────────────────────────────
 #  POST /itinerary/{preference_id}/generate
-# ──────────────────────────────────────────────
 @router.post("/itinerary/{preference_id}/generate")
 def generate_from_hotel(
     preference_id: int,

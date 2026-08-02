@@ -19,10 +19,10 @@ always rank higher when available.
 
 from typing import List, Optional, Dict, Any
 
-# ──────────────────────────────────────────────
+
 # CATEGORY RELAXATION PRIORITY
 # Ordered list of (name, keywords, score_multiplier)
-# ──────────────────────────────────────────────
+
 CATEGORY_GROUPS = [
     # Level 0: Preferred (handled separately — full 1.0 weight)
     ("preferred", [], 1.0),

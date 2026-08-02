@@ -73,7 +73,7 @@ function MapController({ center, zoom, bounds }) {
   }, [center, zoom, bounds, map]);
   return null;
 }
-
+//
 function TrekMap({ treks, hoveredId, selectedId, onHover, onSelect, mapCenter, mapZoom, markerRefs }) {
   const validTreks = treks.filter((t) => t.latitude && t.longitude);
   const bounds = validTreks.map((t) => [t.latitude, t.longitude]);
@@ -125,7 +125,7 @@ function TrekMap({ treks, hoveredId, selectedId, onHover, onSelect, mapCenter, m
     </MapContainer>
   );
 }
-
+// Export Map separately for SplitLayout
 export default function TrekSelection({ treks, onSelect, loading, recommendedTrekId, onBack }) {
   const [hoveredId, setHoveredId] = useState(null);
   const [selectedId, setSelectedId] = useState(recommendedTrekId || null);

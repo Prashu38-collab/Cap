@@ -199,9 +199,9 @@ def calculate_total_distance(
     return round(total_dist, 2)
 
 
-# ==============================
+
 # OSRM-ENHANCED ROUTE FUNCTIONS
-# ==============================
+
 
 def build_waypoints(
     start_lat: float, start_lon: float,

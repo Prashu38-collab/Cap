@@ -341,9 +341,7 @@ function buildPopupHTML({ type, name, district, category, duration, hotelName, o
   </div>`;
 }
 
-/* ─────────────────────────────────────────────
-   MAIN COMPONENT — renders via SplitLayout
-   ───────────────────────────────────────────── */
+//MAIN COMPONENT — renders via SplitLayout
 export default function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor, onReset }) {
   const [activeDay, setActiveDay] = useState(1);
   const [animDir, setAnimDir] = useState("next");
@@ -722,9 +720,7 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
   );
 }
 
-/* ─────────────────────────────────────────────
-   Google Encoded Polyline decoder
-   ───────────────────────────────────────────── */
+//Google Encoded Polyline decoder
 function decodePolyline(encoded) {
   const points = [];
   let index = 0, lat = 0, lng = 0;
@@ -748,11 +744,9 @@ function decodePolyline(encoded) {
   return points;
 }
 
-/* ─────────────────────────────────────────────
-   RIGHT MAP — used by SplitLayout
-   Fetches OSRM road route and draws real polyline
-   Shows all days' markers (dimmed for non-active)
-   ───────────────────────────────────────────── */
+//RIGHT MAP — used by SplitLayout
+// //Fetches OSRM road route and draws real polyline
+// Shows all days' markers (dimmed for non-active)
 function ItineraryMapInner({ itinerary, activeDay, highlightedId, onSelectMarker, mapCenter, mapZoom, allMarkers, markerRefs, days, activeDayPts, currentDay, activeBounds }) {
   const [routeGeometry, setRouteGeometry] = useState(null);
 

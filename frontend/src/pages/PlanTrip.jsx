@@ -112,6 +112,7 @@ function PlanTrip() {
       setForm((prev) => ({
         ...prev,
         categories: cats,
+        //choosing adventure automatically sets mobility to Difficult, otherwise keep previous mobility
         mobility: isAdventure ? "Difficult" : prev.mobility,
       }));
     } else {
@@ -156,7 +157,7 @@ function PlanTrip() {
         setStep("no_trek_fallback");
         return;
       }
-
+        //handling trek selection flow if available in the response
       if (data.flow === "trek_selection" && data.treks?.length) {
         setTreks(data.treks);
         setTrekDurationMessage(data.trek_duration_message || null);
@@ -167,6 +168,7 @@ function PlanTrip() {
 
       setHotels(data.hotels || []);
 
+//setting trek recommendation if available in the response
       if (data.trek_recommendation) {
         setTrekRecommendation(data.trek_recommendation);
         setTrekDurationMessage(data.trek_duration_note || null);
@@ -192,7 +194,7 @@ function PlanTrip() {
       setSubmitting(false);
     }
   };
-
+//handling insufficient places options and nearby district selection
   const handleInsufficientOption = (optionId) => {
     setShowInsufficientModal(false);
     if (optionId === "nearby") {
@@ -203,37 +205,39 @@ function PlanTrip() {
       setStep("form");
     }
   };
-
+//handling nearby district selection and proceeding to hotel selection
   const handleIncludeNearby = (selectedDistricts) => {
     setSelectedTransitDistricts(selectedDistricts);
     setInsufficientInfo(null);
     setStep("hotels");
   };
-
+    //handling trek recommendation selection and proceeding to trek itinerary generation
   const handleTrekRecommendation = async () => {
     if (!trekRecommendation) return;
     setTrekRecommendation(null);
     setTrekDurationMessage(null);
     try {
-      const data = await generateTrek(trekRecommendation.place_id, parseInt(form.travel_days), form.starting_district);
+      const data = await generateTrek(trekRecommendation.place_id, parseInt(form.travel_days), 
+      form.starting_district);
       setTrekItinerary(data);
       setStep("trek_result");
     } catch (err) {
       setError(err.message || "Failed to generate trek itinerary");
     }
   };
-
+//handling trek recommendation dismissal and proceeding to hotel selection
   const handleDismissTrekRecommendation = () => {
     setTrekRecommendation(null);
     setTrekDurationMessage(null);
   };
-
+//toggle nearby district selection for transit
   const toggleTransitDistrict = (district) => {
     setSelectedTransitDistricts((prev) =>
       prev.includes(district) ? prev.filter((d) => d !== district) : [...prev, district]
     );
   };
 
+ //handling trek selection and generating trek itinerary
   const handleTrekSelect = async (trek) => {
     setSubmitting(true);
     setError(null);
@@ -247,7 +251,7 @@ function PlanTrip() {
       setSubmitting(false);
     }
   };
-
+// handling trek hotel selection and saving the selection
   const handleTrekHotelSelect = async (dayNumber, hotelId) => {
     try {
       await selectTrekHotel(prefId, dayNumber, hotelId);
@@ -257,6 +261,7 @@ function PlanTrip() {
     }
   };
 
+//handling hotel selection and generating itinerary from selected hotel
   const handleHotelSelect = async (hotelId) => {
     setSubmitting(true);
     setError(null);
@@ -356,6 +361,7 @@ function PlanTrip() {
     }
   };
 
+  //handling no trek fallback and proceeding to hotel selection
   const handleNoTrekContinue = async () => {
     if (!noTrekFallback?.hotels?.length || !prefId) return;
     setSubmitting(true);

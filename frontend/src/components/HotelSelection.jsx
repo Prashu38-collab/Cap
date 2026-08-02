@@ -63,7 +63,7 @@ function StarRating({ score }) {
     </div>
   );
 }
-
+// Compact Hotel Card Component
 function CompactHotelCard({ hotel, selected, hovered, onSelect, onMouseEnter, onMouseLeave }) {
   return (
     <div
@@ -98,7 +98,7 @@ function CompactHotelCard({ hotel, selected, hovered, onSelect, onMouseEnter, on
     </div>
   );
 }
-
+//Export main component
 export default function HotelSelection({ hotels = [], corridor = [], onSelect, onHover, loading }) {
   const [selectedId, setSelectedId] = useState(hotels[0]?.hotel_id || null);
   const [hoveredHotelId, setHoveredHotelId] = useState(null);
