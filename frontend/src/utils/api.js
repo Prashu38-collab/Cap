@@ -132,7 +132,7 @@ export function saveItinerary(preferenceId, itineraryData, totalEstimatedCost = 
       preference_id: preferenceId,
       itinerary_data: itineraryData,
       total_estimated_cost: totalEstimatedCost,
-      status: "generated",
+      status: "saved",
     }),
   });
 }

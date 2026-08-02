@@ -9,15 +9,31 @@ def save_itinerary(
     db: Session,
     preference_id: int,
     itinerary_data: dict,
-    status: str = "generated",
+    status: str = "saved",
     total_estimated_cost: Optional[float] = None,
+    total_travel_days_used: Optional[int] = None,
+    required_days: Optional[int] = None,
+    user_days: Optional[int] = None,
 ) -> int:
-    """Insert a new saved itinerary record. Returns the new itinerary_id."""
+    """Insert a new saved itinerary record. Returns the new itinerary_id.
+
+    Column mappings:
+        total_travel_days_used  → number of actual generated day entries
+        required_days           → days the itinerary was generated for
+        user_days               → days the user originally selected
+    When the explicit day values are omitted they are derived from the
+    itinerary_data payload (the itinerary JSON the generator produced).
+    """
     max_id = db.execute(
         text('SELECT COALESCE(MAX(itinerary_id), 0) + 1 FROM generated_itineraries')
     ).scalar()
 
-    days = len(itinerary_data.get("itinerary", []))
+    itinerary = itinerary_data.get("itinerary", []) if isinstance(itinerary_data, dict) else []
+    days_used = total_travel_days_used if total_travel_days_used is not None else len(itinerary)
+    req_days = required_days if required_days is not None else (
+        itinerary_data.get("days") or days_used if isinstance(itinerary_data, dict) else days_used
+    )
+    user_days_final = user_days if user_days is not None else req_days
 
     db.execute(
         text("""
@@ -37,9 +53,9 @@ def save_itinerary(
             "pid": preference_id,
             "status": status,
             "cost": total_estimated_cost or 0.0,
-            "days_used": days,
-            "req_days": days,
-            "user_days": days,
+            "days_used": days_used,
+            "req_days": req_days,
+            "user_days": user_days_final,
             "gen_at": datetime.now(timezone.utc),
             "data": json.dumps(itinerary_data),
         },

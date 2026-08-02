@@ -349,10 +349,26 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
   const [mapCenter, setMapCenter] = useState(null);
   const [mapZoom, setMapZoom] = useState(13);
   const [selectedHotelIds, setSelectedHotelIds] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState(null);
   const markerRefs = useRef({});
 
   const selectHotel = (dayNum, hotel) => {
     setSelectedHotelIds(prev => ({ ...prev, [dayNum]: hotel.hotel_id }));
+  };
+
+  const handleSaveItinerary = async () => {
+    if (saving || !itinerary) return;
+    setSaving(true);
+    setSaveMessage(null);
+    try {
+      await saveItinerary(preferenceId, itinerary, null);
+      setSaveMessage({ type: "success", text: "Itinerary saved successfully!" });
+    } catch (err) {
+      setSaveMessage({ type: "error", text: err?.message || "Failed to save itinerary." });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!itinerary?.itinerary) return null;
@@ -678,21 +694,20 @@ export default function ItineraryResult({ itinerary, weatherForecast, preference
         )}
         <button
           className="sl-btn sl-btn-primary"
-          onClick={async () => {
-            try {
-              await saveItinerary(preferenceId, itinerary);
-              alert("Itinerary saved successfully!");
-            } catch (err) {
-              alert("Failed to save: " + (err.message || "Unknown error"));
-            }
-          }}
+          onClick={handleSaveItinerary}
+          disabled={saving}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
             <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
           </svg>
-          Save Itinerary
+          {saving ? "Saving..." : "Save Itinerary"}
         </button>
+        {saveMessage && (
+          <div className={`ir-save-message ir-save-message-${saveMessage.type}`}>
+            {saveMessage.text}
+          </div>
+        )}
       </div>
     </div>
   );

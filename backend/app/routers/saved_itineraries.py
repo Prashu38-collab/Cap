@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.database import get_db
 from app.crud.itinerary_crud import (
@@ -19,7 +20,9 @@ class SaveItineraryRequest(BaseModel):
     preference_id: int
     itinerary_data: dict
     total_estimated_cost: Optional[float] = None
-    status: str = "generated"
+    status: str = "saved"
+    required_days: Optional[int] = None
+    user_days: Optional[int] = None
 
 
 class UpdateItineraryRequest(BaseModel):
@@ -31,17 +34,56 @@ class UpdateItineraryRequest(BaseModel):
 def create_saved_itinerary(body: SaveItineraryRequest, db: Session = Depends(get_db)):
     """Save a generated itinerary to the database."""
     try:
+        if not body.itinerary_data:
+            raise HTTPException(status_code=400, detail="itinerary_data is required")
+
+        itinerary = body.itinerary_data.get("itinerary", [])
+        if not itinerary:
+            raise HTTPException(
+                status_code=400,
+                detail="itinerary_data.itinerary is empty; nothing to save",
+            )
+
+        pref = db.execute(
+            text("""
+                SELECT preference_id, travel_days, total_budget
+                FROM "User_Preferences"
+                WHERE preference_id = :pid
+            """),
+            {"pid": body.preference_id},
+        ).fetchone()
+        if not pref:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Preference {body.preference_id} not found",
+            )
+
+        total_travel_days_used = len(itinerary)
+        required_days = body.required_days or body.itinerary_data.get("days") or total_travel_days_used
+        user_days = body.user_days or pref.travel_days or required_days
+        total_estimated_cost = (
+            body.total_estimated_cost
+            if body.total_estimated_cost is not None
+            else (float(pref.total_budget) if pref.total_budget else 0.0)
+        )
+
         itinerary_id = save_itinerary(
             db=db,
             preference_id=body.preference_id,
             itinerary_data=body.itinerary_data,
             status=body.status,
-            total_estimated_cost=body.total_estimated_cost,
+            total_estimated_cost=total_estimated_cost,
+            total_travel_days_used=total_travel_days_used,
+            required_days=required_days,
+            user_days=user_days,
         )
         return {
             "message": "Itinerary saved successfully",
             "itinerary_id": itinerary_id,
+            "status": body.status,
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
