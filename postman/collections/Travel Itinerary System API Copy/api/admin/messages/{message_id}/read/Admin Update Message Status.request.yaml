@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/messages/:message_id/read"
+method: PUT
+headers:
+  Accept: application/json
+pathVariables:
+  message_id: "4637"
+settings: {}
+examples: ./.resources/Admin Update Message Status.resources/examples
+order: 1000

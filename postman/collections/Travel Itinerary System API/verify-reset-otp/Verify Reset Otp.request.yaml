@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/verify-reset-otp"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "zO3sD@nRAeXeAwgTvy.pt",
+      "otp": "string"
+    }
+settings: {}
+examples: ./.resources/Verify Reset Otp.resources/examples
+order: 1000

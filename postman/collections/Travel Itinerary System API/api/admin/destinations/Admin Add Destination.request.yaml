@@ -1,0 +1,31 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/destinations"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "place_name": "string",
+      "District": "string",
+      "Latitude": 6878.553630681033,
+      "Longitude": 5966.50769819153,
+      "Category": "string",
+      "Indoor_Outdoor": "string",
+      "Mobility": "string",
+      "Weather_Sensitivity": "string",
+      "Budget_level": "string",
+      "Entry_Fee": "string",
+      "province": 2140,
+      "estimated_duration_value": 7668.921536215331,
+      "estimated_duration_unit": "string",
+      "is_trek": false,
+      "elevation_meters": 2372,
+      "opening_time": null,
+      "closing_time": "19:29:52.854Z"
+    }
+settings: {}
+examples: ./.resources/Admin Add Destination.resources/examples
+order: 3000

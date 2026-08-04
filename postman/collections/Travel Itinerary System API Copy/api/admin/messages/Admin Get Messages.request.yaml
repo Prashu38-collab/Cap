@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/messages"
+method: GET
+headers:
+  Accept: application/json
+settings: {}
+examples: ./.resources/Admin Get Messages.resources/examples
+order: 2000

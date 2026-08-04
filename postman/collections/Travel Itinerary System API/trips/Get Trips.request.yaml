@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/trips/"
+method: GET
+headers:
+  Accept: application/json
+settings: {}
+examples: ./.resources/Get Trips.resources/examples
+order: 2000

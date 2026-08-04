@@ -1,15 +1,24 @@
-const API_BASE = import.meta.env.VITE_API_URL || "/api";
+import { getErrorMessage } from "./errorMessage";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
-  const config = {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  };
+  const token = localStorage.getItem("token");
+  const headers = { "Content-Type": "application/json" };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const config = { headers, ...options };
   const res = await fetch(url, config);
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
   if (!res.ok) {
-    throw new Error(data.detail || data.message || "Request failed");
+    throw new Error(getErrorMessage({ response: { data } }, "Request failed"));
   }
   return data;
 }

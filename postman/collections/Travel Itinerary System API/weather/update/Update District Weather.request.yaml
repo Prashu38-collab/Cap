@@ -1,0 +1,29 @@
+$kind: http-request
+description: updated everytime by cron job to keep the weather metrics up-to-date for each district.
+url: "{{baseUrl}}/weather/update"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "district_name": "Kathmandu",
+      "latitude": 3731.755112265688,
+      "longitude": 3824.6099362508635,
+      "current_temperature_2m": 6782.59846357075,
+      "current_relative_humidity_2m": 2265.49957209068,
+      "current_apparent_temperature": 122.3009514943385,
+      "current_is_day": 9799,
+      "current_precipitation": 8083.168500351686,
+      "current_rain": 5764.159725477713,
+      "current_showers": 4449.171883233303,
+      "current_snowfall": 9182.375164172225,
+      "current_cloud_cover": 3091.867460351144,
+      "current_wind_speed_10m": 6331.998125420354,
+      "current_wind_direction_10m": 7398.589819021579
+    }
+settings: {}
+examples: ./.resources/Update District Weather.resources/examples
+order: 1000

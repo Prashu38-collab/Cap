@@ -1,0 +1,43 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/places/district/:district_name"
+  method: GET
+  headers:
+    Accept: application/json
+  pathVariables:
+    district_name: string
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      [
+        {
+          "place_id": 8418,
+          "place_name": "string",
+          "district": "string",
+          "latitude": 904.2787527697672,
+          "longitude": 797.6156795744182,
+          "category": "string",
+          "indoor_outdoor": "string",
+          "mobility": "string",
+          "budget_level": "string",
+          "entry_fee": "string"
+        },
+        {
+          "place_id": 3021,
+          "place_name": "string",
+          "district": "string",
+          "latitude": 5837.174286196363,
+          "longitude": 1501.9377522567422,
+          "category": "string",
+          "indoor_outdoor": "string",
+          "mobility": "string",
+          "budget_level": "string",
+          "entry_fee": "string"
+        }
+      ]
+order: 1000

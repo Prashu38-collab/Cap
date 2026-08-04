@@ -134,7 +134,6 @@ function PlanTrip() {
         hotel_budget: parseInt(form.hotel_budget),
         mobility: form.mobility,
         preferred_categories: form.categories.join(","),
-        user_id: 1,
       };
       const data = await createPreference(payload);
       setPrefId(data.preference_id);

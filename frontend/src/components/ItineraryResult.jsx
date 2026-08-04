@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 
@@ -202,6 +203,7 @@ function downloadItinerary(days, corridor, preferenceId) {
 }
 
 function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor }) {
+  const navigate = useNavigate();
   const [activeDay, setActiveDay] = useState(1);
   const [animDir, setAnimDir] = useState("next");
   const [highlightedId, setHighlightedId] = useState(null);
@@ -295,6 +297,9 @@ function ItineraryResult({ itinerary, weatherForecast, preferenceId, corridor })
             <button className="ir-save-btn" onClick={() => downloadItinerary(days, corridor, preferenceId)}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
               Save
+            </button>
+            <button className="ir-save-btn" onClick={() => navigate("/transport", { state: { preferenceId } })}>
+              View Transport
             </button>
           </div>
         </div>

@@ -1,0 +1,33 @@
+$kind: http-request
+name: Update Profile
+method: PUT
+url: '{{baseUrl}}/me'
+order: 9000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Updated User",
+      "phone_number": "9812345678"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      const json = pm.response.json();
+      pm.test("Response has success true", () => pm.expect(json.success).to.be.true);
+      pm.test("Profile updated message present", () => pm.expect(json.message).to.be.a("string"));
+      pm.test("Response has user object", () => pm.expect(json.user).to.be.an("object"));
+      pm.test("Name updated correctly", () => pm.expect(json.user.name).to.eql("Updated User"));
+      if (pm.response.code === 401) {
+          pm.test("No token returns 401", () => pm.response.to.have.status(401));
+      }

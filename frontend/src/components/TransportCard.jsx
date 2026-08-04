@@ -2,6 +2,7 @@ import busImage from "../assets/bus.png";
 import flightImage from "../assets/flight.png";
 
 import MiniMap from "./MiniMap";
+import busParkData from "../data/busParkData";
 
 function TransportCard({ transport }) {
 
@@ -9,6 +10,10 @@ function TransportCard({ transport }) {
         transport.transport_type?.toLowerCase() === "flight"
             ? flightImage
             : busImage;
+
+    const parkInfo = busParkData[transport.departure_point] || null;
+    const mapLat = parkInfo?.lat || null;
+    const mapLng = parkInfo?.lng || null;
 
     return (
 
@@ -79,8 +84,8 @@ function TransportCard({ transport }) {
                 <div className="map-box">
 
                     <MiniMap
-                        latitude={transport.latitude}
-                        longitude={transport.longitude}
+                        latitude={mapLat}
+                        longitude={mapLng}
                         locationName={transport.departure_point}
                     />
 

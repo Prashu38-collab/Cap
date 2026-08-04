@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/generated-itineraries/:itinerary_id"
+method: DELETE
+headers:
+  Accept: application/json
+pathVariables:
+  itinerary_id: "5919"
+settings: {}
+examples: ./.resources/Admin Delete Generated Itinerary.resources/examples
+order: 2000

@@ -1,0 +1,25 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/itinerary/:preference_id/generate"
+  method: POST
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  pathVariables:
+    preference_id: "9989"
+  body:
+    type: json
+    content: |-
+      {
+        "key_0": 3207.711674011754,
+        "key_1": 5981.678605867733
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: ""
+order: 1000

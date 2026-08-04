@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/preferences/:preference_id/hotel"
+method: POST
+headers:
+  Content-Type: multipart/form-data
+  Accept: application/json
+pathVariables:
+  preference_id: "113"
+body:
+  type: formdata
+  content:
+    - type: text
+      key: selections
+      value: ","
+settings: {}
+examples: ./.resources/Choose Hotel.resources/examples
+order: 1000

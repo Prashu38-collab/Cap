@@ -1,0 +1,54 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/places/filter"
+  method: POST
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "district": "string",
+        "categories": [
+          "string",
+          "string"
+        ],
+        "budget_level": "string",
+        "mobility": "string"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      [
+        {
+          "place_id": 2143,
+          "place_name": "string",
+          "district": "string",
+          "latitude": 35.09476989762006,
+          "longitude": 5579.201991118925,
+          "category": "string",
+          "indoor_outdoor": "string",
+          "mobility": "string",
+          "budget_level": "string",
+          "entry_fee": "string"
+        },
+        {
+          "place_id": 3151,
+          "place_name": "string",
+          "district": "string",
+          "latitude": 2553.0816959514223,
+          "longitude": 4731.815827558878,
+          "category": "string",
+          "indoor_outdoor": "string",
+          "mobility": "string",
+          "budget_level": "string",
+          "entry_fee": "string"
+        }
+      ]
+order: 1000

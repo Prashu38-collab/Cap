@@ -1,0 +1,59 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/weather/update"
+  method: POST
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "district_name": "Kathmandu",
+        "latitude": 5536.876301311319,
+        "longitude": 8675.142169169889,
+        "current_temperature_2m": 615.5640799032724,
+        "current_relative_humidity_2m": 661.7038633455296,
+        "current_apparent_temperature": 1680.2337278593293,
+        "current_is_day": 442,
+        "current_precipitation": 4677.365479402299,
+        "current_rain": 4731.293831809777,
+        "current_showers": 2546.9072488425127,
+        "current_snowfall": 7016.8828335640055,
+        "current_cloud_cover": 7534.053120016735,
+        "current_wind_speed_10m": 5804.440009388813,
+        "current_wind_direction_10m": 6345.6948722906045
+      }
+response:
+  statusCode: 422
+  statusText: Unprocessable Entity (WebDAV) (RFC 4918)
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "detail": [
+          {
+            "loc": [
+              "string",
+              "string"
+            ],
+            "msg": "string",
+            "type": "string",
+            "input": "",
+            "ctx": {}
+          },
+          {
+            "loc": [
+              "string",
+              339
+            ],
+            "msg": "string",
+            "type": "string",
+            "input": "",
+            "ctx": {}
+          }
+        ]
+      }
+order: 2000

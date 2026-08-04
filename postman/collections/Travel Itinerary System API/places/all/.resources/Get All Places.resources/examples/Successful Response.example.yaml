@@ -1,0 +1,41 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/places/all"
+  method: GET
+  headers:
+    Accept: application/json
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      [
+        {
+          "place_id": 2576,
+          "place_name": "string",
+          "district": "string",
+          "latitude": 6725.97188179013,
+          "longitude": 4306.869497089169,
+          "category": "string",
+          "indoor_outdoor": "string",
+          "mobility": "string",
+          "budget_level": "string",
+          "entry_fee": "string"
+        },
+        {
+          "place_id": 2703,
+          "place_name": "string",
+          "district": "string",
+          "latitude": 7931.244043608399,
+          "longitude": 1382.5585730291157,
+          "category": "string",
+          "indoor_outdoor": "string",
+          "mobility": "string",
+          "budget_level": "string",
+          "entry_fee": "string"
+        }
+      ]
+order: 1000

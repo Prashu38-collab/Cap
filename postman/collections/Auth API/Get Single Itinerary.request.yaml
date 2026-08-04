@@ -1,0 +1,27 @@
+$kind: http-request
+name: Get Single Itinerary
+method: GET
+url: '{{baseUrl}}/me/itineraries/1'
+order: 12000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const json = pm.response.json();
+      if (pm.response.code === 200) {
+          pm.test("Status code is 200", () => pm.response.to.have.status(200));
+          pm.test("Response has success true", () => pm.expect(json.success).to.be.true);
+          pm.test("Response has itinerary object", () => pm.expect(json.itinerary).to.be.an("object"));
+      }
+      if (pm.response.code === 404) {
+          pm.test("Not found returns 404", () => pm.response.to.have.status(404));
+          pm.test("Error detail present", () => pm.expect(json.detail).to.be.a("string"));
+      }
+      if (pm.response.code === 401) {
+          pm.test("No token returns 401", () => pm.response.to.have.status(401));
+      }

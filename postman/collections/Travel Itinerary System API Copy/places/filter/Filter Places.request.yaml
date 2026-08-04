@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/places/filter"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "district": "string",
+      "categories": null,
+      "budget_level": "string",
+      "mobility": null
+    }
+settings: {}
+examples: ./.resources/Filter Places.resources/examples
+order: 1000

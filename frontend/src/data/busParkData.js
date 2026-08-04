@@ -58,8 +58,19 @@ const busParkData = {
     district: "Sindhuli",
     lat: 27.2565,
     lng: 85.9718,
-  }
+  },
 
+  "Bharatpur Airport":{
+    district: "Chitwan",
+    lat: 27.6781,
+    lng: 84.4294
+  },
+
+  "Tribhuvan International Airport":{
+    district: "Kathmandu",
+    lat: 27.6966,
+    lng: 85.3591
+  }
 };
 
 export default busParkData;

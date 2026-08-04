@@ -12,11 +12,8 @@ import { getTransport } from "../services/transportService";
 function Transport() {
 
     const navigate = useNavigate();
-    const location = useLocation(); navigate("/transport", {
-    state: {
-        preferenceId: itinerary.preference_id
-    }
-});
+    const location = useLocation();
+    const preferenceId = location.state?.preferenceId || 2;
 
     const [transportData, setTransportData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -44,13 +41,11 @@ function Transport() {
 
         } catch (err) {
 
-                console.error("Transport Error:", err);
+            console.error("Transport Error:", err);
+            console.error("Response:", err.response);
+            console.error("Data:", err.response?.data);
 
-    console.error("Response:", err.response);
-
-    console.error("Data:", err.response?.data);
-
-    setError(err.response?.data?.detail || err.message);
+            setError(err.response?.data?.detail || err.message);
 
         } finally {
 
@@ -77,8 +72,6 @@ function Transport() {
 
                 </div>
 
-                {/* Loading */}
-
                 {loading && (
 
                     <div className="loading-box">
@@ -89,8 +82,6 @@ function Transport() {
 
                 )}
 
-                {/* Error */}
-
                 {!loading && error && (
 
                     <div className="error-box">
@@ -100,8 +91,6 @@ function Transport() {
                     </div>
 
                 )}
-
-                {/* Data */}
 
                 {!loading && !error && transportData && (
 

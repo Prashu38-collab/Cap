@@ -1,0 +1,23 @@
+$kind: http-request
+description: Integrating content-based filtering criteria and real-time live weather telemetry safely.
+url: "{{baseUrl}}/itinerary/generate-weather-safe"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "district": "string",
+      "budget_level": "string",
+      "category": "string",
+      "mobility": "string",
+      "preferences": [
+        "string",
+        "string"
+      ]
+    }
+settings: {}
+examples: ./.resources/Generate Weather Safe Itinerary.resources/examples
+order: 1000

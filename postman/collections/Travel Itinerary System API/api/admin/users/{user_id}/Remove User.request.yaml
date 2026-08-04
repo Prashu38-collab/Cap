@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/users/:user_id"
+method: DELETE
+headers:
+  Accept: application/json
+pathVariables:
+  user_id: "4587"
+settings: {}
+examples: ./.resources/Remove User.resources/examples
+order: 2000

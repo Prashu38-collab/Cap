@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/traffic/"
+method: GET
+headers:
+  Accept: application/json
+settings: {}
+examples: ./.resources/Get Traffic.resources/examples
+order: 1000

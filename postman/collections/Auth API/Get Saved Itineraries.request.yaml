@@ -1,0 +1,23 @@
+$kind: http-request
+name: Get Saved Itineraries
+method: GET
+url: '{{baseUrl}}/me/itineraries'
+order: 11000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      const json = pm.response.json();
+      pm.test("Response has success true", () => pm.expect(json.success).to.be.true);
+      pm.test("Response has count field", () => pm.expect(json).to.have.property("count"));
+      pm.test("Count is a number", () => pm.expect(json.count).to.be.a("number"));
+      pm.test("saved_itineraries is an array", () => pm.expect(json.saved_itineraries).to.be.an("array"));
+      if (pm.response.code === 401) {
+          pm.test("No token returns 401", () => pm.response.to.have.status(401));
+      }

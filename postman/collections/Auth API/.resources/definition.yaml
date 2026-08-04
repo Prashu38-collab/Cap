@@ -1,0 +1,3 @@
+$kind: collection
+name: Auth API
+description: 'Complete authentication API tests for Travel Itinerary System. Covers registration, OTP verification, login, password reset, and profile management.'

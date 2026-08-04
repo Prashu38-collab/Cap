@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/users/:user_id/status"
+method: PUT
+headers:
+  Content-Type: application/json
+  Accept: application/json
+pathVariables:
+  user_id: "4587"
+body:
+  type: json
+  content: |-
+    {
+      "status": "string"
+    }
+settings: {}
+examples: ./.resources/Change Status.resources/examples
+order: 1000

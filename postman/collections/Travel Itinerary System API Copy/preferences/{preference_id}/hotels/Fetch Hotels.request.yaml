@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/preferences/:preference_id/hotels"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  preference_id: "113"
+settings: {}
+examples: ./.resources/Fetch Hotels.resources/examples
+order: 1000

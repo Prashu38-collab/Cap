@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/me/itineraries"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/Get Saved Itineraries.resources/examples
+order: 2000

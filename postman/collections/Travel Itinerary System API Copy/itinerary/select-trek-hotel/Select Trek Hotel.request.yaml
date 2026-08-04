@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/itinerary/select-trek-hotel"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "key_0": 8071.269536363003,
+      "key_1": true,
+      "key_2": true,
+      "key_3": false
+    }
+settings: {}
+examples: ./.resources/Select Trek Hotel.resources/examples
+order: 1000

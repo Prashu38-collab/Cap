@@ -1,0 +1,11 @@
+$kind: http-request
+description: Get transport options after itinerary generation.
+url: "{{baseUrl}}/transport/:preference_id"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  preference_id: "9989"
+settings: {}
+examples: ./.resources/Get Transport.resources/examples
+order: 1000

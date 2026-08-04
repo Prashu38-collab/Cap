@@ -1,0 +1,31 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/admin/hotels/:hotel_id"
+  method: PUT
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  pathVariables:
+    hotel_id: "2176"
+  body:
+    type: json
+    content: |-
+      {
+        "hotel_name": "string",
+        "review_score": 3803.59379238965,
+        "budget": 1026.3355025866217,
+        "latitude": 1237.906530436318,
+        "longitude": 5008.517287824774,
+        "district": "string",
+        "destination_id": "string",
+        "elevation_meters": 6781
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: ""
+order: 1000

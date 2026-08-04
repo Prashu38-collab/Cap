@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/users"
+method: GET
+headers:
+  Accept: application/json
+settings: {}
+examples: ./.resources/Get Users.resources/examples
+order: 2000

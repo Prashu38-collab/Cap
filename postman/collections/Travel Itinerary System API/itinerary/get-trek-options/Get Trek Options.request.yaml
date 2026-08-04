@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/itinerary/get-trek-options"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "key_0": false,
+      "key_1": "string",
+      "key_2": "string",
+      "key_3": "string"
+    }
+settings: {}
+examples: ./.resources/Get Trek Options.resources/examples
+order: 1000

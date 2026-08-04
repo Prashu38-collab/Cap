@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import "../styles/VerifyOTP.css";
 import { verifyOTP, resendOTP } from "../services/authService";
+import { getErrorMessage } from "../utils/errorMessage";
 
 export default function VerifyOTP() {
     const navigate = useNavigate();
@@ -95,16 +96,7 @@ export default function VerifyOTP() {
         } catch (error) {
             setLoading(false);
 
-            if (error.response) {
-                showNotice(
-                    "error",
-                    error.response.data.detail ||
-                        error.response.data.message ||
-                        "Verification failed."
-                );
-            } else {
-                showNotice("error", "Unable to connect to server.");
-            }
+            showNotice("error", getErrorMessage(error, "Verification failed."));
         }
     }
 
@@ -124,16 +116,7 @@ export default function VerifyOTP() {
         } catch (error) {
             setResending(false);
 
-            if (error.response) {
-                showNotice(
-                    "error",
-                    error.response.data.detail ||
-                        error.response.data.message ||
-                        "Failed to resend OTP."
-                );
-            } else {
-                showNotice("error", "Unable to connect to server.");
-            }
+            showNotice("error", getErrorMessage(error, "Failed to resend OTP."));
         }
     }
 

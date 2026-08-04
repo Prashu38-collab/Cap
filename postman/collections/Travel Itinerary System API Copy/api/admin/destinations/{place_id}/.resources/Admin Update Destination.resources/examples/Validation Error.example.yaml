@@ -1,0 +1,64 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/admin/destinations/:place_id"
+  method: PUT
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  pathVariables:
+    place_id: "1641"
+  body:
+    type: json
+    content: |-
+      {
+        "place_name": "string",
+        "District": "string",
+        "Latitude": 8624.734478780863,
+        "Longitude": 3809.499491453353,
+        "Category": "string",
+        "Indoor_Outdoor": "string",
+        "Mobility": "string",
+        "Weather_Sensitivity": "string",
+        "Budget_level": "string",
+        "Entry_Fee": "string",
+        "province": 396,
+        "estimated_duration_value": 4925.004798545044,
+        "estimated_duration_unit": "string",
+        "is_trek": true,
+        "elevation_meters": null,
+        "opening_time": "21:06:55.444Z",
+        "closing_time": "23:23:43.000Z"
+      }
+response:
+  statusCode: 422
+  statusText: Unprocessable Entity (WebDAV) (RFC 4918)
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "detail": [
+          {
+            "loc": [
+              "string",
+              "string"
+            ],
+            "msg": "string",
+            "type": "string",
+            "input": "",
+            "ctx": {}
+          },
+          {
+            "loc": [
+              "string",
+              339
+            ],
+            "msg": "string",
+            "type": "string",
+            "input": "",
+            "ctx": {}
+          }
+        ]
+      }
+order: 2000

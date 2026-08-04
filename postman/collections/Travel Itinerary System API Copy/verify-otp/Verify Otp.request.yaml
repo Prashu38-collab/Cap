@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/verify-otp"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "1iQF6cg2NCXY2@GidkKIgHgBFIzKjMOub.yk",
+      "otp": "string"
+    }
+settings: {}
+examples: ./.resources/Verify Otp.resources/examples
+order: 1000

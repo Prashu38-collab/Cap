@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/contact/"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "string",
+      "email": "y4loj4NrKJ@kHubGgbBAK.edv",
+      "phone": "string",
+      "subject": "string",
+      "message": "string"
+    }
+settings: {}
+examples: ./.resources/Send Message.resources/examples
+order: 1000

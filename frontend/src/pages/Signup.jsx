@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Signup.css';
 import { registerUser } from '../services/authService';
+import { getErrorMessage } from '../utils/errorMessage';
 
 // Eye icon
 function EyeIcon() {
@@ -132,6 +133,17 @@ export default function Signup() {
       return;
     }
 
+    // Phone validation
+    if (!/^\d{10}$/.test(form.phone_number.trim())) {
+      showNotice('error', 'Phone number must be exactly 10 digits.');
+      return;
+    }
+
+    if (!/^(98|97)/.test(form.phone_number.trim())) {
+      showNotice('error', 'Phone number must start with 98 or 97.');
+      return;
+    }
+
     // Password validations
     if (form.password.length < 8) {
       showNotice('error', 'Password must be at least 8 characters.');
@@ -198,16 +210,7 @@ export default function Signup() {
     } catch (error) {
       setLoading(false);
 
-      if (error.response) {
-        showNotice(
-          'error',
-          error.response.data.detail ||
-            error.response.data.message ||
-            'Registration failed.'
-        );
-      } else {
-        showNotice('error', 'Unable to connect to the server.');
-      }
+      showNotice('error', getErrorMessage(error, 'Registration failed.'));
     }
   }
 

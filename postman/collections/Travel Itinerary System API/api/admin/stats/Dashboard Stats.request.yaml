@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/stats"
+method: GET
+headers:
+  Accept: application/json
+settings: {}
+examples: ./.resources/Dashboard Stats.resources/examples
+order: 1000

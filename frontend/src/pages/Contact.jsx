@@ -3,6 +3,7 @@ import '../styles/contact.css'
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import axios from "axios";
+import { getErrorMessage } from "../utils/errorMessage";
 
 import {
 FaUser,
@@ -63,12 +64,7 @@ async function submitForm(event) {
 
   catch(error){
     console.error(error);
-    if(error.response){
-      alert(error.response.data.detail);
-    }
-    else{
-      alert("Unable to connect to server.");
-    }
+    alert(getErrorMessage(error, "Unable to connect to server."));
   }
 
 }

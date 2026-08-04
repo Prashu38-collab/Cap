@@ -64,20 +64,31 @@ export const resetPassword = async (data) => {
 };
 
 // ================================
-// FUTURE PROFILE APIs
-// (We'll implement later)
+// PROFILE APIs
 // ================================
 
 export const getProfile = async () => {
-    return API.get("/profile");
-};
-
-export const updateProfile = async (data) => {
-    return API.put("/profile", data);
+    return API.get("/me");
 };
 
 export const changePassword = async (data) => {
     return API.put("/change-password", data);
+};
+
+export const updateProfile = async (data) => {
+    return API.put("/me", data);
+};
+
+// ================================
+// SAVED ITINERARIES
+// ================================
+
+export const getSavedItineraries = async () => {
+    return API.get("/me/itineraries");
+};
+
+export const getItineraryDetails = async (preferenceId) => {
+    return API.get(`/me/itineraries/${preferenceId}`);
 };
 
 export default API;

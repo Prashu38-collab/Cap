@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/register"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "string",
+      "email": "eyLaWM@aLJGyZRSfIN.gjj",
+      "phone_number": "stringstring",
+      "password": "stringstring",
+      "confirm_password": "string",
+      "terms_accepted": false
+    }
+settings: {}
+examples: ./.resources/Register.resources/examples
+order: 1000

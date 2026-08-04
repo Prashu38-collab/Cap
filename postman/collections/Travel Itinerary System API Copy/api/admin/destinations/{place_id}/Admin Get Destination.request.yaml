@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/destinations/:place_id"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  place_id: "1641"
+settings: {}
+examples: ./.resources/Admin Get Destination.resources/examples
+order: 1000

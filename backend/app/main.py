@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import User_Preferences, auth,hotels, itinerary, weather,weather_places, traffic, places, map, admin, contact
 from app.routers import transport
+from app.routers import saved_itineraries
 app = FastAPI(
     title="Travel Itinerary System API",
     description="Backend API for personalized travel itinerary planning",
@@ -13,6 +14,8 @@ app = FastAPI(
 origins = [
     "http://localhost:5173", 
     "http://127.0.0.1:5173",  # React (Vite)
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
 ]
 
 app.add_middleware(
@@ -38,6 +41,7 @@ app.include_router(map.router)
 app.include_router(admin.router)
 app.include_router(contact.router)
 app.include_router(transport.router)
+app.include_router(saved_itineraries.router)
 
 @app.get("/")
 def home():

@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/messages/:message_id"
+method: DELETE
+headers:
+  Accept: application/json
+pathVariables:
+  message_id: "4637"
+settings: {}
+examples: ./.resources/Admin Delete Message.resources/examples
+order: 2000

@@ -1,0 +1,38 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/admin/destinations"
+  method: POST
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "place_name": "string",
+        "District": "string",
+        "Latitude": 9915.042905321814,
+        "Longitude": 2299.117741364174,
+        "Category": "string",
+        "Indoor_Outdoor": "string",
+        "Mobility": "string",
+        "Weather_Sensitivity": "string",
+        "Budget_level": "string",
+        "Entry_Fee": "string",
+        "province": 3551,
+        "estimated_duration_value": 7730.967071059174,
+        "estimated_duration_unit": "string",
+        "is_trek": false,
+        "elevation_meters": null,
+        "opening_time": null,
+        "closing_time": "17:13:57.731Z"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: ""
+order: 1000

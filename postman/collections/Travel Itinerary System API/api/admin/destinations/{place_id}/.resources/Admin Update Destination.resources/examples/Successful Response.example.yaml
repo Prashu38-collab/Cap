@@ -1,0 +1,40 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/admin/destinations/:place_id"
+  method: PUT
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  pathVariables:
+    place_id: "8816"
+  body:
+    type: json
+    content: |-
+      {
+        "place_name": "string",
+        "District": "string",
+        "Latitude": 4353.900693013192,
+        "Longitude": 1646.5771982476163,
+        "Category": "string",
+        "Indoor_Outdoor": "string",
+        "Mobility": "string",
+        "Weather_Sensitivity": "string",
+        "Budget_level": "string",
+        "Entry_Fee": "string",
+        "province": 3545,
+        "estimated_duration_value": 8968.979917541063,
+        "estimated_duration_unit": "string",
+        "is_trek": true,
+        "elevation_meters": null,
+        "opening_time": "13:48:26.418Z",
+        "closing_time": "23:37:28.596Z"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: ""
+order: 1000

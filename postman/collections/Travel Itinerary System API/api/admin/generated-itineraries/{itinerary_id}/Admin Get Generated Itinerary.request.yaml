@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/generated-itineraries/:itinerary_id"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  itinerary_id: "5919"
+settings: {}
+examples: ./.resources/Admin Get Generated Itinerary.resources/examples
+order: 1000

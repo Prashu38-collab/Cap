@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/me/itineraries/:preference_id"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  preference_id: "9989"
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/Get Itinerary Details.resources/examples
+order: 1000

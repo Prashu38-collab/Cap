@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/places/district/:district_name"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  district_name: string
+settings: {}
+examples: ./.resources/Get Places By District.resources/examples
+order: 1000

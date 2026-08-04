@@ -1,0 +1,30 @@
+$kind: http-request
+name: Verify OTP
+method: POST
+url: '{{baseUrl}}/verify-otp'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{testEmail}}",
+      "otp": "{{testOtp}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      const json = pm.response.json();
+      pm.test("Response has success field", () => pm.expect(json).to.have.property("success"));
+      pm.test("Response has message", () => pm.expect(json.message).to.be.a("string"));
+      if (pm.response.code === 200 && json.success) {
+          pm.test("OTP verified successfully", () => pm.expect(json.success).to.be.true);
+      }
+      if (pm.response.code === 400) {
+          pm.test("Invalid OTP returns 400", () => pm.response.to.have.status(400));
+          pm.test("Error detail present", () => pm.expect(json.detail).to.be.a("string"));
+      }

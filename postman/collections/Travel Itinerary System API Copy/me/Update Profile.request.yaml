@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/me"
+method: PUT
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "string",
+      "phone_number": "stringstring"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/Update Profile.resources/examples
+order: 3000

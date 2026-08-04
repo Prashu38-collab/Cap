@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/itinerary/:preference_id/generate"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+pathVariables:
+  preference_id: "113"
+body:
+  type: json
+  content: |-
+    {
+      "key_0": 4724.842200754791,
+      "key_1": "string",
+      "key_2": "string",
+      "key_3": "string",
+      "key_4": "string"
+    }
+settings: {}
+examples: ./.resources/Generate From Hotel.resources/examples
+order: 1000

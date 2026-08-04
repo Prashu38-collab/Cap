@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/hotels"
+method: GET
+headers:
+  Accept: application/json
+settings: {}
+examples: ./.resources/Admin Get Hotels.resources/examples
+order: 2000

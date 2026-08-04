@@ -1,0 +1,38 @@
+$kind: http-request
+name: Register User
+method: POST
+url: '{{baseUrl}}/register'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Test User",
+      "email": "{{testEmail}}",
+      "phone_number": "9812345678",
+      "password": "{{testPassword}}",
+      "confirm_password": "{{testPassword}}",
+      "terms_accepted": true
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      // Test: Successful registration
+      if (pm.response.code === 201) {
+          const json = pm.response.json();
+          pm.test("Status code is 201", () => pm.response.to.have.status(201));
+          pm.test("Response has success true", () => pm.expect(json.success).to.be.true);
+          pm.test("Response has user object", () => pm.expect(json.user).to.be.an("object"));
+          pm.test("User has user_id", () => pm.expect(json.user.user_id).to.be.a("number"));
+          pm.test("User email matches", () => pm.expect(json.user.email).to.eql(pm.environment.get("testEmail")));
+      }
+      // Test: Duplicate email
+      if (pm.response.code === 400) {
+          const json = pm.response.json();
+          pm.test("Status code is 400 for duplicate", () => pm.response.to.have.status(400));
+          pm.test("Error detail exists", () => pm.expect(json.detail).to.be.a("string"));
+      }

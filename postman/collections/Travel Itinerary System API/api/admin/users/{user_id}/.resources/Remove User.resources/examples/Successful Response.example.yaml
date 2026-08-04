@@ -1,0 +1,17 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/admin/users/:user_id"
+  method: DELETE
+  headers:
+    Accept: application/json
+  pathVariables:
+    user_id: "4587"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: ""
+order: 1000

@@ -1,4 +1,5 @@
 import math
+import decimal
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -7,9 +8,22 @@ from app.logic.generator import (
     generate_itinerary, estimate_max_days, allocate_places_balanced,
 )
 from app.logic.transit_corridors import DISTRICT_GRAPH
+from app.routers.auth_utils import get_current_user
+from app.crud.itinerary_crud import save_itinerary
 from sqlalchemy import text
 
 router = APIRouter()
+
+
+def _json_safe(value):
+    """Recursively convert Decimal/other non-JSON types to native types."""
+    if isinstance(value, decimal.Decimal):
+        return float(value)
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    return value
 
 
 def _haversine_km(lat1, lon1, lat2, lon2):
@@ -601,7 +615,11 @@ def select_trek_hotel(payload: dict, db: Session = Depends(get_db)):
 #  POST /itinerary/create-preference
 # ──────────────────────────────────────────────
 @router.post("/itinerary/create-preference")
-def create_preference_route(payload: dict, db: Session = Depends(get_db)):
+def create_preference_route(
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     try:
         from app.logic.transit_corridors import compute_corridor
 
@@ -613,7 +631,7 @@ def create_preference_route(payload: dict, db: Session = Depends(get_db)):
         hotel_budget = int(payload.get("hotel_budget", 0))
         mobility = payload.get("mobility", "moderate")
         categories = payload.get("preferred_categories", "")
-        user_id = int(payload.get("user_id", 1))
+        user_id = current_user["user_id"]
 
         # Save preferences
         row = db.execute(
@@ -831,6 +849,7 @@ def get_nearby_districts(payload: dict, db: Session = Depends(get_db)):
 def generate_from_hotel(
     preference_id: int,
     payload: dict,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     try:
@@ -919,11 +938,21 @@ def generate_from_hotel(
                     "if you'd prefer an adventure itinerary."
                 )
 
+        # ── Persist the generated itinerary so it shows on the user's profile ──
+        safe_result = _json_safe(result)
+        save_itinerary(
+            db=db,
+            preference_id=preference_id,
+            itinerary_data=safe_result,
+            status="generated",
+            total_estimated_cost=safe_result.get("total_estimated_cost"),
+        )
+
         return {
             "status": "success",
             "preference_id": preference_id,
             "district": ending,
-            "data": result,
+            "data": safe_result,
         }
 
     except HTTPException:

@@ -1,0 +1,29 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/admin/hotels"
+  method: POST
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "hotel_name": "string",
+        "review_score": 8578.96531277696,
+        "budget": 3199.0462759615302,
+        "latitude": 4180.851627466589,
+        "longitude": 8057.218694793499,
+        "district": "string",
+        "destination_id": "string",
+        "elevation_meters": null
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: text
+    content: ""
+order: 1000

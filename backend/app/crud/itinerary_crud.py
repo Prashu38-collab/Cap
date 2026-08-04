@@ -12,7 +12,22 @@ def save_itinerary(
     status: str = "generated",
     total_estimated_cost: Optional[float] = None,
 ) -> int:
-    """Insert a new saved itinerary record. Returns the new itinerary_id."""
+    """Insert a new saved itinerary record. Returns the new itinerary_id.
+    If a generated itinerary already exists for this preference_id, it is
+    replaced so the profile list shows one card per preference."""
+    existing = db.execute(
+        text("SELECT itinerary_id FROM generated_itineraries WHERE preference_id = :pid ORDER BY generated_at"),
+        {"pid": preference_id},
+    ).fetchone()
+
+    if existing:
+        update_saved_itinerary(
+            db, existing.itinerary_id,
+            status=status,
+            itinerary_data=itinerary_data,
+        )
+        return existing.itinerary_id
+
     max_id = db.execute(
         text('SELECT COALESCE(MAX(itinerary_id), 0) + 1 FROM generated_itineraries')
     ).scalar()

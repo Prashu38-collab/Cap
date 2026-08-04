@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/hotels/:hotel_id"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  hotel_id: "2176"
+settings: {}
+examples: ./.resources/Admin Get Hotel.resources/examples
+order: 1000

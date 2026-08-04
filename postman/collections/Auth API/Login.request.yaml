@@ -1,0 +1,35 @@
+$kind: http-request
+name: Login
+method: POST
+url: '{{baseUrl}}/login'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{testEmail}}",
+      "password": "{{testPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      const json = pm.response.json();
+      pm.test("Response has success true", () => pm.expect(json.success).to.be.true);
+      pm.test("Response has access_token", () => pm.expect(json.access_token).to.be.a("string"));
+      pm.test("Token type is bearer", () => pm.expect(json.token_type).to.eql("bearer"));
+      pm.test("Response has user object", () => pm.expect(json.user).to.be.an("object"));
+      pm.test("User has user_id", () => pm.expect(json.user.user_id).to.be.a("number"));
+      // Save token to environment for subsequent requests
+      if (json.access_token) {
+          pm.environment.set("authToken", json.access_token);
+      }
+      // Test: Wrong password
+      if (pm.response.code === 401) {
+          pm.test("Wrong password returns 401", () => pm.response.to.have.status(401));
+          pm.test("Error detail present", () => pm.expect(json.detail).to.be.a("string"));
+      }

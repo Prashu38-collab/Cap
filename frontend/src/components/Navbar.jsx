@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { logoutUser } from "../utils/authStorage";
 
 import "../styles/navbar.css";
 
@@ -7,8 +8,7 @@ function Navbar() {
 
   const navigate = useNavigate();
   const handleLogout = () => {
-    // Clear all auth data
-    localStorage.removeItem('token');
+    logoutUser();
     sessionStorage.clear();
     navigate("/login");
   };

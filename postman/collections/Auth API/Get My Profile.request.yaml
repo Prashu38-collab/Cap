@@ -1,0 +1,24 @@
+$kind: http-request
+name: Get My Profile
+method: GET
+url: '{{baseUrl}}/me'
+order: 8000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      const json = pm.response.json();
+      pm.test("Response has success true", () => pm.expect(json.success).to.be.true);
+      pm.test("Response has user object", () => pm.expect(json.user).to.be.an("object"));
+      pm.test("User has user_id", () => pm.expect(json.user.user_id).to.be.a("number"));
+      pm.test("User has email", () => pm.expect(json.user.email).to.be.a("string"));
+      pm.test("User has name", () => pm.expect(json.user.name).to.be.a("string"));
+      if (pm.response.code === 401) {
+          pm.test("No token returns 401", () => pm.response.to.have.status(401));
+      }
