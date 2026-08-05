@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import User_Preferences, auth,hotels, itinerary, weather,weather_places, traffic, places, map, admin, contact
+from app.routers import User_Preferences, auth,hotels, itinerary, weather,weather_places, traffic, places, map, admin, contact, saved_itineraries
 
 from app.security.limiter import limiter
 from slowapi.errors import RateLimitExceeded
@@ -44,6 +44,7 @@ app.include_router(weather.router)
 app.include_router(traffic.router)
 app.include_router(places.router)
 app.include_router(map.router)
+app.include_router(saved_itineraries.router)
 
 app.include_router(admin.router)
 app.include_router(contact.router)

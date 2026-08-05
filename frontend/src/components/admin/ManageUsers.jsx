@@ -137,7 +137,7 @@ const handleAddUser = async () => {
 
   // Send Request
   try {
-    await api.get("/api/admin/users", newUser);
+    await api.post("/api/admin/users", newUser);
     Swal.fire("Success", "User added successfully.", "success");
     fetchUsers();
     setShowAdd(false);
@@ -156,7 +156,7 @@ const handleAddUser = async () => {
 const handleStatusChange = async (id, status) => {
 
   try {
-    const response = await api.put(`/api/admin/hotels/${id}/status`,
+    const response = await api.put(`/api/admin/users/${id}/status`,
       {
         status: status
       }

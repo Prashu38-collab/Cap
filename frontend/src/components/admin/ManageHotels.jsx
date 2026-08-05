@@ -72,7 +72,7 @@ function ManageHotels() {
     }
 
     try {
-      await api.get("/api/admin/destinations", newHotel);
+      await api.post("/api/admin/hotels", newHotel);
       Swal.fire("Success", "Hotel added successfully.", "success");
       fetchHotels();
       setShowAdd(false);
