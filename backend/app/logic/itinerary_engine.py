@@ -709,7 +709,7 @@ def _inject_meals(itinerary_days: list, districts_per_day: Optional[list] = None
                     "name": f"Travel to {p['name']}",
                     "start_time": travel_start_str,
                     "duration": round(travel_dur_min_val / 60.0, 2),
-                    "icon": "🚗",
+                   
                     "transport_mode": p.get("transport_mode", "Private Car / Local Bus"),
                     "travel_dist_km": round(travel_dist, 1),
                     "description": f"Transit to attraction ({round(travel_dist, 1)} km)."
@@ -1732,7 +1732,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
 # ==============================
 # 4. MASTER ORCHESTRATOR
 # ==============================
-def generate_master_itinerary(db: Session, preference_id: int, corridor_override: list = None):
+def generate_master_itinerary(db: Session, preference_id: int, corridor_override: list = None, ranked_places_override: Optional[list] = None):
     """
     Master orchestrator entry point.
     Reads preferences, computes corridor, builds the full itinerary.
