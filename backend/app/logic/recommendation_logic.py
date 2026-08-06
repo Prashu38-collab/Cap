@@ -7,9 +7,9 @@ class RecommendationService:
 
     def get_ranked_places(self, db: Session, preference_id: int, districts_override: Optional[list] = None):
 
-        # ----------------------------
+      
         # USER PREFERENCES
-        # ----------------------------
+      
         pref_query = text("""
             SELECT *
             FROM "User_Preferences"
@@ -21,9 +21,9 @@ class RecommendationService:
         if not pref:
             return []
 
-        # ----------------------------
+      
         # SAFE PARSER
-        # ----------------------------
+      
         def parse_list(val):
             if not val:
                 return []
@@ -35,13 +35,14 @@ class RecommendationService:
         budget = (getattr(pref, "budget_level", "") or "").lower()
         mobility = (getattr(pref, "mobility", "") or "").lower()
         district = (getattr(pref, "starting_district", "") or getattr(pref, "district", "") or "").lower()
+        ending_district = (getattr(pref, "ending_district", "") or "").lower()
 
         # Support multi-district via districts_override
         search_districts = districts_override if districts_override else ([district] if district else [])
 
-        # ----------------------------
+      
         # GET PLACES (FILTERED BY DISTRICT(S))
-        # ----------------------------
+      
         query_str = """
             SELECT
                 place_id,
@@ -79,9 +80,9 @@ class RecommendationService:
 
         ranked = []
 
-        # ----------------------------
+      
         # SCORING ENGINE
-        # ----------------------------
+      
         for r in rows:
 
             score = 0.0
@@ -99,8 +100,9 @@ class RecommendationService:
                 else:
                     score += 0.05
 
-            # DISTRICT (20%)
-            if district and district in dist:
+            # DISTRICT (20%) — user visits the starting district AND travels to
+            # the ending district, so places in either get the boost.
+            if (district and district in dist) or (ending_district and ending_district != district and ending_district in dist):
                 score += 0.20
 
             # BUDGET (20%)
@@ -178,9 +180,9 @@ class RecommendationService:
 #         if not pref:
 #             return []
 
-#         # ----------------------------
+#       
 #         # SAFE PARSER
-#         # ----------------------------
+#       
 #         def parse_list(val):
 #             if not val:
 #                 return []
@@ -193,9 +195,9 @@ class RecommendationService:
 #         mobility = (getattr(pref, "mobility", "") or "").lower()
 #         district = (getattr(pref, "starting_district", "") or getattr(pref, "district", "") or "").lower()
 
-#         # ----------------------------
+#       
 #         # GET PLACES
-#         # ----------------------------
+#       
 #         query = text("""
 #             SELECT
 #                 place_id,
@@ -214,9 +216,9 @@ class RecommendationService:
 
 #         ranked = []
 
-#         # ----------------------------
+#       
 #         # SCORING ENGINE
-#         # ----------------------------
+#       
 #         for r in rows:
 
 #             score = 0.0
