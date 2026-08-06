@@ -1128,11 +1128,17 @@ def generate_from_hotel(
             corridor = extended_corridor
 
         # ── Weather-Aware: indoor-only on days whose weather is actually bad ──
+        # Only the explicit "weather_aware" choice enables weather-based indoor
+        # swapping; "continue" (and the plain favourable-weather generate) keep
+        # the itinerary untouched so outdoor attractions are preserved.
+        result = generate_master_itinerary(
+            db, preference_id, corridor_override=corridor,
+            weather_aware=(weather_action == "weather_aware"),
+        )
+
         if weather_action == "weather_aware":
             from app.logic.weather.weather_service import WeatherService
             from app.logic.weather.weather_adapter import _count_indoor_places
-
-            result = generate_master_itinerary(db, preference_id, corridor_override=corridor)
 
             day_bad_weather = {}
             try:
@@ -1183,8 +1189,6 @@ def generate_from_hotel(
                             "warning": f"No indoor places available in {d}. This district is mainly for outdoor activities. Consider travelling when weather conditions become favourable.",
                         })
             result["_weather_removals"] = removals
-        else:
-            result = generate_master_itinerary(db, preference_id, corridor_override=corridor)
 
         cats_lower = (pref.category or "").lower()
         user_wants_adventure = any(kw in cats_lower for kw in ["adventure", "trek"])

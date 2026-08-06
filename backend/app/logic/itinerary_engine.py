@@ -842,7 +842,7 @@ def _inject_meals(itinerary_days: list, districts_per_day: Optional[list] = None
 
 
 #MAIN ITINERARY BUILDER
-def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = None, starting_hotel_id: Optional[int] = None, ranked_places_override: Optional[list] = None):
+def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = None, starting_hotel_id: Optional[int] = None, ranked_places_override: Optional[list] = None, weather_aware: bool = True):
     pref = get_preferences(db, preference_id)
     city = getattr(pref, "starting_district", "") or getattr(pref, "district", "")
     days = getattr(pref, "travel_days", 1)
@@ -1065,7 +1065,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
     # days). Each day checks the forecast for its own assigned district.
     # ──────────────────────────────────────────────
     weather_by_day = {}
-    if travel_date:
+    if weather_aware and travel_date:
         try:
             from app.logic.weather.weather_service import WeatherService
             weather_flags = WeatherService.get_weather_flags_from_db(
@@ -1732,7 +1732,7 @@ def build_itinerary(db: Session, preference_id: int, corridor: Optional[list] = 
 # ==============================
 # 4. MASTER ORCHESTRATOR
 # ==============================
-def generate_master_itinerary(db: Session, preference_id: int, corridor_override: list = None, ranked_places_override: Optional[list] = None):
+def generate_master_itinerary(db: Session, preference_id: int, corridor_override: list = None, ranked_places_override: Optional[list] = None, weather_aware: bool = True):
     """
     Master orchestrator entry point.
     Reads preferences, computes corridor, builds the full itinerary.
@@ -1747,7 +1747,7 @@ def generate_master_itinerary(db: Session, preference_id: int, corridor_override
     else:
         corridor = compute_corridor(start, end)
 
-    result = build_itinerary(db, preference_id, corridor=corridor, ranked_places_override=ranked_places_override)
+    result = build_itinerary(db, preference_id, corridor=corridor, ranked_places_override=ranked_places_override, weather_aware=weather_aware)
     result["corridor"] = corridor
     result["district"] = end
     return result
