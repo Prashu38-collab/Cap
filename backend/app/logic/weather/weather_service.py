@@ -1,6 +1,6 @@
 import requests
-from datetime import date
-from typing import Optional
+from datetime import date, timedelta
+from typing import Optional, Union
 from geopy.geocoders import Nominatim
 
 FORECAST_WINDOW_DAYS = 16
@@ -118,3 +118,58 @@ class WeatherService:
         for district in districts:
             results[district] = self.get_forecast(district, travel_date_str)
         return results
+
+    @staticmethod
+    def get_weather_flags_from_db(
+        db,
+        districts: Union[str, list[str]],
+        travel_date: str,
+        days: int,
+    ) -> list[dict]:
+        """Per-day weather flags used by itinerary generation.
+
+        Args:
+            districts: a single district name (applied to every day) or a list
+                with one district per day.
+            travel_date: ISO date string of the first travel day.
+            days: number of itinerary days.
+
+        Returns:
+            list of {day, district, is_bad_weather, condition, temp_max,
+            temp_min} for each day (1..days). Days with no forecast simply
+            report is_bad_weather=False.
+        """
+        from .weather_rules import is_favourable, condition_label
+
+        service = WeatherService()
+        if isinstance(districts, str):
+            per_day = [districts] * days
+        else:
+            per_day = list(districts)
+            if not per_day:
+                per_day = [""] * days
+            elif len(per_day) < days:
+                per_day += [per_day[-1]] * (days - len(per_day))
+
+        try:
+            travel = date.fromisoformat(travel_date) if travel_date else None
+        except (ValueError, TypeError):
+            travel = None
+
+        flags = []
+        for day_num in range(1, days + 1):
+            district = per_day[day_num - 1]
+            day_str = None
+            if travel is not None:
+                day_str = (travel + timedelta(days=day_num - 1)).isoformat()
+            forecast = service.get_forecast(district, day_str) if day_str else None
+            flags.append({
+                "day": day_num,
+                "district": district,
+                "is_bad_weather": bool(forecast) and not is_favourable(forecast),
+                "condition": condition_label(forecast),
+                "temp_max": getattr(forecast, "temp_max", None),
+                "temp_min": getattr(forecast, "temp_min", None),
+                "precipitation_sum": getattr(forecast, "precipitation_sum", None),
+            })
+        return flags

@@ -286,6 +286,7 @@ function PlanTrip() {
           return;
         }
         setResult(data);
+        setWeatherForecast(data.weather_forecast || []);
         setStep("result");
       } else {
         // Weather is unfavourable — show advisory modal
@@ -316,6 +317,7 @@ function PlanTrip() {
       }
       data.data._weather_advisory = weatherAdvisory;
       setResult(data);
+      setWeatherForecast(data.weather_forecast || []);
       setWeatherAdvisory(null);
       setPendingHotelId(null);
       setStep("result");
@@ -344,6 +346,7 @@ function PlanTrip() {
       data.data._weather_advisory = weatherAdvisory;
       data.data._weather_aware = true;
       setResult(data);
+      setWeatherForecast(data.weather_forecast || []);
       setWeatherAdvisory(null);
       setPendingHotelId(null);
       setStep("result");
@@ -744,7 +747,6 @@ function PlanTrip() {
           {weatherAdvisory && (
             <div className="modal-overlay">
               <div className="modal-card" style={{ maxWidth: "480px" }}>
-                <div className="modal-icon" style={{ fontSize: "36px" }}>🌧️</div>
                 <h2 className="modal-title">{weatherAdvisory.advisory?.title || "Weather Advisory"}</h2>
                 <p className="modal-msg">{weatherAdvisory.advisory?.message || "Adverse weather expected."}</p>
 
@@ -781,13 +783,6 @@ function PlanTrip() {
                     </span>
                   </button>
                 </div>
-
-                <button
-                  className="modal-close-btn"
-                  onClick={() => { setWeatherAdvisory(null); setPendingHotelId(null); }}
-                >
-                  Cancel
-                </button>
 
                 <button
                   className="modal-close-btn"

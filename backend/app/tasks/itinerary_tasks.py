@@ -15,7 +15,7 @@ from sqlalchemy import text
 
 from app.database import SessionLocal
 from app.logic.itinerary_engine import build_itinerary
-from app.logic.weather_logic import WeatherService
+from app.logic.weather.weather_service import WeatherService
 from app.tasks.celery_app import get_celery_app, is_celery_available
 
 logger = logging.getLogger(__name__)

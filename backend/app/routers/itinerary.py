@@ -1127,13 +1127,31 @@ def generate_from_hotel(
                         extended_corridor.append(td_norm)
             corridor = extended_corridor
 
-        # ── Weather-Aware: indoor-only per district (post-process, no fallback changes) ──
+        # ── Weather-Aware: indoor-only on days whose weather is actually bad ──
         if weather_action == "weather_aware":
+            from app.logic.weather.weather_service import WeatherService
+            from app.logic.weather.weather_adapter import _count_indoor_places
+
             result = generate_master_itinerary(db, preference_id, corridor_override=corridor)
+
+            day_bad_weather = {}
+            try:
+                day_districts = [d.get("district", "") for d in result.get("itinerary", [])]
+                pref_travel_date = str(getattr(pref_full, "travel_date", ""))
+                flags = WeatherService.get_weather_flags_from_db(
+                    db, day_districts, pref_travel_date, len(day_districts)
+                )
+                day_bad_weather = {f["day"]: f.get("is_bad_weather", False) for f in flags}
+            except Exception:
+                day_bad_weather = {}
 
             removals = []
             for day in result.get("itinerary", []):
                 d = day.get("district", "")
+                day_num = day.get("day")
+                is_bad = day_bad_weather.get(day_num, False)
+                if not is_bad:
+                    continue
                 kept = []
                 for p in day.get("places", []):
                     io = (p.get("indoor_outdoor") or "").lower()
@@ -1142,14 +1160,28 @@ def generate_from_hotel(
                         kept.append(p)
                 day["places"] = kept
                 if not kept:
-                    day["weather_message"] = (
-                        f"No indoor places available in {d}. "
-                        f"This district is mainly for outdoor activities."
-                    )
-                    removals.append({
-                        "district": d,
-                        "warning": f"No indoor places available in {d}. This district is mainly for outdoor activities. Consider travelling when weather conditions become favourable.",
-                    })
+                    # Only claim "no indoor places" when the district genuinely
+                    # has none; otherwise indoor options exist but none matched
+                    # the user's preferences (category/mobility/budget).
+                    has_indoor = _count_indoor_places(db, d) > 0
+                    if has_indoor:
+                        day["weather_message"] = (
+                            f"No suitable indoor places available in {d} for your "
+                            f"preferences. Try a different category or mobility level."
+                        )
+                        removals.append({
+                            "district": d,
+                            "warning": f"No indoor places matched your preferences in {d}. Consider adjusting your categories or mobility level.",
+                        })
+                    else:
+                        day["weather_message"] = (
+                            f"No indoor places available in {d}. "
+                            f"This district is mainly for outdoor activities."
+                        )
+                        removals.append({
+                            "district": d,
+                            "warning": f"No indoor places available in {d}. This district is mainly for outdoor activities. Consider travelling when weather conditions become favourable.",
+                        })
             result["_weather_removals"] = removals
         else:
             result = generate_master_itinerary(db, preference_id, corridor_override=corridor)
