@@ -23,7 +23,7 @@ A full-stack web application that generates **personalized, day-by-day travel it
 | Database | PostgreSQL (Supabase), raw SQL for reporting logic |
 | External APIs | Open-Meteo (forecasts), Nominatim (geocoding), OSRM (routing), OpenWeather |
 | Testing | Pytest |
-| ML-style scoring | TF-IDF + cosine similarity (content-based recommender) |
+
 
 ## Architecture
 
