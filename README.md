@@ -5,12 +5,11 @@ A full-stack web application that generates **personalized, day-by-day travel it
 ## Features
 
 - **Personalized recommendations** — every attraction is scored (0–1) against the user's profile across category match, starting/ending district, budget, mobility, and entry fee.
-- **Route-aware itinerary planning** — places are packed into days using real road distances and travel times between 41 districts (no more zigzagging).
 - **Weather-aware itineraries** — checks a live 16-day forecast before generation. On bad-weather days the user can keep the original outdoor plan or swap to indoor alternatives.
 - **Multi-level fallback** — if a day would end up empty, the system relaxes category filters, pulls nearby-district places, and finally generates leisure activities so no day is ever empty.
 - **Trek itineraries** — static injected routes for multi-day treks with hotel stops.
 - **Hotel planning & budget validation** — picks hotels per district within budget and rejects plans where the budget can't cover hotels and transport.
-- **Live traffic & weather telemetry** — district weather updates and traffic-aware routing.
+- ** weather aware planning ** — district weather updates 
 - **User accounts** — signup/login, profile management, saved itineraries.
 - **Admin dashboard** — manage destinations and platform content.
 
