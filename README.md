@@ -1,6 +1,6 @@
 # Go Travel — Travel Itinerary Recommendation System
 
-The final updated version is on finalriddhi for now.
+
 
 A full-stack web application that generates **personalized, day-by-day travel itineraries** for Nepal. It scores attractions against the user's preferences, plans route-aware daily schedules across districts, and adapts plans to real-time weather.
 
