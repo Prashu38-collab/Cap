@@ -43,14 +43,14 @@ PostgreSQL (Supabase)
 - `logic/` — the core business logic:
   - `recommendation_logic.py` — weighted scoring engine (`get_ranked_places`).
   - `itinerary_engine.py` — master day-by-day planner (`generate_master_itinerary` / `build_itinerary`).
-  - `recommender.py` — TF-IDF + cosine similarity content-based recommender.
+ 
   - `fallback_recommender.py` — multi-level fallback to fill empty days.
-  - `transit_corridors.py` — road graph between 41 districts (distances, times, fares).
+ 
   - `hotel_logic.py`, `transport_logic.py`, `traffic_logic.py`, `map_logic.py`, `route_optimiser.py`, `return_route.py`, `trek_routes.py`.
   - `weather/` — `weather_service.py` (Open-Meteo fetching), `weather_rules.py` (good/bad day rules), `weather_adapter.py` (advisory + indoor fallback).
 - `services/` — orchestrators: `itinerary_service.py` (master orchestrator), `osrm_service.py`, `map_service.py`, `cache_service.py`, `email_services.py`.
 - `models/`, `schemas/` — ORM models and Pydantic schemas.
-- `tasks/` — Celery + itinerary background tasks.
+
 - `tests/` — pytest suites for weather and recommendation logic.
 
 ### Frontend layout (`Frontend/src/`)
